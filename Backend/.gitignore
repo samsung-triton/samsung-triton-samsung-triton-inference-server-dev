@@ -1,0 +1,170 @@
+# =========================================
+# Python
+# =========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# =========================================
+# FastAPI / Framework
+# =========================================
+*.log
+logs/
+*.pid
+tmp/
+staticfiles/
+media/
+uploads/
+__pypackages__/
+site/
+.env
+.env.*
+.env.local
+.env.dev
+.env.prod
+secrets.json
+*.bak
+*.tmp
+
+# =========================================
+# Docker / Compose
+# =========================================
+.docker/
+docker-compose.override.yml
+docker-compose.local.yml
+docker-compose.dev.yml
+Dockerfile.*
+*.tar
+*.pid
+tmp/
+volumes/
+postgres_data/
+pgdata/
+data/
+*.sock
+
+# =========================================
+# Databases
+# =========================================
+# SQLite (not used, but avoid test leftovers)
+*.sqlite
+*.sqlite3
+*.db
+
+# PostgreSQL dumps / temp
+*.sql
+*.dump
+*.backup
+
+# =========================================
+# Virtual Environments
+# =========================================
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+env/
+venv/
+ENV/
+.envrc
+
+# =========================================
+# IDE / Editor
+# =========================================
+.vscode/
+.idea/
+.spyderproject
+.spyproject
+.ropeproject
+*.sublime-project
+*.sublime-workspace
+
+# =========================================
+# Type Checkers / Linters
+# =========================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+cython_debug/
+
+# =========================================
+# OS-specific
+# =========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =========================================
+# Node (optional, for Swagger UI / Front)
+# =========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================================
+# Pytest / Coverage
+# =========================================
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache/
