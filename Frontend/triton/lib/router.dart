@@ -25,10 +25,7 @@ class AppFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(0),
-          child: _HeaderNav(),
-        ),
+        bottom: const PreferredSize(preferredSize: Size.fromHeight(0), child: _HeaderNav()),
       ),
       body: child,
     );
@@ -47,26 +44,10 @@ class _HeaderNav extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          _NavItem(
-            label: 'Dashboard',
-            to: Routes.dashboard,
-            selected: loc.startsWith(Routes.dashboard),
-          ),
-          _NavItem(
-            label: 'Model Manage',
-            to: Routes.modelManage,
-            selected: loc.startsWith(Routes.modelManage),
-          ),
-          _NavItem(
-            label: 'Model Log',
-            to: Routes.modelLog,
-            selected: loc.startsWith(Routes.modelLog),
-          ),
-          _NavItem(
-            label: 'Server Log',
-            to: Routes.serverLog,
-            selected: loc.startsWith(Routes.serverLog),
-          ),
+          _NavItem(label: 'Dashboard', to: Routes.dashboard, selected: loc.startsWith(Routes.dashboard)),
+          _NavItem(label: 'Model Manage', to: Routes.modelManage, selected: loc.startsWith(Routes.modelManage)),
+          _NavItem(label: 'Model Log', to: Routes.modelLog, selected: loc.startsWith(Routes.modelLog)),
+          _NavItem(label: 'Server Log', to: Routes.serverLog, selected: loc.startsWith(Routes.serverLog)),
         ],
       ),
     );
@@ -78,11 +59,7 @@ class _NavItem extends StatelessWidget {
   final String to;
   final bool selected;
 
-  const _NavItem({
-    required this.label,
-    required this.to,
-    required this.selected,
-  });
+  const _NavItem({required this.label, required this.to, required this.selected});
 
   @override
   Widget build(BuildContext context) {
@@ -94,12 +71,7 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         margin: const EdgeInsets.only(right: 8),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: selected ? color.primary : Colors.transparent,
-              width: 3,
-            ),
-          ),
+          border: Border(bottom: BorderSide(color: selected ? color.primary : Colors.transparent, width: 3)),
         ),
         child: Text(
           label,
@@ -118,40 +90,19 @@ final appRouter = GoRouter(
   initialLocation: Routes.login,
   routes: [
     // 로그인은 별개 라우팅으로 분리
-    GoRoute(
-      path: Routes.login,
-      name: 'login',
-      builder: (_, __) => const LoginScreen(),
-    ),
+    GoRoute(path: Routes.login, name: 'login', builder: (_, __) => const LoginScreen()),
 
     // 로그인 이후의 페이지들
     // 공통 프레임(헤더) 아래의 하위 라우트들
     ShellRoute(
       builder: (_, __, child) => AppFrame(child: child),
       routes: [
-        GoRoute(
-          path: Routes.dashboard,
-          name: 'dashboard',
-          builder: (_, __) => const DashboardScreen(),
-        ),
-        GoRoute(
-          path: Routes.modelManage,
-          name: 'model_manage',
-          builder: (_, __) => const ModelManageScreen(),
-        ),
-        GoRoute(
-          path: Routes.modelLog,
-          name: 'model_log',
-          builder: (_, __) => const ModelLogScreen(),
-        ),
-        GoRoute(
-          path: Routes.serverLog,
-          name: 'server_log',
-          builder: (_, __) => const ServerLogScreen(),
-        ),
+        GoRoute(path: Routes.dashboard, name: 'dashboard', builder: (_, __) => const DashboardScreen()),
+        GoRoute(path: Routes.modelManage, name: 'model_manage', builder: (_, __) => const ModelManageScreen()),
+        GoRoute(path: Routes.modelLog, name: 'model_log', builder: (_, __) => const ModelLogScreen()),
+        GoRoute(path: Routes.serverLog, name: 'server_log', builder: (_, __) => const ServerLogScreen()),
       ],
     ),
   ],
-  errorBuilder: (_, state) =>
-      Scaffold(body: Center(child: Text('404: ${state.matchedLocation}'))),
+  errorBuilder: (_, state) => Scaffold(body: Center(child: Text('404: ${state.matchedLocation}'))),
 );
