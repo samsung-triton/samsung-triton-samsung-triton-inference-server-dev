@@ -18,13 +18,13 @@ class MenuText extends StatelessWidget {
       onTap: () => context.go(to),
       borderRadius: BorderRadius.circular(4),
       child: Container(
-        width: 120,
+        width: 140,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         //margin: const EdgeInsets.only(right: 8),
         child: selected
-            ? Text(label, style: T.t12(color: primaryNormal, bold: true))
-            : Text(label, style: T.t12(color: black, bold: false)),
+            ? Text(label, style: T.t16(color: primaryNormal, bold: true))
+            : Text(label, style: T.t16(color: black, bold: false)),
       ),
     );
   }
