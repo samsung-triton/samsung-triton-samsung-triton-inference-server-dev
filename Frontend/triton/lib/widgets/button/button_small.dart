@@ -9,6 +9,7 @@ class ButtonSmall extends StatelessWidget {
   final double width;
   final double height;
   final double borderRadius;
+  final bool isbold;
   final VoidCallback? onPressed;
 
   const ButtonSmall({
@@ -20,6 +21,7 @@ class ButtonSmall extends StatelessWidget {
     this.width = 56,
     this.height = 28,
     this.borderRadius = 4,
+    this.isbold = false,
     this.onPressed,
   }) : super(key: key);
 
@@ -40,7 +42,10 @@ class ButtonSmall extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
             border: borderColor != null ? Border.all(color: borderColor!, width: 1) : null,
           ),
-          child: Text(text, style: T.t12(color: textColor, bold: false)),
+          child: Text(
+            text,
+            style: T.t12(color: textColor, bold: isbold),
+          ),
         ),
       ),
     );

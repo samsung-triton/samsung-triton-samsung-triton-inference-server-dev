@@ -9,6 +9,7 @@ class ButtonMedium extends StatelessWidget {
   final double width;
   final double height;
   final double borderRadius;
+  final bool isbold;
   final VoidCallback? onPressed;
 
   const ButtonMedium({
@@ -20,6 +21,7 @@ class ButtonMedium extends StatelessWidget {
     this.width = 64,
     this.height = 32,
     this.borderRadius = 4,
+    this.isbold = false,
     this.onPressed,
   }) : super(key: key);
 
@@ -40,7 +42,10 @@ class ButtonMedium extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
             border: borderColor != null ? Border.all(color: borderColor!, width: 1) : null,
           ),
-          child: Text(text, style: T.t12(color: textColor, bold: false)),
+          child: Text(
+            text,
+            style: T.t12(color: textColor, bold: isbold),
+          ),
         ),
       ),
     );

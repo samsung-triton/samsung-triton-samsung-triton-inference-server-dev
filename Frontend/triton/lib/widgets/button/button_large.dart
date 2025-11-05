@@ -10,6 +10,7 @@ class ButtonLarge extends StatelessWidget {
   final double width;
   final double height;
   final double borderRadius;
+  final bool isbold;
   final VoidCallback? onPressed;
 
   const ButtonLarge({
@@ -21,6 +22,7 @@ class ButtonLarge extends StatelessWidget {
     this.width = 88,
     this.height = 44,
     this.borderRadius = 4,
+    this.isbold = false,
     this.onPressed,
   }) : super(key: key);
 
@@ -41,7 +43,10 @@ class ButtonLarge extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
             border: borderColor != null ? Border.all(color: borderColor!, width: 1) : null,
           ),
-          child: Text(text, style: T.t16(color: textColor, bold: false)),
+          child: Text(
+            text,
+            style: T.t16(color: textColor, bold: isbold),
+          ),
         ),
       ),
     );
