@@ -7,8 +7,8 @@ class InputSmall extends StatelessWidget {
   final TextEditingController? controller;
   final bool enabled;
   final bool hasError;
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
   final double borderRadius;
   final EdgeInsets padding;
   final VoidCallback? onTap;
