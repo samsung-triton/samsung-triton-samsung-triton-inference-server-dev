@@ -53,6 +53,7 @@ class AppFrame extends StatelessWidget {
         elevation: 4,
         shadowColor: black.withValues(alpha: 0.2),
       ),
+      body: SafeArea(child: child),
     );
   }
 }
