@@ -69,7 +69,6 @@ class _ModalRegistrationState extends State<ModalRegistration> {
           label: 'model type',
           child: Dropdown(
             width: 200,
-            height: 24,
             items: const ['single', 'ensemble'], // 선택 가능한 타입 목록
             hintText: 'Select model type',
             value: selectedModelType, // 현재 선택된 값

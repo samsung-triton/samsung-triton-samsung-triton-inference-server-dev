@@ -25,7 +25,7 @@ class InputMedium extends StatefulWidget {
     this.readOnly = false,
     this.enableInteractiveSelection = true,
     this.width = 200,
-    this.height = 24,
+    this.height = 28,
     this.borderRadius = 4,
     this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     this.maxLength = 200,
