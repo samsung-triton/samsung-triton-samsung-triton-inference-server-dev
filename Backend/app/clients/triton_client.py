@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Any, List, Dict
 import tritonclient.grpc as grpcclient
 from app.core.config import settings
 
@@ -16,13 +16,24 @@ class TritonClient:
     def is_model_ready(self, model_name: str) -> bool:
         return self.client.is_model_ready(model_name)
 
-    def list_models(self, ready: Optional[bool] = None) -> List[Dict]:
-        items = self.client.get_model_repository_index(ready=ready)
-        return [{
-            "name": it.get("name"),
-            "version": it.get("version"),
-            "state": it.get("state"),
-            "ready": bool(it.get("ready", False)),
-        } for it in items]
+    def list_models(self) -> List[Dict]:
+        resp = self.client.get_model_repository_index(as_json=True)
+ 
+        models = resp.get("models") if isinstance(resp, dict) else []
+        if not isinstance(models, list):
+            models = []
+
+        out = []
+        for m in models:
+            state = m.get("state")
+            out.append({
+                "name": m.get("name"),
+                "version": m.get("version"),
+                "state": state,
+                "reason": m.get("reason"),
+                "ready": (state == "READY") if state is not None else False
+            })
+
+        return out
 
 triton_client = TritonClient()

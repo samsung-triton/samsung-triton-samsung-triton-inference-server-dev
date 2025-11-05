@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
-from app.clients.triton_client import triton_client
+from app.services.model_service import list_models_wrapped
 
 router = APIRouter(prefix="/api/v1/models", tags=["models"])
 
-@router.get("", summary="모델 목록 (전체)")
+@router.get("", summary="모델 목록 (전체) 조회")
 def list_models():
     try:
-        return triton_client.list_models()
+        return list_models_wrapped()
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Triton gRPC error: {e}")
