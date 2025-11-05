@@ -7,8 +7,9 @@ class Dropdown extends StatefulWidget {
   final double? width;
   final double? height;
   final List<String> items;
+  final String hintText;
 
-  const Dropdown({super.key, this.width, this.height, required this.items});
+  const Dropdown({super.key, this.width, this.height, required this.items, this.hintText = 'Select an item'});
 
   @override
   State<Dropdown> createState() => _DropdownState();
@@ -25,7 +26,7 @@ class _DropdownState extends State<Dropdown> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton2<String>(
           isExpanded: true,
-          hint: Text('model name', style: T.t12(color: gray, bold: false)),
+          hint: Text(widget.hintText, style: T.t12(color: gray, bold: false)),
           value: selectedModel,
           iconStyleData: const IconStyleData(icon: Icon(Icons.arrow_drop_down, color: black), iconSize: 20),
           buttonStyleData: ButtonStyleData(
