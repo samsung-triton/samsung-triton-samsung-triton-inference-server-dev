@@ -21,6 +21,4 @@ def login_user_service(login_id: str, password: str, db: Session) -> BaseRespons
             status.HTTP_401_UNAUTHORIZED, CustomCode.ERR_401.value, Messages.INVALID_CREDENTIAL.value
         )
 
-    return create_response(
-        CustomCode.AUTH_001.value, Messages.LOGIN_SUCCESS.value, {"user_id": user.user_id, "role": user.role}
-    )
+    return create_response(CustomCode.AUTH_001.value, Messages.LOGIN_SUCCESS.value, {"role": user.role})
