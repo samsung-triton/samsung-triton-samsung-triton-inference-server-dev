@@ -2,12 +2,15 @@ from fastapi import FastAPI
 from app.core.database import SessionLocal
 from sqlalchemy import text
 import logging
+from app.api.v1.router import api_router
 
 logger = logging.getLogger("uvicorn")
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Triton Gateway")
+
+    app.include_router(api_router)
 
     @app.on_event("startup")
     async def startup_event():
