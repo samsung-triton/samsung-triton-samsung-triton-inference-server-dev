@@ -3,6 +3,12 @@ from enum import Enum
 
 class Messages(str, Enum):
     # ---- Master Key ----
+    LOGIN_SUCCESS = "로그인이 성공적으로 완료되었습니다."
+    INVALID_PARAM = "요청 파라미터가 올바르지 않습니다."
+    INVALID_CREDENTIAL = "아이디 또는 비밀번호가 일치하지 않습니다."
+    USER_NOT_FOUND = "해당 유저를 찾을 수 없습니다."
+
+    # ---- Master Key ----
     MASTER_KEY_MATCH = "마스터 키가 일치합니다."
     MASTER_KEY_MISMATCH = "마스터 키가 일치하지 않습니다."
 
