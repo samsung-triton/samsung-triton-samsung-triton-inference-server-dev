@@ -46,6 +46,15 @@ class _DropdownState extends State<Dropdown> {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(color: lightGray, width: 1),
             ),
+            scrollbarTheme: ScrollbarThemeData(
+              //스크롤디자인
+              radius: const Radius.circular(4),
+              thickness: WidgetStateProperty.all(8),
+              thumbVisibility: WidgetStateProperty.all(true),
+              thumbColor: WidgetStateProperty.all(primaryLighter),
+              trackColor: WidgetStateProperty.all(Colors.transparent),
+              trackVisibility: WidgetStateProperty.all(false),
+            ),
             offset: const Offset(0, 0), // 드롭다운을 아래로 띄움
           ),
           menuItemStyleData: MenuItemStyleData(
