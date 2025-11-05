@@ -9,7 +9,19 @@ class Dropdown extends StatefulWidget {
   final List<String> items;
   final String hintText;
 
-  const Dropdown({super.key, this.width, this.height, required this.items, this.hintText = 'Select an item'});
+  // 외부에서 선택값과 콜백 받을 수 있도록 추가
+  final String? value;
+  final ValueChanged<String?>? onChanged;
+
+  const Dropdown({
+    super.key,
+    this.width,
+    this.height,
+    required this.items,
+    this.hintText = 'Select an item',
+    this.value,
+    this.onChanged,
+  });
 
   @override
   State<Dropdown> createState() => _DropdownState();
@@ -68,6 +80,7 @@ class _DropdownState extends State<Dropdown> {
             setState(() {
               selectedModel = newValue!;
             });
+            widget.onChanged?.call(newValue); // 외부에 전달
           },
           items: widget.items.map((value) {
             return DropdownMenuItem<String>(

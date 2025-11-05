@@ -8,6 +8,7 @@ import '../input/input_large.dart';
 import '../button/button_medium.dart';
 import '../button/button_small.dart';
 import 'modal_base.dart';
+import '../modellog/dropdown.dart';
 
 class ModalRegistration extends StatefulWidget {
   final String modelType;
@@ -66,9 +67,17 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         // ───── model type (임시 InputSmall) ─────
         _LabelInputRow(
           label: 'model type',
-          child: InputType(
-            controller: TextEditingController(text: selectedModelType),
-            readOnly: true, // 🔹 드롭다운 완성 전 임시 표시
+          child: Dropdown(
+            width: 200,
+            height: 24,
+            items: const ['single', 'ensemble'], // 선택 가능한 타입 목록
+            hintText: 'Select model type',
+            value: selectedModelType, // 현재 선택된 값
+            onChanged: (newValue) {
+              setState(() {
+                selectedModelType = newValue ?? 'single'; // 변경값 반영
+              });
+            },
           ),
         ),
 
