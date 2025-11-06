@@ -50,7 +50,7 @@ class FilterBlock extends StatelessWidget {
             children: [
               const FilterText(label: 'search'),
               const SizedBox(width: 8),
-              const SizedBox(child: InputSmall(hintText: 'Enter keyword...', width: 200, height: 28)),
+              const SizedBox(child: InputSmall(hintText: 'Enter keyword...', width: 424, height: 28)),
               const SizedBox(width: 8),
               const ButtonSmall(
                 text: 'ok',
