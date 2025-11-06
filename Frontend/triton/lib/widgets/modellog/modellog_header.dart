@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_block.dart';
 import 'package:triton/theme/app_colors.dart';
@@ -34,6 +35,12 @@ class _ModelLogHeaderState extends State<ModelLogHeader> with SingleTickerProvid
                   Text("Model Log", style: T.t16(color: black, bold: true)),
                   const SizedBox(width: 12),
                   Dropdown(items: const ['model-A', 'model-B', 'model-C'], width: 160, hintText: "model name"),
+                  const SizedBox(width: 12),
+                  DownloadIconButton(
+                    onPressed: () {
+                      print('다운로드 버튼 클릭!');
+                    },
+                  ),
                 ],
               ),
 
