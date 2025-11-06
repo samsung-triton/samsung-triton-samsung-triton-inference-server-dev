@@ -51,8 +51,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width >= 1000;
-
     return Scaffold(
       body: Center(
         child: Row(
@@ -61,24 +59,22 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // 왼쪽 로고 패널
-            if (isWide) ...[
-              SizedBox(
-                width: 480,
-                height: 480,
-                child: ClipRRect(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.asset(
-                        'assets/images/login_panel.png',
-                        fit: BoxFit.cover, // 패널을 꽉 채우도록
-                      ),
-                    ],
-                  ),
+            SizedBox(
+              width: 480,
+              height: 480,
+              child: ClipRRect(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      'assets/images/login_panel.png',
+                      fit: BoxFit.cover, // 패널을 꽉 채우도록
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 32),
-            ],
+            ),
+            const SizedBox(width: 32),
 
             // 오른쪽 로그인 폼
             ConstrainedBox(
