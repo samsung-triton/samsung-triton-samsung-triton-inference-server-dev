@@ -13,7 +13,7 @@ class FilterBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(8),
-      margin: EdgeInsets.all(4),
+      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
         color: white,
         borderRadius: BorderRadius.circular(8),

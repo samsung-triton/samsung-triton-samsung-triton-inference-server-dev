@@ -34,14 +34,12 @@ class _FilterToggleSectionState extends State<FilterToggleSection> {
           ),
         ),
 
-        const SizedBox(height: 8),
-
         // 필터 블록 영역 (토글로 열고 닫기)
         ClipRect(
           child: AnimatedAlign(
             alignment: Alignment.topCenter,
             heightFactor: _isOpen ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 20),
             curve: Curves.easeInOut,
             child: const FilterBlock(),
           ),
