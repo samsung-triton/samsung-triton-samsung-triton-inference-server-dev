@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     # Triton
     TRITON_URL: str
 
+    TRITON_MODEL_REPO: str
+    ALLOW_OVERWRITE: bool = False
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
