@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/typography.dart';
-import 'package:flutter/services.dart'; // ← 중요: MaxLengthEnforcement 사용
+import 'package:flutter/services.dart';
 
 class InputMedium extends StatefulWidget {
   final String hintText;
   final TextEditingController? controller;
   final bool enabled;
   final bool hasError;
-  final double width;
+  final bool readOnly;
+  final bool enableInteractiveSelection;
+  final double? width;
+  final double? height;
   final double borderRadius;
   final EdgeInsets padding;
   final int maxLength;
@@ -19,9 +22,12 @@ class InputMedium extends StatefulWidget {
     this.controller,
     this.enabled = true,
     this.hasError = false,
-    this.width = 236,
+    this.readOnly = false,
+    this.enableInteractiveSelection = true,
+    this.width = 200,
+    this.height = 28,
     this.borderRadius = 4,
-    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     this.maxLength = 200,
   }) : super(key: key);
 
@@ -54,7 +60,8 @@ class _InputMediumState extends State<InputMedium> {
   Widget build(BuildContext context) {
     return Container(
       width: widget.width,
-      alignment: Alignment.topLeft,
+      height: widget.height, // ✅ 높이 고정 가능
+      alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         color: white,
         borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -64,12 +71,12 @@ class _InputMediumState extends State<InputMedium> {
       child: TextField(
         controller: _controller,
         enabled: widget.enabled,
-        keyboardType: TextInputType.multiline,
-        textInputAction: TextInputAction.newline,
-        minLines: 1,
-        maxLines: 5,
+        readOnly: widget.readOnly,
+        enableInteractiveSelection: widget.enableInteractiveSelection,
+        keyboardType: TextInputType.text,
+        maxLines: 1,
         maxLength: widget.maxLength,
-        maxLengthEnforcement: MaxLengthEnforcement.enforced, // 초과 입력 금지
+        maxLengthEnforcement: MaxLengthEnforcement.enforced,
         style: T.t12(color: darkGray),
         cursorColor: primaryNormal,
         decoration: InputDecoration(

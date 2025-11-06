@@ -8,7 +8,7 @@ class InputLarge extends StatefulWidget {
   final TextEditingController? controller;
   final bool enabled;
   final bool hasError;
-  final double width;
+  final double? width;
   final double borderRadius;
   final EdgeInsets padding;
   final int maxLength;
@@ -19,9 +19,9 @@ class InputLarge extends StatefulWidget {
     this.controller,
     this.enabled = true,
     this.hasError = false,
-    this.width = 309,
+    this.width = 308,
     this.borderRadius = 4,
-    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
     this.maxLength = 500,
   }) : super(key: key);
 

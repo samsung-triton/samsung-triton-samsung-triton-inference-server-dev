@@ -2,24 +2,28 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/typography.dart';
 
-class InputSmall extends StatelessWidget {
+class InputType extends StatelessWidget {
   final String hintText;
   final TextEditingController? controller;
   final bool enabled;
   final bool hasError;
+  final bool readOnly;
+  final bool enableInteractiveSelection;
   final double? width;
   final double? height;
   final double borderRadius;
   final EdgeInsets padding;
   final VoidCallback? onTap;
 
-  const InputSmall({
+  const InputType({
     Key? key,
     this.hintText = '',
     this.controller,
     this.enabled = true,
     this.hasError = false,
-    this.width = 72,
+    this.readOnly = false,
+    this.enableInteractiveSelection = true,
+    this.width = 104,
     this.height = 24,
     this.borderRadius = 4,
     this.padding = const EdgeInsets.symmetric(horizontal: 8),
@@ -47,6 +51,8 @@ class InputSmall extends StatelessWidget {
       child: TextField(
         controller: controller,
         enabled: enabled,
+        readOnly: readOnly,
+        enableInteractiveSelection: enableInteractiveSelection,
         onTap: onTap,
         style: T.t12(color: darkGray, bold: false),
         cursorColor: primaryNormal,
