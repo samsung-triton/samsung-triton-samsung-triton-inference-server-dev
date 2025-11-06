@@ -31,7 +31,7 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
     _overlayEntry = OverlayEntry(
       builder: (context) => Stack(
         children: [
-          // ✅ 1. 전체 화면 클릭 감지용 반투명 배경 (달력 닫기)
+          // 전체 화면 클릭 감지용 반투명 배경 (달력 닫기)
           Positioned.fill(
             child: GestureDetector(
               behavior: HitTestBehavior.translucent, // 빈 공간 클릭도 감지
@@ -109,7 +109,7 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
     return GestureDetector(
       onTap: _toggleCalendar,
       child: Container(
-        key: _buttonKey, // ✅ 버튼 위치 추적용 Key
+        key: _buttonKey, // 버튼 위치 추적용 Key
         height: 28,
         width: 200,
         padding: const EdgeInsets.symmetric(horizontal: 8),
