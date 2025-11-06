@@ -1,6 +1,7 @@
 // 모델 로그 화면 위젯
 import 'package:flutter/material.dart';
-import 'package:triton/widgets/modellog/filter_block.dart';
+import 'package:triton/widgets/modellog/model_log_table.dart';
+import 'package:triton/widgets/modellog/modellog_header.dart';
 
 class ModelLogScreen extends StatefulWidget {
   const ModelLogScreen({super.key});
@@ -15,15 +16,12 @@ class _ModelLogScreenState extends State<ModelLogScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              FilterBlock(),
-              SizedBox(height: 16),
-              Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text("Model Log")),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            ModelLogHeader(),
+            Expanded(child: ModelLogTable()), // 테이블이 아래 전체 채움
+          ],
         ),
       ),
     );
