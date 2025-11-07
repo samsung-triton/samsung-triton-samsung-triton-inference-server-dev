@@ -41,7 +41,7 @@ class FilterBlock extends StatelessWidget {
             children: const [
               FilterText(label: 'log level'),
               SizedBox(width: 8),
-              Dropdown(items: ['INFO', 'DEBUG', 'WARN', 'ERROR'], width: 200),
+              Dropdown(items: ['INFO', 'DEBUG', 'WARN', 'ERROR'], width: 200, hintText: 'select loglevel'),
             ],
           ),
 
