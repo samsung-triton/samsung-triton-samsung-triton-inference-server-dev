@@ -1,0 +1,18 @@
+from fastapi import APIRouter, Depends, UploadFile, File, Form, status
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+from app.services.inferdata_service import save_input_before_infer_service
+from app.schemas.base_schema import BaseResponse
+
+
+inferdata_router = APIRouter(prefix="/api/v1/infer", tags=["InferData"])
+
+
+@inferdata_router.post("/save/before", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+def save_input_before_infer(
+    clientId: str = Form(..., description="추론 전 입력 데이터 저장"),
+    modelName: str = Form(..., description="추론할 모델 id"),
+    dataFile: UploadFile = File(..., description="추론 입력 데이터 (.npy, .ply 등)"),
+    db: Session = Depends(get_db),
+):
+    return save_input_before_infer_service(clientId, modelName, dataFile, db)

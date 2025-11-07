@@ -71,6 +71,8 @@ class Messages(str, Enum):
     INPUT_DATA_SAVE_SUCCESS = "입력 데이터 저장 완료"
     OUTPUT_DATA_SAVE_SUCCESS = "결과 데이터 저장 완료"
     INFERENCE_STATS_FETCH_SUCCESS = "추론 통계 조회 성공"
+    INPUT_DATA_SAVE_FAIL = "입력 데이터 저장 중 오류 발생"
+    OUTPUT_DATA_SAVE_FAIL = "결과 데이터 저장 중 오류 발생"
 
     # ---- Metrics ----
     SERVER_METRICS_FETCH_SUCCESS = "서버 실시간 메트릭 조회 성공"
