@@ -41,7 +41,7 @@ class ModalConfirmationPassword extends StatelessWidget {
         ),
 
         Center(
-          child: SizedBox(width: 240, child: InputMedium(hintText: "Enter password", obscureText: true)),
+          child: SizedBox(width: 200, child: InputMedium(hintText: "Enter password", obscureText: true)),
         ),
 
         const SizedBox(height: 20),
