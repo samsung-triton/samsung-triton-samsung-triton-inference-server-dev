@@ -15,6 +15,7 @@ class InputMedium extends StatefulWidget {
   final double borderRadius;
   final EdgeInsets padding;
   final int maxLength;
+  final bool obscureText;
 
   const InputMedium({
     Key? key,
@@ -29,6 +30,7 @@ class InputMedium extends StatefulWidget {
     this.borderRadius = 4,
     this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     this.maxLength = 200,
+    this.obscureText = false,
   }) : super(key: key);
 
   @override
@@ -79,6 +81,7 @@ class _InputMediumState extends State<InputMedium> {
         maxLengthEnforcement: MaxLengthEnforcement.enforced,
         style: T.t12(color: darkGray),
         cursorColor: primaryNormal,
+        obscureText: widget.obscureText,
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: T.t12(color: gray),
