@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.core.database import get_db
 from app.schemas.base_schema import BaseResponse
+from app.schemas.server_schema import ServerActorRequest
 from app.services.server_service import (
     get_server_status_service,
     start_server_service,
@@ -10,8 +11,7 @@ from app.services.server_service import (
     restart_server_service,
 )
 
-class ServerActorRequest(BaseModel):
-    user_login_id: str
+
 
 server_router = APIRouter(prefix="/api/v1/server", tags=["Server Management"])
 
