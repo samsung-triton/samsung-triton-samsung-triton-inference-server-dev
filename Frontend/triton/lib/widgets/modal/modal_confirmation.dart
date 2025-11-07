@@ -24,7 +24,7 @@ class ModalConfirmation extends StatelessWidget {
       children: [
         // ───── 본문 문구 ─────
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 32),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Text(
             message,
             style: T.t16(color: white),
