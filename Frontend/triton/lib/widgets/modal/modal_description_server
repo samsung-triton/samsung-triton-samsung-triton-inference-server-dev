@@ -25,7 +25,7 @@ class ModalDescriptionServer extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Text(
-            'Restarting(stopping) the server may interrupt\nongoing inferences. Pease ensure all tasks are\ncompleted before proceeding.\nDo you want to continue?',
+            'Restarting(stopping) the server may interrupt\nongoing inferences. Please ensure all tasks are\ncompleted before proceeding.\nDo you want to continue?',
             style: T.t16(color: darkGray),
             textAlign: TextAlign.center,
           ),
