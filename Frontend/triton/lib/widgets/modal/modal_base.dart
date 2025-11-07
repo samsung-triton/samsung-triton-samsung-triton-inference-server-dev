@@ -28,8 +28,8 @@ class ModalBase extends StatelessWidget {
     this.backgroundColor = white,
     this.titleColor = primaryDarker,
     this.dividerColor = primaryDarker,
-    this.borderColor = lightGray,
-    this.contentSpacing = 16,
+    this.borderColor = Colors.transparent,
+    this.contentSpacing = 0,
     this.showDivider = true,
   }) : super(key: key);
 
@@ -38,7 +38,7 @@ class ModalBase extends StatelessWidget {
     return Center(
       child: Container(
         width: width,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(borderRadius),
