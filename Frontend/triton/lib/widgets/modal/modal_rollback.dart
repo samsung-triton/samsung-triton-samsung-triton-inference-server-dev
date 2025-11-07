@@ -38,10 +38,10 @@ class _ModalRollbackState extends State<ModalRollback> {
       onClose: widget.onClose,
       width: 428,
       borderRadius: 8,
-      dividerColor: primaryDarker,
-      borderColor: lightGray,
+      dividerColor: primaryDarkest,
+      borderColor: Colors.transparent,
       backgroundColor: white,
-      titleColor: primaryDarker,
+      titleColor: primaryDarkest,
       contentSpacing: 0,
       children: [
         const SizedBox(height: 4),

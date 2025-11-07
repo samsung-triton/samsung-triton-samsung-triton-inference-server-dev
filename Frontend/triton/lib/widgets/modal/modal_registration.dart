@@ -58,10 +58,10 @@ class _ModalRegistrationState extends State<ModalRegistration> {
       onClose: widget.onClose,
       width: 428,
       borderRadius: 8,
-      dividerColor: primaryDarker,
-      borderColor: lightGray,
+      dividerColor: primaryDarkest,
+      borderColor: Colors.transparent,
       backgroundColor: white,
-      titleColor: primaryDarker,
+      titleColor: primaryDarkest,
       contentSpacing: 8,
       children: [
         // ───── model type (임시 InputSmall) ─────
