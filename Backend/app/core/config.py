@@ -1,8 +1,8 @@
-# app/core/config.py
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
-    # FastAPI 기본 설정
+    # FastAPI
     APP_NAME: str
     APP_ENV: str
     DEBUG: bool
@@ -18,13 +18,12 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
 
-    # Triton 관련 설정
-    TRITON_URL: str
-    USE_LOCAL_GPU_AGENT: bool = True
-    GPU_AGENT_URL: str
+    # Triton
+    TRITON_URL: str                     # ex: http://localhost:8000
     TRITON_IMAGE: str
     TRITON_CONTAINER_NAME: str
     TRITON_MODEL_PATH: str
+    TRITON_COMPOSE_PATH: str
 
     class Config:
         env_file = ".env"
