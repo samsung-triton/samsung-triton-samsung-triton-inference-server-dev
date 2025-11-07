@@ -1,0 +1,8 @@
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+
+
+class ServerStatusResponse(BaseModel):
+    status: str = Field(..., example="ready")
+    started_at: Optional[datetime] = None
