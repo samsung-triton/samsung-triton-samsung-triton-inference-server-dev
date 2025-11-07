@@ -1,5 +1,16 @@
-// 모델 관리 위젯
+// 모델 관리 스크린
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../controller/model_manage/model_manage_controller.dart';
+import '../../controller/model_manage/version_manage_controller.dart';
+import '../../controller/model_manage/code_editor_controller.dart';
+
+import '../../widgets/model_manage/model_sidebar.dart';
+import '../../widgets/model_manage/version_table_header.dart';
+import '../../widgets/model_manage/version_table.dart';
+import '../../widgets/model_manage/editor_header.dart';
+import '../../widgets/model_manage/code_editor.dart';
 
 class ModelManageScreen extends StatefulWidget {
   const ModelManageScreen({super.key});
@@ -9,8 +20,56 @@ class ModelManageScreen extends StatefulWidget {
 }
 
 class _ModelManageScreenState extends State<ModelManageScreen> {
+  late final ModelManageController modelManageController;
+  late final VersionManageController versionManageController;
+  late final CodeEditorController codeEditorController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 화면 스코프 주입
+    modelManageController = Get.put(ModelManageController(), permanent: false);
+    versionManageController = Get.put(VersionManageController(), permanent: false);
+    codeEditorController = Get.put(CodeEditorController(), permanent: false);
+
+    // 모델들 불러오기
+    modelManageController.loadModels();
+  }
+
+  @override
+  void dispose() {
+    Get.delete<ModelManageController>();
+    Get.delete<VersionManageController>();
+    Get.delete<CodeEditorController>();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Text("Model Manage"));
+    return Row(
+      children: const [
+        // 좌측: 모델 사이드바
+        ModelSidebar(),
+
+        // 우측: 버전 헤더 + 테이블 + 에디터
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                VersionTableHeader(),
+                VersionTable(),
+                SizedBox(height: 24),
+                EditorHeader(),
+                Expanded(child: CodeEditor()),
+                SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
