@@ -1,8 +1,8 @@
-from sqlalchemy import Column, BigInteger
+from sqlalchemy import Column, BigInteger, Integer
 from app.core.database import Base
 
 
 class MasterKey(Base):
     __tablename__ = "master_key"
     master_key_id = Column(BigInteger, primary_key=True, index=True)
-    key = Column(BigInteger, nullable=False)
+    key = Column(Integer, nullable=False)
