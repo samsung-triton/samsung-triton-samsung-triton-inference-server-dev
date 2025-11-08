@@ -33,8 +33,9 @@ async def get_server_status_service(db: Session):
     # 현재 Triton 서버 상태 조회
     try:
         result = await get_triton_status()
-        status_data = result.get("data", {})
-        is_ready = status_data.get("status") == "ready"
+        # BaseResponse 객체에서 속성으로 접근
+        status_data = result.data if hasattr(result, 'data') else {}
+        is_ready = status_data.get("status") == "ready" if isinstance(status_data, dict) else False
 
         return create_response(
             CustomCode.DOCKER_004.value if is_ready else CustomCode.ERR_503.value,
@@ -63,7 +64,11 @@ async def _execute_server_action(
 
     try:
         result = await action_func()
-        data = result.get("data", {})
+        
+        # BaseResponse 객체에서 속성으로 접근
+        data = result.data if hasattr(result, 'data') else {}
+        code = result.code if hasattr(result, 'code') else CustomCode.MASTER_001.value
+        message = result.message if hasattr(result, 'message') else ""
 
         if dual_log:
             db.add_all([
@@ -75,7 +80,7 @@ async def _execute_server_action(
 
         db.commit()
 
-        return create_response(result["code"], result["message"], data)
+        return create_response(code, message, data)
 
     except CustomHTTPException:
         raise

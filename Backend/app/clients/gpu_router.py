@@ -49,7 +49,11 @@ async def get_triton_status():
 async def start_triton():
     # Triton 컨테이너 실행 (중복 방지 포함)
     status_result = await get_triton_status()
-    if status_result["data"]["status"] == "ready":
+    
+    status_data = status_result.data if hasattr(status_result, 'data') else {}
+    current_status = status_data.get("status") if isinstance(status_data, dict) else None
+    
+    if current_status == "ready":
         return create_response(
             CustomCode.DOCKER_001.value,
             "이미 Triton이 실행 중입니다.",
