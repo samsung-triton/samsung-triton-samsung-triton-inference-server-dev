@@ -11,8 +11,6 @@ from app.services.server_service import (
     restart_server_service,
 )
 
-
-
 server_router = APIRouter(prefix="/api/v1/server", tags=["Server Management"])
 
 # 서버 상태 조회

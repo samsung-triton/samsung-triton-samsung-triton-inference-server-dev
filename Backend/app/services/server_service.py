@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from fastapi import status
-from app.api.v1.gpu_router import get_triton_status, start_triton, stop_triton, restart_triton
+from app.clients.gpu_router import get_triton_status, start_triton, stop_triton, restart_triton
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.models.server import Server, ServerStatus
