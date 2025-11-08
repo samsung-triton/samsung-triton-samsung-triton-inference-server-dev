@@ -9,7 +9,7 @@ from enum import Enum
 class ModelType(str, Enum):
     """모델 타입"""
 
-    SINGLE = "SINGLE"
+    NORMAL = "NORMAL"
     ENSEMBLE = "ENSEMBLE"
 
 

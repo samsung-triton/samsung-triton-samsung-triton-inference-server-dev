@@ -1,11 +1,16 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, status
+from fastapi import APIRouter, UploadFile, File, Depends, status, Path, Form
 from typing import List, Annotated
 
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 
 from app.schemas.base_schema import BaseResponse
-from app.services.model_service import list_models_service, register_model_service
+from app.services.model_service import (
+    list_models_service,
+    register_model_service,
+    register_ensemble_service,
+    register_model_version_service,
+)
 from app.schemas.model_schema import ModelRegisterRequest
 
 model_router = APIRouter(prefix="/api/v1/models", tags=["models"])
@@ -16,22 +21,41 @@ def list_models():
     return list_models_service()
 
 
-@model_router.post("", summary="모델 최초 등록")
+@model_router.post("", summary="단일 모델 최초 등록")
 def register_model(
     req: Annotated[ModelRegisterRequest, Depends(ModelRegisterRequest.as_form)],
-    modelFiles: List[UploadFile] = File(..., description="모델 파일들 (.onnx / .plan / .pt / .pth 등)"),
-    configFile: UploadFile = File(..., description="Triton 설정 파일 (config.pbtxt)"),
+    modelFiles: List[UploadFile] = File(...),
+    configFile: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    return register_model_service(req=req, model_files=modelFiles, config_file=configFile, db=db)
+
+
+@model_router.post("/register/ensemble", summary="앙상블 모델 등록")
+def register_ensemble_model(
+    req: Annotated[ModelRegisterRequest, Depends(ModelRegisterRequest.as_form)],
+    configFile: UploadFile = File(..., description="config.pbtxt 파일"),
+    db: Session = Depends(get_db),
+):
+    return register_ensemble_service(req=req, config_file=configFile, db=db)
+
+
+@model_router.post("/{model_id}/versions", summary="모델 버전 추가")
+def register_model_version(
+    model_id: int = Path(..., description="모델 ID"),
+    loginId: str = Form(..., description="등록자 LoginId"),
+    description: str | None = Form(None, description="버전 변경 내용 (선택)"),
+    modelFiles: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
     """
-    - TRITON_MODEL_REPO 아래에 모델 디렉토리 생성
-    - config.pbtxt는 <modelName>/config.pbtxt
-    - 모델 파일은 <modelName>/1/ 아래에 저장
-    - DB에 model / model_version / model_file 기록
+    - 기존 모델에 버전 추가
+    - version은 자동 증가
     """
-    return register_model_service(
-        req=req,
+    return register_model_version_service(
+        model_id=model_id,
+        login_id=loginId,
+        description=description,
         model_files=modelFiles,
-        config_file=configFile,
         db=db,
     )

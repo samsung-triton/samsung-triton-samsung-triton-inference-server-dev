@@ -7,7 +7,7 @@ from enum import Enum as PyEnum
 
 
 class ModelType(PyEnum):
-    SINGLE = "SINGLE"
+    NORMAL = "NORMAL"
     ENSEMBLE = "ENSEMBLE"
 
 
@@ -46,7 +46,6 @@ class ModelVersion(Base):
     version = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     created_by = Column(BigInteger, ForeignKey("users.user_id", ondelete="SET NULL"))
-    note = Column(Text)
 
     # relationships
     model = relationship("Model", back_populates="versions")
