@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from fastapi import Form
-from typing import List
+from typing import List, Optional
 from enum import Enum
 
 # ========== Request (요청) ==========
@@ -18,22 +18,22 @@ class ModelRegisterRequest(BaseModel):
 
     modelName: str = Field(..., description="모델 이름")
     modelType: ModelType = Field(..., description="모델 타입")
-    description: str = Field(..., description="등록 사유")
-    userId: int = Field(..., description="등록자 ID")
+    description: str = Field(None, description="등록 사유")
+    LoginId: str = Field(..., description="등록자 ID")
 
     @classmethod
     def as_form(
         cls,
         modelName: str = Form(...),
         modelType: ModelType = Form(...),
-        description: str = Form(...),
-        userId: int = Form(...),
+        description: Optional[str] = Form(None),
+        LoginId: str = Form(...),
     ):
         return cls(
             modelName=modelName,
             modelType=modelType,
             description=description,
-            userId=userId,
+            LoginId=LoginId,
         )
 
 

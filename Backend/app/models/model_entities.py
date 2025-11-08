@@ -1,43 +1,98 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, BigInteger, Enum
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, BigInteger, Text, ForeignKey, DateTime, Boolean, Enum, func
+
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
+from enum import Enum as PyEnum
+
+
+class ModelType(PyEnum):
+    SINGLE = "SINGLE"
+    ENSEMBLE = "ENSEMBLE"
+
+
+class ReleaseType(PyEnum):
+    CONFIG = "CONFIG"
+    MODEL = "MODEL"
+    VERSION = "VERSION"
+
+
+class ReleaseAction(PyEnum):
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+
 
 class Model(Base):
-    __tablename__ = "model"
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), unique=True, index=True, nullable=False)
-    type = Column(String(32), nullable=False)  # SINGLE/ENSEMBLE
-    description = Column(Text, nullable=False)
-    status = Column(String(32), default="REGISTERED")
-    created_by = Column(Integer, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __tablename__ = "models"
 
-    versions = relationship("ModelVersion", back_populates="model")
+    model_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    name = Column(String(64), unique=True, nullable=False)
+    type = Column(Enum(ModelType, name="model_type"), nullable=False)
+    storage_dir = Column(String(128), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    versions = relationship("ModelVersion", back_populates="model", cascade="all, delete")
+    configs = relationship("ModelConfig", back_populates="model", cascade="all, delete")
+    # release log 연결은 model_id를 target_id로 참조하므로 역참조 필요 없음
 
 
 class ModelVersion(Base):
-    __tablename__ = "model_version"
-    id = Column(Integer, primary_key=True)
-    model_id = Column(Integer, ForeignKey("model.id"), nullable=False)
-    version = Column(Integer, nullable=False)  # 1, 2, ...
-    status = Column(String(32), default="STORED")
-    repo_path = Column(Text, nullable=False)  # ex) /models/yolov8n_onnx_nms/1
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __tablename__ = "model_versions"
 
+    model_version_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    model_id = Column(BigInteger, ForeignKey("models.model_id", ondelete="CASCADE"), nullable=False)
+    version = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_by = Column(BigInteger, ForeignKey("users.user_id", ondelete="SET NULL"))
+    note = Column(Text)
+
+    # relationships
     model = relationship("Model", back_populates="versions")
-    files = relationship("ModelFile", back_populates="version")
+    files = relationship("ModelVersionFile", back_populates="version", cascade="all, delete")
 
 
-class ModelFile(Base):
-    __tablename__ = "model_file"
-    id = Column(Integer, primary_key=True)
-    model_version_id = Column(Integer, ForeignKey("model_version.id"), nullable=False)
-    filename = Column(String(512), nullable=False)
-    rel_path = Column(Text, nullable=False)  # repo_path 기준 상대경로 (ex: "1/model.onnx", "config.pbtxt")
-    file_type = Column(String(32), nullable=False)  # MODEL / CONFIG / OTHER
-    size_bytes = Column(BigInteger, nullable=False, default=0)
+class ModelVersionFile(Base):
+    __tablename__ = "model_version_files"
+
+    model_version_file_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    model_version_id = Column(
+        BigInteger,
+        ForeignKey("model_versions.model_version_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    file_name = Column(String(128))
+    file_path = Column(String(256), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # relationship
     version = relationship("ModelVersion", back_populates="files")
+
+
+class ModelConfig(Base):
+    __tablename__ = "model_configs"
+
+    config_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    model_id = Column(BigInteger, ForeignKey("models.model_id", ondelete="CASCADE"), nullable=False)
+    version = Column(Integer, nullable=False)
+    content = Column(Text, nullable=False)
+    file_path = Column(String(256), nullable=False)
+    created_by = Column(BigInteger, ForeignKey("users.user_id", ondelete="SET NULL"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    is_current = Column(Boolean, default=False)
+
+    # relationship
+    model = relationship("Model", back_populates="configs")
+
+
+class ModelRelease(Base):
+    __tablename__ = "model_releases"
+
+    release_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    actor_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="SET NULL"))
+    type = Column(Enum(ReleaseType, name="release_type"), nullable=False)
+    action = Column(Enum(ReleaseAction, name="release_action"), nullable=False)
+    target_id = Column(BigInteger, nullable=False)
+    reason = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
