@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -25,9 +26,13 @@ class Settings(BaseSettings):
     TRITON_MODEL_PATH: str
     TRITON_COMPOSE_PATH: str
 
+    # Data
+    INFER_DATA_SAVE_PATH: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
 
 settings = Settings()
+Path(settings.INFER_DATA_SAVE_PATH).mkdir(parents=True, exist_ok=True)
