@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.base_schema import BaseResponse
-from app.services.model_config_service import get_current_config_service, get_rollback_config_list_service
+from app.services.model_config_service import get_current_config_service, get_rollback_config_list_service, get_selected_config_service
 
 model_config_router = APIRouter(prefix="/api/v1/configs", tags=["Model Config"])
 
@@ -15,3 +15,8 @@ async def get_current_config(model_id: int, db: Session = Depends(get_db)):
 @model_config_router.get("/models/{model_id}/config/history", response_model=BaseResponse)
 async def get_rollback_config_list(model_id: int, db: Session = Depends(get_db)):
     return await get_rollback_config_list_service(db, model_id)
+
+# 특정 Config 상세 내용 조회
+@model_config_router.get("/models/{model_id}/config/{config_id}", response_model=BaseResponse)
+async def get_selected_config(model_id: int, config_id: int, db: Session = Depends(get_db)):
+    return await get_selected_config_service(db, model_id, config_id)
