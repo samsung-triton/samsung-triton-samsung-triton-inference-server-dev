@@ -50,10 +50,6 @@ def register_model_version(
     modelFiles: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
-    """
-    - 기존 모델에 버전 추가
-    - version은 자동 증가
-    """
     return register_model_version_service(
         model_id=model_id,
         login_id=loginId,
@@ -73,7 +69,7 @@ def delete_model_version(
     return delete_model_version_service(
         model_id=model_id,
         version=version,
-        login_id=req.loginId,
+        req=req,
         db=db,
     )
 
@@ -86,6 +82,6 @@ def delete_model(
 ):
     return delete_model_service(
         model_id=model_id,
-        login_id=req.loginId,
+        req=req,
         db=db,
     )

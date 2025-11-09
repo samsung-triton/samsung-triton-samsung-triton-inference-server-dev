@@ -40,6 +40,8 @@ class Messages(str, Enum):
     # ---- Model Version ----
     MODEL_VERSION_ADD_SUCCESS = "모델 버전이 성공적으로 추가되었습니다."
     MODEL_VERSION_ADD_ERROR = "모델 버전 추가 중 오류가 발생했습니다."
+    MODEL_VERSION_NOT_FOUND = "해당 모델 버전을 찾을 수 없습니다."
+    MODEL_VERSION_DELETE_SUCCESS = "모델 버전이 성공적으로 삭제되었습니다."
 
     # ---- Model Delete ----
     MODEL_DELETE_SUCCESS = "모델이 성공적으로 삭제되었습니다."

@@ -6,7 +6,7 @@ import re
 from sqlalchemy.orm import Session
 
 from app.clients.triton_client import triton_client
-from app.schemas.model_schema import ModelRegisterRequest
+from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 from app.core.config import settings
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
@@ -415,7 +415,7 @@ def register_model_version_service(
 # =====================================================
 # 5. 모델 버전 삭제
 # =====================================================
-def delete_model_version_service(model_id: int, version: int, login_id: str, db: Session):
+def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRequest, db: Session):
     # === 1. 모델 및 유저 검증 ===
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
@@ -425,7 +425,7 @@ def delete_model_version_service(model_id: int, version: int, login_id: str, db:
             Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    user = _get_user_or_404(db, login_id)
+    user = _get_user_or_404(db, req.loginId)
 
     # === 2. 버전 확인 ===
     version_obj = (
@@ -435,7 +435,7 @@ def delete_model_version_service(model_id: int, version: int, login_id: str, db:
         raise CustomHTTPException(
             status.HTTP_404_NOT_FOUND,
             CustomCode.ERR_404.value,
-            f"{version}번 버전을 찾을 수 없습니다.",
+            Messages.MODEL_VERSION_NOT_FOUND.value,
         )
 
     # === 3. Triton에서 모델 언로드 ===
@@ -449,7 +449,7 @@ def delete_model_version_service(model_id: int, version: int, login_id: str, db:
     if vdir.exists():
         shutil.rmtree(vdir, ignore_errors=True)
 
-    # === 5. DB 삭제 (순서 중요) ===
+    # === 5. DB 삭제 ===
     db.query(ModelVersionFile).filter(ModelVersionFile.model_version_id == version_obj.model_version_id).delete()
     db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.version == version).delete()
     db.delete(version_obj)
@@ -462,21 +462,21 @@ def delete_model_version_service(model_id: int, version: int, login_id: str, db:
         type_=ReleaseType.VERSION,
         action_=ReleaseAction.DELETE,
         target_id=model_id,
-        reason=f"{version}번 버전 삭제",
+        reason=req.description or f"{model.name}의 {version}번 버전 삭제",
     )
     db.commit()
 
     return create_response(
         CustomCode.MODEL_005.value,
-        f"모델 버전 {version}이 성공적으로 삭제되었습니다.",
-        {"modelId": model_id, "version": version},
+        Messages.MODEL_VERSION_DELETE_SUCCESS.value,
+        None,
     )
 
 
 # =====================================================
 # 6. 모델 전체 삭제
 # =====================================================
-def delete_model_service(model_id: int, login_id: str, db: Session):
+def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
     # === 1. 모델 및 유저 검증 ===
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
@@ -486,7 +486,7 @@ def delete_model_service(model_id: int, login_id: str, db: Session):
             Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    user = _get_user_or_404(db, login_id)
+    user = _get_user_or_404(db, req.loginId)
 
     # === 2. Triton 언로드 ===
     try:
@@ -500,7 +500,12 @@ def delete_model_service(model_id: int, login_id: str, db: Session):
         shutil.rmtree(root_dir, ignore_errors=True)
 
     # === 4. DB 삭제 ===
-    db.query(ModelVersionFile).filter(ModelVersionFile.model_id == model_id).delete()
+    version_ids = [v.model_version_id for v in db.query(ModelVersion).filter(ModelVersion.model_id == model_id).all()]
+    if version_ids:
+        db.query(ModelVersionFile).filter(ModelVersionFile.model_version_id.in_(version_ids)).delete(
+            synchronize_session=False
+        )
+
     db.query(ModelConfig).filter(ModelConfig.model_id == model_id).delete()
     db.query(ModelVersion).filter(ModelVersion.model_id == model_id).delete()
     db.delete(model)
@@ -513,12 +518,8 @@ def delete_model_service(model_id: int, login_id: str, db: Session):
         type_=ReleaseType.MODEL,
         action_=ReleaseAction.DELETE,
         target_id=model_id,
-        reason="모델 전체 삭제",
+        reason=req.description or f"{model.name} 모델 전체 삭제",
     )
     db.commit()
 
-    return create_response(
-        CustomCode.MODEL_006.value,
-        Messages.MODEL_DELETE_SUCCESS.value,
-        {"modelId": model_id, "modelName": model.name},
-    )
+    return create_response(CustomCode.MODEL_006.value, Messages.MODEL_DELETE_SUCCESS.value, None)

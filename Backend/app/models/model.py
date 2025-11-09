@@ -11,7 +11,6 @@ class ModelType(str, enum.Enum):
     ENSEMBLE = "ENSEMBLE"
 
 
-<<<<<<< HEAD
 class ReleaseType(str, enum.Enum):
     CONFIG = "CONFIG"
     MODEL = "MODEL"
@@ -24,8 +23,6 @@ class ReleaseAction(str, enum.Enum):
     DELETE = "DELETE"
 
 
-=======
->>>>>>> backend
 class Model(Base):
     __tablename__ = "models"
 
@@ -52,6 +49,7 @@ class ModelVersion(Base):
     # relationships
     model = relationship("Model", back_populates="versions")
     files = relationship("ModelVersionFile", back_populates="version", cascade="all, delete")
+    creator = relationship("User", back_populates="versions")
 
 
 class ModelVersionFile(Base):
@@ -81,3 +79,5 @@ class ModelRelease(Base):
     target_id = Column(BigInteger, nullable=False)
     reason = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    actor = relationship("User", back_populates="releases")

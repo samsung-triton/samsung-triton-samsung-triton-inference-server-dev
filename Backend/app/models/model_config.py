@@ -15,4 +15,5 @@ class ModelConfig(Base):
     created_at = Column(TIMESTAMP(timezone=True))
     is_current = Column(Boolean, default=False)
 
-    creator = relationship("User", backref="configs")
+    model = relationship("Model", back_populates="configs")
+    creator = relationship("User", back_populates="configs")

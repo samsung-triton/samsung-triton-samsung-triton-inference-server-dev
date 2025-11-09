@@ -38,4 +38,5 @@ class ModelRegisterRequest(BaseModel):
 
 
 class ModelDeleteRequest(BaseModel):
-    loginId: str = Field(..., description="요청자 로그인 ID", example="tester1")
+    loginId: str = Field(..., description="요청자 로그인 ID")
+    description: str = Field(..., description="삭제 이유")

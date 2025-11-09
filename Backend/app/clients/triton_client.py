@@ -18,7 +18,7 @@ class TritonClient:
 
     def list_models(self) -> List[Dict]:
         resp = self.client.get_model_repository_index(as_json=True)
- 
+
         models = resp.get("models") if isinstance(resp, dict) else []
         if not isinstance(models, list):
             models = []
@@ -26,14 +26,17 @@ class TritonClient:
         out = []
         for m in models:
             state = m.get("state")
-            out.append({
-                "name": m.get("name"),
-                "version": m.get("version"),
-                "state": state,
-                "reason": m.get("reason"),
-                "ready": (state == "READY") if state is not None else False
-            })
+            out.append(
+                {
+                    "name": m.get("name"),
+                    "version": m.get("version"),
+                    "state": state,
+                    "reason": m.get("reason"),
+                    "ready": (state == "READY") if state is not None else False,
+                }
+            )
 
         return out
+
 
 triton_client = TritonClient()
