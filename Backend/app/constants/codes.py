@@ -24,6 +24,8 @@ class CustomCode(str, Enum):
     MODEL_003 = "MODEL-003"
     MODEL_004 = "MODEL-004"
     MODEL_005 = "MODEL-005"
+    MODEL_006 = "MODEL-006"
+    MODEL_009 = "MODEL-009"
 
     CONFIG_001 = "CONFIG-001"
     CONFIG_002 = "CONFIG-002"

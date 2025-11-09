@@ -37,24 +37,5 @@ class ModelRegisterRequest(BaseModel):
         )
 
 
-# ========== Response (응답) ==========
-
-
-class FileInfoDTO(BaseModel):
-    """파일 정보 DTO"""
-
-    fileName: str
-    filePath: str
-
-
-class ModelRegisterResponse(BaseModel):
-    """모델 등록 응답 DTO"""
-
-    modelId: int
-    modelName: str
-    modelType: str
-    files: List[FileInfoDTO]
-    description: str
-    status: str
-    createdBy: str
-    createdAt: str
+class ModelDeleteRequest(BaseModel):
+    loginId: str = Field(..., description="요청자 로그인 ID", example="tester1")

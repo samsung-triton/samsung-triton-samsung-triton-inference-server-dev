@@ -12,15 +12,15 @@ from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.constants.codes import CustomCode
 from app.constants.messages import Messages
-from app.models.model_entities import (
+from app.models.model import (
     Model,
     ModelVersion,
     ModelVersionFile,
-    ModelConfig,
     ModelRelease,
     ReleaseType,
     ReleaseAction,
 )
+from app.models.model_config import ModelConfig
 from app.models.user import User
 
 # =========================
@@ -409,4 +409,116 @@ def register_model_version_service(
             # "createdBy": login_id,
             "createdAt": version.created_at.isoformat(),
         },
+    )
+
+
+# =====================================================
+# 5. 모델 버전 삭제
+# =====================================================
+def delete_model_version_service(model_id: int, version: int, login_id: str, db: Session):
+    # === 1. 모델 및 유저 검증 ===
+    model = db.query(Model).filter(Model.model_id == model_id).first()
+    if not model:
+        raise CustomHTTPException(
+            status.HTTP_404_NOT_FOUND,
+            CustomCode.ERR_404.value,
+            Messages.MODEL_NOT_FOUND_FOUND.value,
+        )
+
+    user = _get_user_or_404(db, login_id)
+
+    # === 2. 버전 확인 ===
+    version_obj = (
+        db.query(ModelVersion).filter(ModelVersion.model_id == model_id, ModelVersion.version == version).first()
+    )
+    if not version_obj:
+        raise CustomHTTPException(
+            status.HTTP_404_NOT_FOUND,
+            CustomCode.ERR_404.value,
+            f"{version}번 버전을 찾을 수 없습니다.",
+        )
+
+    # === 3. Triton에서 모델 언로드 ===
+    try:
+        triton_client.unload_model(model_name=model.name)
+    except Exception:
+        pass  # 이미 내려가 있을 수도 있으니 무시
+
+    # === 4. 파일/폴더 삭제 ===
+    vdir = MODEL_REPO_ROOT / model.name / str(version)
+    if vdir.exists():
+        shutil.rmtree(vdir, ignore_errors=True)
+
+    # === 5. DB 삭제 (순서 중요) ===
+    db.query(ModelVersionFile).filter(ModelVersionFile.model_version_id == version_obj.model_version_id).delete()
+    db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.version == version).delete()
+    db.delete(version_obj)
+    db.commit()
+
+    # === 6. 삭제 이력 기록 ===
+    _save_model_release(
+        db,
+        actor_id=user.user_id,
+        type_=ReleaseType.VERSION,
+        action_=ReleaseAction.DELETE,
+        target_id=model_id,
+        reason=f"{version}번 버전 삭제",
+    )
+    db.commit()
+
+    return create_response(
+        CustomCode.MODEL_005.value,
+        f"모델 버전 {version}이 성공적으로 삭제되었습니다.",
+        {"modelId": model_id, "version": version},
+    )
+
+
+# =====================================================
+# 6. 모델 전체 삭제
+# =====================================================
+def delete_model_service(model_id: int, login_id: str, db: Session):
+    # === 1. 모델 및 유저 검증 ===
+    model = db.query(Model).filter(Model.model_id == model_id).first()
+    if not model:
+        raise CustomHTTPException(
+            status.HTTP_404_NOT_FOUND,
+            CustomCode.ERR_404.value,
+            Messages.MODEL_NOT_FOUND_FOUND.value,
+        )
+
+    user = _get_user_or_404(db, login_id)
+
+    # === 2. Triton 언로드 ===
+    try:
+        triton_client.unload_model(model_name=model.name)
+    except Exception:
+        pass
+
+    # === 3. 파일 폴더 삭제 ===
+    root_dir = MODEL_REPO_ROOT / model.name
+    if root_dir.exists():
+        shutil.rmtree(root_dir, ignore_errors=True)
+
+    # === 4. DB 삭제 ===
+    db.query(ModelVersionFile).filter(ModelVersionFile.model_id == model_id).delete()
+    db.query(ModelConfig).filter(ModelConfig.model_id == model_id).delete()
+    db.query(ModelVersion).filter(ModelVersion.model_id == model_id).delete()
+    db.delete(model)
+    db.commit()
+
+    # === 5. 삭제 이력 ===
+    _save_model_release(
+        db,
+        actor_id=user.user_id,
+        type_=ReleaseType.MODEL,
+        action_=ReleaseAction.DELETE,
+        target_id=model_id,
+        reason="모델 전체 삭제",
+    )
+    db.commit()
+
+    return create_response(
+        CustomCode.MODEL_006.value,
+        Messages.MODEL_DELETE_SUCCESS.value,
+        {"modelId": model_id, "modelName": model.name},
     )

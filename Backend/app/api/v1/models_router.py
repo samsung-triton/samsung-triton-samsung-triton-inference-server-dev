@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, status, Path, Form
+from fastapi import APIRouter, UploadFile, File, Depends, status, Path, Form, Body
 from typing import List, Annotated
 
 from sqlalchemy.orm import Session
@@ -10,8 +10,10 @@ from app.services.model_service import (
     register_model_service,
     register_ensemble_service,
     register_model_version_service,
+    delete_model_version_service,
+    delete_model_service,
 )
-from app.schemas.model_schema import ModelRegisterRequest
+from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 
 model_router = APIRouter(prefix="/api/v1/models", tags=["models"])
 
@@ -57,5 +59,33 @@ def register_model_version(
         login_id=loginId,
         description=description,
         model_files=modelFiles,
+        db=db,
+    )
+
+
+@model_router.delete("/{model_id}/versions/{version}", summary="모델 버전 삭제")
+def delete_model_version(
+    model_id: int = Path(..., description="모델 ID"),
+    version: int = Path(..., description="삭제할 버전 번호"),
+    req: ModelDeleteRequest = Body(...),
+    db: Session = Depends(get_db),
+):
+    return delete_model_version_service(
+        model_id=model_id,
+        version=version,
+        login_id=req.loginId,
+        db=db,
+    )
+
+
+@model_router.delete("/{model_id}", summary="모델 전체 삭제")
+def delete_model(
+    model_id: int = Path(..., description="모델 ID"),
+    req: ModelDeleteRequest = Body(...),
+    db: Session = Depends(get_db),
+):
+    return delete_model_service(
+        model_id=model_id,
+        login_id=req.loginId,
         db=db,
     )

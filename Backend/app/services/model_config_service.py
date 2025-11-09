@@ -7,13 +7,10 @@ from app.constants.messages import Messages
 from fastapi import status
 from app.core.response_utils import create_response
 
+
 async def get_current_config_service(db: Session, model_id: int):
     # 특정 모델의 현재 사용 중인 Config 조회
-    config = (
-        db.query(ModelConfig)
-        .filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True)
-        .first()
-    )
+    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
 
     if not config:
         raise CustomHTTPException(
@@ -22,12 +19,11 @@ async def get_current_config_service(db: Session, model_id: int):
             message=f"모델 ID {model_id}의 현재 Config가 없습니다.",
         )
 
-
     data = {
         "configId": config.config_id,
         "version": config.version,
         "content": config.content,
-        "createdBy": config.created_by, 
+        "createdBy": config.created_by,
         "createdAt": config.created_at,
     }
 
