@@ -31,11 +31,7 @@ async def get_current_config_service(db: Session, model_id: int):
         "createdAt": config.created_at,
     }
 
-    return create_response(
-        code="CONFIG-001",
-        message="현재 사용 중인 Config가 조회되었습니다.",
-        data=data,
-    )
+    return create_response(CustomCode.CONFIG_001.value,Messages.CONFIG_CURRENT_FETCH_SUCCESS.value,data=data)
 
 async def get_rollback_config_list_service(db: Session, model_id: int):
     """현재 사용 중인 config를 제외한 롤백 가능한 config 목록 조회"""
@@ -72,8 +68,4 @@ async def get_rollback_config_list_service(db: Session, model_id: int):
         "history": history,
     }
 
-    return create_response(
-        code="CONFIG-002",
-        message="Config 이력 목록이 조회되었습니다.",
-        data=data,
-    )
+    return create_response(code=CustomCode.CONFIG_002.value,message=Messages.CONFIG_HISTORY_FETCH_SUCCESS.value,data=data)
