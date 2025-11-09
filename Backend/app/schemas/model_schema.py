@@ -1,16 +1,9 @@
 from pydantic import BaseModel, Field
 from fastapi import Form
 from typing import List, Optional
-from enum import Enum
+from app.models.model import ModelType
 
 # ========== Request (요청) ==========
-
-
-class ModelType(str, Enum):
-    """모델 타입"""
-
-    NORMAL = "NORMAL"
-    ENSEMBLE = "ENSEMBLE"
 
 
 class ModelRegisterRequest(BaseModel):
