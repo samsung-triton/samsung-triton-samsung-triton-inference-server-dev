@@ -1,5 +1,5 @@
-# app/core/config.py
 from pydantic_settings import BaseSettings
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -20,7 +20,14 @@ class Settings(BaseSettings):
     DB_NAME: str
 
     # Triton
-    TRITON_URL: str
+    TRITON_URL: str                     # ex: http://localhost:8000
+    TRITON_IMAGE: str
+    TRITON_CONTAINER_NAME: str
+    TRITON_MODEL_PATH: str
+    TRITON_COMPOSE_PATH: str
+
+    # Data
+    INFER_DATA_SAVE_PATH: str
 
     TRITON_MODEL_REPO: str
     ALLOW_OVERWRITE: bool = False
@@ -31,3 +38,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+Path(settings.INFER_DATA_SAVE_PATH).mkdir(parents=True, exist_ok=True)
