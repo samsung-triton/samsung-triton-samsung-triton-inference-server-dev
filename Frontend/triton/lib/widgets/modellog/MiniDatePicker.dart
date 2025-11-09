@@ -13,7 +13,7 @@ class MiniDatePicker extends StatefulWidget {
 
 class _MiniDatePickerState extends State<MiniDatePicker> {
   final GlobalKey _buttonKey = GlobalKey(); // 버튼 위치 계산용 Key
-  DateTime? selectedDate;
+  DateTime? selectedDate = DateTime.now();
   OverlayEntry? _overlayEntry;
 
   void _toggleCalendar() {
