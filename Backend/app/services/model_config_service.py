@@ -69,3 +69,44 @@ async def get_rollback_config_list_service(db: Session, model_id: int):
     }
 
     return create_response(code=CustomCode.CONFIG_002.value,message=Messages.CONFIG_HISTORY_FETCH_SUCCESS.value,data=data)
+
+
+async def get_selected_config_service(db: Session, model_id: int, config_id: int):
+    """특정 모델의 선택된 Config 내용을 조회"""
+
+    # 해당 모델의 Config 존재 여부 확인
+    result = (
+        db.query(ModelConfig, User)
+        .join(User, User.user_id == ModelConfig.created_by, isouter=True)
+        .filter(
+            ModelConfig.model_id == model_id,
+            ModelConfig.config_id == config_id
+        )
+        .first()
+    )
+
+    if not result:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=f"모델 ID {model_id}의 Config ID {config_id}를 찾을 수 없습니다.",
+        )
+
+    config, user = result
+
+    # 응답 데이터 구성
+    data = {
+        "configId": config.config_id,
+        "version": config.version,
+        "content": config.content,
+        "createdBy": user.name if user else None,
+        "createdAt": config.created_at,
+    }
+
+    # 응답 반환
+    return create_response(
+        code=CustomCode.CONFIG_003.value,
+        message=Messages.CONFIG_ONE_FETCH_SUCCESS.value,
+        data=data,
+    )
+

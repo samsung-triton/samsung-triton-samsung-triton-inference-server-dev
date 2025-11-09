@@ -15,3 +15,4 @@ class ModelConfig(Base):
     is_current = Column(Boolean, default=False)
 
     creator = relationship("User", backref="configs")
+    model = relationship("Model", backref="configs")
