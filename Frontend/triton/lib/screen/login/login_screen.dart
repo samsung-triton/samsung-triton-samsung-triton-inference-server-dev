@@ -1,10 +1,13 @@
 // 로그인 화면
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
+
 import '../../theme/app_colors.dart';
 import '../../theme/typography.dart';
 import '../../widgets/login/login_text_field.dart';
 import '../../widgets/login/login_button.dart';
+import '../../controller/auth/auth_controller.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _idCtrl = TextEditingController();
   final _pwCtrl = TextEditingController();
+  final AuthController _auth = Get.put(AuthController());
 
   bool _isLoading = false;
   String? _error;
@@ -33,14 +37,27 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // TODO: 서버 로그인 API 연동
-      await Future.delayed(const Duration(milliseconds: 300));
-      final ok = _idCtrl.text.trim() == 'admin' && _pwCtrl.text == 'admin';
+      if (_idCtrl.text.trim().isEmpty || _pwCtrl.text.trim().isEmpty) {
+        setState(() {
+          _error = 'Please enter both your ID and password.';
+          _isLoading = false;
+        });
+        return; // 로그인 로직 중단
+      }
 
-      if (!ok) {
+      // 입력값을 컨트롤러에 전달
+      _auth.loginId.value = _idCtrl.text.trim();
+      _auth.password.value = _pwCtrl.text.trim();
+
+      // AuthController 내부 login() 호출
+      final success = await _auth.login();
+
+      if (!success) {
         setState(() => _error = 'Check your account again.');
         return;
       }
+
+      // 로그인 성공 → 페이지 이동
       if (mounted) context.go('/dashboard');
     } catch (_) {
       setState(() => _error = 'Network error. Please try again.');

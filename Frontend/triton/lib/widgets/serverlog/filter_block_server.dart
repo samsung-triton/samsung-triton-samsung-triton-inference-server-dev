@@ -6,8 +6,8 @@ import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
 
-class FilterBlock extends StatelessWidget {
-  const FilterBlock({super.key});
+class FilterBlockServer extends StatelessWidget {
+  const FilterBlockServer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +39,9 @@ class FilterBlock extends StatelessWidget {
           // 2행: log level
           Row(
             children: const [
-              FilterText(label: 'log level'),
+              FilterText(label: 'log type'),
               SizedBox(width: 8),
-              Dropdown(items: ['INFO', 'DEBUG', 'WARN', 'ERROR'], width: 200, hintText: 'select loglevel'),
+              Dropdown(items: ['INFO', 'DEBUG', 'WARN', 'ERROR'], width: 200, hintText: 'selcct logtype'),
             ],
           ),
 
@@ -49,6 +49,8 @@ class FilterBlock extends StatelessWidget {
           Row(
             children: [
               const FilterText(label: 'search'),
+              const SizedBox(width: 8),
+              const Dropdown(items: ['user ID', 'user name', 'details', 'description'], width: 200, hintText: 'sort'),
               const SizedBox(width: 8),
               const SizedBox(child: InputSmall(hintText: 'Enter keyword...', width: 424, height: 28)),
               const SizedBox(width: 8),

@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:triton/widgets/input/input_medium.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/typography.dart';
 import '../button/button_medium.dart';
 import 'modal_base.dart';
 
-class ModalConfirmation extends StatelessWidget {
+class ModalConfirmationPassword extends StatelessWidget {
   final String message;
-  final VoidCallback? onDelete;
+  final VoidCallback? onOk;
   final VoidCallback? onCancel;
   final VoidCallback? onClose;
 
-  const ModalConfirmation({Key? key, required this.message, this.onDelete, this.onCancel, this.onClose})
-    : super(key: key);
+  const ModalConfirmationPassword({
+    super.key, // Key를 바로 부모(StatelessWidget)로 전달
+    required this.message,
+    this.onOk,
+    this.onCancel,
+    this.onClose,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,11 +40,17 @@ class ModalConfirmation extends StatelessWidget {
           ),
         ),
 
+        Center(
+          child: SizedBox(width: 200, child: InputMedium(hintText: "Enter password", obscureText: true)),
+        ),
+
+        const SizedBox(height: 20),
+
         // ───── 하단 버튼 영역 ─────
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ButtonMedium(text: 'delete', onPressed: onDelete, backgroundColor: white, textColor: black),
+            ButtonMedium(text: 'OK', onPressed: onOk, backgroundColor: white, textColor: black),
             const SizedBox(width: 12),
 
             ButtonMedium(
