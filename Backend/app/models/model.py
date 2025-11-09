@@ -8,7 +8,7 @@ class ModelType(str, enum.Enum):
     ENSEMBLE = "ENSEMBLE"
 
 
-class Models(Base):
+class Model(Base):
     __tablename__ = "models"
 
     model_id = Column(BigInteger, primary_key=True, autoincrement=True, nullable=False)

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.inference_logs import InferenceLogs
-from app.models.model import Models
+from app.models.model import Model
 from app.schemas.base_schema import BaseResponse
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def save_input_before_infer_service(clientId: str, modelName: str, dataFile: UploadFile, db: Session) -> BaseResponse:
-    model = db.query(Models).filter(Models.name == modelName).first()
+    model = db.query(Model).filter(Model.name == modelName).first()
 
     if not model:
         raise CustomHTTPException(

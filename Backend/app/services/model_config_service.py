@@ -8,7 +8,7 @@ from fastapi import status
 from app.core.response_utils import create_response
 
 async def get_current_config_service(db: Session, model_id: int):
-    # 특정 모델의 현재 사용 중인 Config 조회
+    '''특정 모델의 현재 사용 중인 Config 조회'''
     config = (
         db.query(ModelConfig)
         .filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True)
@@ -31,8 +31,41 @@ async def get_current_config_service(db: Session, model_id: int):
         "createdAt": config.created_at,
     }
 
-    return create_response(
-        code="CONFIG-001",
-        message="현재 사용 중인 Config가 조회되었습니다.",
-        data=data,
+    return create_response(CustomCode.CONFIG_001.value,Messages.CONFIG_CURRENT_FETCH_SUCCESS.value,data=data)
+
+async def get_rollback_config_list_service(db: Session, model_id: int):
+    """현재 사용 중인 config를 제외한 롤백 가능한 config 목록 조회"""
+
+    # 현재 사용 중이 아닌 Config만 조회
+    results = (
+        db.query(ModelConfig, User)
+        .join(User, User.user_id == ModelConfig.created_by, isouter=True)
+        .filter(ModelConfig.model_id == model_id, ModelConfig.is_current == False)
+        .order_by(ModelConfig.version.asc())
+        .all()
     )
+
+    if not results:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=f"모델 ID {model_id}의 롤백 가능한 Config가 없습니다.",
+        )
+
+    # 응답 데이터 구성
+    history = [
+        {
+            "configId": config.config_id,
+            "version": config.version,
+            "createdAt": config.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "userName": user.name if user else None,
+        }
+        for config, user in results
+    ]
+
+    data = {
+        "modelId": model_id,
+        "history": history,
+    }
+
+    return create_response(code=CustomCode.CONFIG_002.value,message=Messages.CONFIG_HISTORY_FETCH_SUCCESS.value,data=data)
