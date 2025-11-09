@@ -289,14 +289,6 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
             message=Messages.ENSEMBLE_REGISTER_DUPLICATE_NAME.value,
         )
 
-    # 모델명 중복 체크
-    if not config_file.filename.endswith("config.pbtxt"):
-        raise CustomHTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            code=CustomCode.ERR_415.value,
-            message=Messages.ENSEMBLE_REGISTER_INVALID_FILE_TYPE.value,
-        )
-
     # === 1. config 저장 ===
     cfg_path = _save_model_config_file(model_name, config_file)
     config_text = cfg_path.read_text(encoding="utf-8", errors="ignore")
