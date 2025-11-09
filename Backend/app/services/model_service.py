@@ -241,16 +241,37 @@ def register_model_service(
     user = _get_user_or_404(db, req.LoginId)
     config_text = cfg_path.read_text(encoding="utf-8", errors="ignore")
 
-    model = _save_model(db, model_name, req.modelType.value, str(MODEL_REPO_ROOT / model_name))
-    version = _save_model_version(db, model.model_id, user.user_id, 1)
-    for f in saved_files:
-        _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
-    _save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
-    _save_model_release(
-        db, user.user_id, ReleaseType.MODEL, ReleaseAction.CREATE, model.model_id, req.description or "신규 모델 등록"
-    )
+    try:
+        model = _save_model(db, model_name, req.modelType.value, str(MODEL_REPO_ROOT / model_name))
+        version = _save_model_version(db, model.model_id, user.user_id, 1)
+        for f in saved_files:
+            _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
+        _save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
+        _save_model_release(
+            db,
+            user.user_id,
+            ReleaseType.MODEL,
+            ReleaseAction.CREATE,
+            model.model_id,
+            req.description or "신규 모델 등록",
+        )
 
-    db.commit()
+        db.commit()
+    except Exception as e:
+        db.rollback()  # 모든 변경사항 롤백
+        # 파일과 모델을 함께 정리 (Triton과 로컬 모두)
+        try:
+            triton_client.unload_model(model_name=model_name)
+        except Exception:
+            pass
+        shutil.rmtree(MODEL_REPO_ROOT / model_name, ignore_errors=True)
+
+        raise CustomHTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            CustomCode.ERR_500.value,
+            Messages.MODEL_REGISTER_DB_ERROR.value,
+            str(e),
+        )
 
     return create_response(
         CustomCode.MODEL_002.value,
@@ -310,18 +331,35 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
     # === 3. DB 기록 ===
     user = _get_user_or_404(db, req.LoginId)
 
-    model = _save_model(db, model_name, "ENSEMBLE", str(MODEL_REPO_ROOT / model_name))
-    version = _save_model_version(db, model.model_id, user.user_id, 1)
-    _save_version_file(db, version.model_version_id, "config.pbtxt", str(cfg_path))
-    _save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
-    _save_model_release(
-        db,
-        user.user_id,
-        ReleaseType.MODEL,
-        ReleaseAction.CREATE,
-        model.model_id,
-        req.description or "신규 앙상블 모델 등록",
-    )
+    try:
+        model = _save_model(db, model_name, "ENSEMBLE", str(MODEL_REPO_ROOT / model_name))
+        version = _save_model_version(db, model.model_id, user.user_id, 1)
+        _save_version_file(db, version.model_version_id, "config.pbtxt", str(cfg_path))
+        _save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
+        _save_model_release(
+            db,
+            user.user_id,
+            ReleaseType.MODEL,
+            ReleaseAction.CREATE,
+            model.model_id,
+            req.description or "신규 앙상블 모델 등록",
+        )
+
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        try:
+            triton_client.unload_model(model_name=model_name)
+        except Exception:
+            pass
+        shutil.rmtree(MODEL_REPO_ROOT / model_name, ignore_errors=True)
+        raise CustomHTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            CustomCode.ERR_500.value,
+            Messages.MODEL_REGISTER_DB_ERROR.value,
+            str(e),
+        )
 
     return create_response(
         CustomCode.MODEL_003.value,
@@ -381,14 +419,30 @@ def register_model_version_service(
         )
 
     # === 4. DB 기록 ===
-    version = _save_model_version(db, model_id, user.user_id, next_version)
-    for f in saved_files:
-        _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
-    _save_model_release(
-        db, user.user_id, ReleaseType.VERSION, ReleaseAction.CREATE, model_id, description or "모델 버전 추가"
-    )
+    try:
+        version = _save_model_version(db, model_id, user.user_id, next_version)
+        for f in saved_files:
+            _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
+        _save_model_release(
+            db, user.user_id, ReleaseType.VERSION, ReleaseAction.CREATE, model_id, description or "모델 버전 추가"
+        )
 
-    db.commit()
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        try:
+            triton_client.unload_model(model_name=model.name)
+        except Exception:
+            pass
+        vdir = MODEL_REPO_ROOT / model.name / str(next_version)
+        if vdir.exists():
+            shutil.rmtree(vdir, ignore_errors=True)
+        raise CustomHTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            CustomCode.ERR_500.value,
+            message=Messages.MODEL_REGISTER_DB_ERROR.value,
+            data=str(e),
+        )
 
     return create_response(
         CustomCode.MODEL_004.value,

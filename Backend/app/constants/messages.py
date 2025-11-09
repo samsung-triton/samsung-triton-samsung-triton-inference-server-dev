@@ -2,6 +2,9 @@ from enum import Enum
 
 
 class Messages(str, Enum):
+    # ---- 롤백 메시지 ----
+    MODEL_REGISTER_DB_ERROR = "DB 저장 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
+
     # ---- Master Key ----
     LOGIN_SUCCESS = "로그인이 성공적으로 완료되었습니다."
     INVALID_PARAM = "요청 파라미터가 올바르지 않습니다."
