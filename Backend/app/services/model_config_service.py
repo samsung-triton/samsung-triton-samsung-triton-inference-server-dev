@@ -106,7 +106,7 @@ async def get_selected_config_service(db: Session, model_id: int, config_id: int
     # 응답 반환
     return create_response(
         code=CustomCode.CONFIG_003.value,
-        message=Messages.CONFIG_SELECTED_FETCH_SUCCESS.value,
+        message=Messages.CONFIG_ONE_FETCH_SUCCESS.value,
         data=data,
     )
 
