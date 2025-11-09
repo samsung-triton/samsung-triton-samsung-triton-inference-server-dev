@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # Data
     INFER_DATA_SAVE_PATH: str
 
+    TRITON_MODEL_REPO: str
+    ALLOW_OVERWRITE: bool = False
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

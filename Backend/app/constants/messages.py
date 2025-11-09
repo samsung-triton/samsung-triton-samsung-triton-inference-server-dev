@@ -2,6 +2,9 @@ from enum import Enum
 
 
 class Messages(str, Enum):
+    # ---- 롤백 메시지 ----
+    MODEL_REGISTER_DB_ERROR = "DB 저장 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
+
     # ---- Master Key ----
     LOGIN_SUCCESS = "로그인이 성공적으로 완료되었습니다."
     INVALID_PARAM = "요청 파라미터가 올바르지 않습니다."
@@ -19,8 +22,12 @@ class Messages(str, Enum):
 
     # ---- Model Register ----
     MODEL_REGISTER_SUCCESS = "모델이 성공적으로 등록되었습니다."
-    MODEL_REGISTER_MISSING_REQUIRED = "필수 입력값(modelName, modelType, description, files≥2)을 모두 입력해야 합니다."
+    MODEL_REGISTER_MISSING_REQUIRED = (
+        "필수 입력값(modelName, modelType, description, config.pbtxt)을 모두 입력해야 합니다."
+    )
+    MODEL_REGISTER_INVALID_NAME = "모델 이름이 유효하지 않습니다."
     MODEL_REGISTER_DUPLICATE_NAME = "이미 동일한 이름의 모델이 존재합니다."
+    MODEL_REGISTER_INVALID_FILE_NAME = "유효한 모델 파일 이름이 아닙니다."
     MODEL_REGISTER_UPLOAD_ERROR = "모델 파일 업로드 또는 등록 과정에서 오류가 발생했습니다."
 
     # ---- Ensemble Register ----
@@ -36,6 +43,8 @@ class Messages(str, Enum):
     # ---- Model Version ----
     MODEL_VERSION_ADD_SUCCESS = "모델 버전이 성공적으로 추가되었습니다."
     MODEL_VERSION_ADD_ERROR = "모델 버전 추가 중 오류가 발생했습니다."
+    MODEL_VERSION_NOT_FOUND = "해당 모델 버전을 찾을 수 없습니다."
+    MODEL_VERSION_DELETE_SUCCESS = "모델 버전이 성공적으로 삭제되었습니다."
 
     # ---- Model Delete ----
     MODEL_DELETE_SUCCESS = "모델이 성공적으로 삭제되었습니다."

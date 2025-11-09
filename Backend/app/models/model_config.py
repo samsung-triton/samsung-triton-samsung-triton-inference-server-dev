@@ -2,11 +2,12 @@ from sqlalchemy import Column, BigInteger, Integer, Text, Boolean, TIMESTAMP, Fo
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
+
 class ModelConfig(Base):
     __tablename__ = "model_configs"
 
     config_id = Column(BigInteger, primary_key=True, index=True)
-    model_id = Column(BigInteger, ForeignKey("models.model_id", ondelete="CASCADE"), nullable=False)
+    model_id = Column(BigInteger, ForeignKey("model.model_id", ondelete="CASCADE"), nullable=False)
     version = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
     file_path = Column(Text, nullable=False)
@@ -14,5 +15,5 @@ class ModelConfig(Base):
     created_at = Column(TIMESTAMP(timezone=True))
     is_current = Column(Boolean, default=False)
 
-    creator = relationship("User", backref="configs")
-    model = relationship("Model", backref="configs")
+    model = relationship("Model", back_populates="configs")
+    creator = relationship("User", back_populates="configs")
