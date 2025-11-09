@@ -259,11 +259,7 @@ def register_model_service(
         db.commit()
     except Exception as e:
         db.rollback()  # 모든 변경사항 롤백
-        # 파일과 모델을 함께 정리 (Triton과 로컬 모두)
-        try:
-            triton_client.unload_model(model_name=model_name)
-        except Exception:
-            pass
+        triton_client.unload_model(model_name=model_name)
         shutil.rmtree(MODEL_REPO_ROOT / model_name, ignore_errors=True)
 
         raise CustomHTTPException(
@@ -349,10 +345,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
 
     except Exception as e:
         db.rollback()
-        try:
-            triton_client.unload_model(model_name=model_name)
-        except Exception:
-            pass
+        triton_client.unload_model(model_name=model_name)
         shutil.rmtree(MODEL_REPO_ROOT / model_name, ignore_errors=True)
         raise CustomHTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -430,10 +423,7 @@ def register_model_version_service(
         db.commit()
     except Exception as e:
         db.rollback()
-        try:
-            triton_client.unload_model(model_name=model.name)
-        except Exception:
-            pass
+        triton_client.unload_model(model_name=model.name)
         vdir = MODEL_REPO_ROOT / model.name / str(next_version)
         if vdir.exists():
             shutil.rmtree(vdir, ignore_errors=True)
