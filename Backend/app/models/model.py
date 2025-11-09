@@ -11,6 +11,7 @@ class ModelType(str, enum.Enum):
     ENSEMBLE = "ENSEMBLE"
 
 
+<<<<<<< HEAD
 class ReleaseType(str, enum.Enum):
     CONFIG = "CONFIG"
     MODEL = "MODEL"
@@ -23,6 +24,8 @@ class ReleaseAction(str, enum.Enum):
     DELETE = "DELETE"
 
 
+=======
+>>>>>>> backend
 class Model(Base):
     __tablename__ = "models"
 
