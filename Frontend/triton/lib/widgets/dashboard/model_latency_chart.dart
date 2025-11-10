@@ -162,7 +162,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                 child: touchedIndex != null
                     ? _buildTooltip(latencyList[touchedIndex!])
                     : Center(
-                        child: Text("데이터를 터치하세요", style: T.t12(color: gray)),
+                        child: Text("Click on the latency to check", style: T.t12(color: gray)),
                       ),
               ),
             ),
