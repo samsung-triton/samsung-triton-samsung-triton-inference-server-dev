@@ -7,3 +7,8 @@ class ConfigResponse(BaseModel):
     content: str
     createdBy: int | None 
     createdAt: datetime
+
+class ConfigUpdateRequest(BaseModel):
+    loginId: str
+    description: str | None = None
+    configContent: str

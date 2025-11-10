@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from enum import Enum as PyEnum
+from sqlalchemy.orm import relationship
 
 
 class UserRole(PyEnum):
@@ -20,6 +21,6 @@ class User(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False)
     last_login_at = Column(TIMESTAMP(timezone=True))
 
-    versions = relationship("ModelVersion", back_populates="creator", cascade="all, delete-orphan")
-    configs = relationship("ModelConfig", back_populates="creator", cascade="all, delete-orphan")
-    releases = relationship("ModelRelease", back_populates="actor", cascade="all, delete-orphan")
+    configs = relationship("ModelConfig", back_populates="creator", cascade="all, delete")
+    versions = relationship("ModelVersion", back_populates="creator", cascade="all, delete")
+    releases = relationship("ModelRelease", back_populates="actor", cascade="all, delete")

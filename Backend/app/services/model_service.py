@@ -86,7 +86,7 @@ def _save_version_file(db: Session, version_id: int, file_name: str, file_path: 
     return mvf
 
 
-def _save_model_config(db: Session, model_id: int, version: int, content: str, file_path: str, user_id: int):
+def save_model_config(db: Session, model_id: int, version: int, content: str, file_path: str, user_id: int):
     cfg = ModelConfig(
         model_id=model_id,
         version=version,
@@ -100,7 +100,7 @@ def _save_model_config(db: Session, model_id: int, version: int, content: str, f
     return cfg
 
 
-def _save_model_release(
+def save_model_release(
     db: Session, actor_id: int, type_: ReleaseType, action_: ReleaseAction, target_id: int, reason: str
 ):
     release = ModelRelease(
@@ -291,8 +291,8 @@ def register_model_service(
         version = _save_model_version(db, model.model_id, user.user_id, 1)
         for f in saved_files:
             _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
-        _save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
-        _save_model_release(
+        save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
+        save_model_release(
             db,
             actor_id=user.user_id,
             type_=ReleaseType.MODEL,
@@ -377,8 +377,8 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
         model = _save_model(db, model_name, "ENSEMBLE", str(MODEL_REPO_ROOT / model_name))
         version = _save_model_version(db, model.model_id, user.user_id, 1)
         _save_version_file(db, version.model_version_id, "config.pbtxt", str(cfg_path))
-        _save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
-        _save_model_release(
+        save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
+        save_model_release(
             db,
             actor_id=user.user_id,
             type_=ReleaseType.MODEL,
@@ -458,13 +458,8 @@ def register_model_version_service(
         version = _save_model_version(db, model_id, user.user_id, next_version)
         for f in saved_files:
             _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
-        _save_model_release(
-            db,
-            actor_id=user.user_id,
-            type_=ReleaseType.VERSION,
-            action_=ReleaseAction.CREATE,
-            target_id=model_id,
-            reason=description or "모델 버전 추가",
+        save_model_release(
+            db, user.user_id, ReleaseType.VERSION, ReleaseAction.CREATE, model_id, description or "모델 버전 추가"
         )
 
         model.last_version_num = next_version
@@ -593,8 +588,8 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
             data={"detail": str(e)},
         )
 
-    # === 3. 삭제 이력 기록 ===
-    _save_model_release(
+    # === 6. 삭제 이력 기록 ===
+    save_model_release(
         db,
         actor_id=user.user_id,
         type_=ReleaseType.VERSION,
@@ -655,7 +650,7 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
         pass  # 이미 없으면 무시
 
     # === 5. 삭제 이력 ===
-    _save_model_release(
+    save_model_release(
         db,
         actor_id=user.user_id,
         type_=ReleaseType.MODEL,
