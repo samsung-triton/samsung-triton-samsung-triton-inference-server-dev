@@ -80,6 +80,9 @@ class Messages(str, Enum):
     RESOURCE_TIMESERIES_FETCH_SUCCESS = "리소스 시계열 데이터 조회 성공"
     METRICS_INVALID_PERIOD = "지원하지 않는 period 값입니다. (허용: 1h, 6h, 24h)"
     PROMETHEUS_RANGE_QUERY_ERROR = "Prometheus Range Query 중 오류가 발생했습니다."
+    SERVER_METRIC_FAIL = "서버 메트릭 조회 실패"
+    PROMETHEUS_BAD_STATUS = "Prometheus 응답 상태가 올바르지 않습니다."
+    PROMETHEUS_QUERY_FAIL = "Prometheus 메트릭 수집 중 오류 발생"
 
     # ---- Logs (Model / Server) ----
     MODEL_LOG_FETCH_SUCCESS = "모델 로그 조회 성공"
