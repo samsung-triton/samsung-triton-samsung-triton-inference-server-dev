@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, Any, List
 from fastapi import UploadFile, status
 from pathlib import Path
@@ -115,14 +116,54 @@ def _save_model_release(
 # =========================
 # 1. 모델 목록 조회
 # =========================
-def list_models_service() -> Dict[str, Any]:
+def list_models_service(db: Session) -> Dict[str, Any]:
     try:
-        models = triton_client.list_models()
+        resp = triton_client.list_models()
+        print(resp)
+        triton_models = resp.get("models", [])
+        if not isinstance(triton_models, list):
+            triton_models = []
+
+        # 모델 이름별로 버전 묶기
+        triton_grouped = defaultdict(list)
+        for m in triton_models:
+            triton_grouped[m["name"]].append(m)
+
+        # DB 모델 데이터 조회
+        db_models = db.query(Model).all()
+
+        # response data 변환
+        result = []
+        for model in db_models:
+            model_id = model.model_id
+            name = model.name
+            total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
+
+            # 상태 확인
+            versions = triton_grouped.get(name, [])
+            ready_versions = [v for v in versions if v.get("state") == "READY"]
+
+            if ready_versions:
+                status_bool = True
+                last_loaded = max(int(v["version"]) for v in ready_versions)
+            else:
+                status_bool = False
+                last_loaded = "N/A"
+
+            result.append(
+                {
+                    "modelId": model_id,
+                    "name": name,
+                    "status": status_bool,  # True / False
+                    "lastLoadedVersion": last_loaded,  # "4" or "N/A"
+                    "totalVersions": total_versions,  # from DB
+                }
+            )
 
         return create_response(
             CustomCode.MODEL_001.value,
             Messages.MODEL_LIST_FETCH_SUCCESS.value,
-            {"models": models},
+            {"models": result},
         )
 
     except Exception as e:

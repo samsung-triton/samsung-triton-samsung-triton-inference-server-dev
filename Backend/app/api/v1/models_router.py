@@ -19,8 +19,8 @@ model_router = APIRouter(prefix="/api/v1/models", tags=["models"])
 
 
 @model_router.get("", response_model=BaseResponse, status_code=status.HTTP_200_OK, summary="모델 목록 (전체) 조회")
-def list_models():
-    return list_models_service()
+def list_models(db: Session = Depends(get_db)):
+    return list_models_service(db=db)
 
 
 @model_router.post("", summary="단일 모델 최초 등록")
