@@ -1,22 +1,33 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.base_schema import BaseResponse
-from app.services.model_config_service import get_current_config_service, get_rollback_config_list_service, get_selected_config_service
+from app.services.model_config_service import get_current_config_service, get_rollback_config_list_service, get_selected_config_service, update_model_config_service
 
-model_config_router = APIRouter(prefix="/api/v1/configs", tags=["Model Config"])
+model_config_router = APIRouter(prefix="/api/v1/models", tags=["Model Config"])
 
 # 현재 사용 중인 Config 조회
-@model_config_router.get("/models/{model_id}/config/current", response_model=BaseResponse)
+@model_config_router.get("/{model_id}/config/current", response_model=BaseResponse)
 async def get_current_config(model_id: int, db: Session = Depends(get_db)):
     return await get_current_config_service(db, model_id)
 
 # Config 롤백 목록 조회
-@model_config_router.get("/models/{model_id}/config/history", response_model=BaseResponse)
+@model_config_router.get("/{model_id}/config/history", response_model=BaseResponse)
 async def get_rollback_config_list(model_id: int, db: Session = Depends(get_db)):
     return await get_rollback_config_list_service(db, model_id)
 
 # 특정 Config 상세 내용 조회
-@model_config_router.get("/models/{model_id}/config/{config_id}", response_model=BaseResponse)
+@model_config_router.get("/{model_id}/config/{config_id}", response_model=BaseResponse)
 async def get_selected_config(model_id: int, config_id: int, db: Session = Depends(get_db)):
     return await get_selected_config_service(db, model_id, config_id)
+
+# 모델 Config 파일 교체 및 Triton 반영
+@model_config_router.patch("/{model_id}/config/apply", response_model=BaseResponse)
+async def update_model_config(
+    model_id: int,
+    loginId: str = Form(...),
+    description: str = Form(None),
+    configContent: str = Form(...), 
+    db: Session = Depends(get_db),
+):
+    return update_model_config_service(model_id, loginId, configContent, description, db)
