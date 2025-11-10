@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, Any, List
 from fastapi import UploadFile, status
 from pathlib import Path
@@ -22,6 +23,7 @@ from app.models.model import (
 )
 from app.models.model_config import ModelConfig
 from app.models.user import User
+
 
 # =========================
 # 공통 설정
@@ -115,14 +117,56 @@ def save_model_release(
 # =========================
 # 1. 모델 목록 조회
 # =========================
-def list_models_service() -> Dict[str, Any]:
+def list_models_service(db: Session) -> Dict[str, Any]:
     try:
-        models = triton_client.list_models()
+        resp = triton_client.list_models()
+
+        triton_models = resp.get("models", [])
+        if not isinstance(triton_models, list):
+            triton_models = []
+
+        # 모델 이름별로 버전 묶기
+        triton_grouped = defaultdict(list)
+        for m in triton_models:
+            triton_grouped[m["name"]].append(m)
+
+        # DB 모델 데이터 조회
+        db_models = db.query(Model).all()
+
+        # response data 변환
+        result = []
+        for model in db_models:
+            model_id = model.model_id
+            name = model.name
+            type = model.type
+            total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
+
+            # 상태 확인
+            versions = triton_grouped.get(name, [])
+            ready_versions = [v for v in versions if v.get("state") == "READY"]
+
+            if ready_versions:
+                status_bool = True
+                last_loaded = max(int(v["version"]) for v in ready_versions)
+            else:
+                status_bool = False
+                last_loaded = "N/A"
+
+            result.append(
+                {
+                    "modelId": model_id,
+                    "name": name,
+                    "type": type,
+                    "status": status_bool,  # True / False
+                    "lastLoadedVersion": last_loaded,  # "4" or "N/A"
+                    "totalVersions": total_versions,  # from DB
+                }
+            )
 
         return create_response(
             CustomCode.MODEL_001.value,
             Messages.MODEL_LIST_FETCH_SUCCESS.value,
-            {"models": models},
+            {"models": result},
         )
 
     except Exception as e:
@@ -227,7 +271,6 @@ def register_model_service(
     try:
         triton_client.load_model(model_name=model_name)
     except Exception as e:
-        # print(e)
         shutil.rmtree(MODEL_REPO_ROOT / model_name, ignore_errors=True)
 
         raise CustomHTTPException(
@@ -249,11 +292,11 @@ def register_model_service(
         save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
         save_model_release(
             db,
-            user.user_id,
-            ReleaseType.MODEL,
-            ReleaseAction.CREATE,
-            model.model_id,
-            req.description or "신규 모델 등록",
+            actor_id=user.user_id,
+            type_=ReleaseType.MODEL,
+            action_=ReleaseAction.CREATE,
+            target_id=model.model_id,
+            reason=req.description or "신규 모델 등록",
         )
 
         db.commit()
@@ -306,15 +349,15 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
             message=Messages.ENSEMBLE_REGISTER_DUPLICATE_NAME.value,
         )
 
-    # === 1. config 저장 ===
+    # === 1. config 랑 폴더 저장 ===
     cfg_path = _save_model_config_file(model_name, config_file)
     config_text = cfg_path.read_text(encoding="utf-8", errors="ignore")
+    _save_model_files(model_name, 1, [])
 
     # === 2. 트리톤 모델 로드
     try:
         triton_client.load_model(model_name=model_name)
     except Exception as e:
-        # print(e)
         shutil.rmtree(MODEL_REPO_ROOT / model_name, ignore_errors=True)
 
         raise CustomHTTPException(
@@ -334,11 +377,11 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
         save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
         save_model_release(
             db,
-            user.user_id,
-            ReleaseType.MODEL,
-            ReleaseAction.CREATE,
-            model.model_id,
-            req.description or "신규 앙상블 모델 등록",
+            actor_id=user.user_id,
+            type_=ReleaseType.MODEL,
+            action_=ReleaseAction.CREATE,
+            target_id=model.model_id,
+            reason=req.description or "신규 앙상블 모델 등록",
         )
 
         db.commit()
@@ -375,7 +418,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
 def register_model_version_service(
     model_id: int, login_id: str, description: str, model_files: List[UploadFile], db: Session
 ):
-    # === 1. 모델 & 유저 검증 ===
+    # === 1. 모델, 유저 검증 & 버전 계산 ===
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
         raise CustomHTTPException(
@@ -386,13 +429,9 @@ def register_model_version_service(
 
     user = _get_user_or_404(db, login_id)
 
-    # === 2. 버전 계산 ===
-    latest = (
-        db.query(ModelVersion).filter(ModelVersion.model_id == model_id).order_by(ModelVersion.version.desc()).first()
-    )
-    next_version = 1 if not latest else latest.version + 1
+    next_version = (model.last_version_num or 1) + 1
 
-    # === 3. 모델 파일 저장 ===
+    # === 2. 모델 파일 저장 ===
     saved_files = _save_model_files(model.name, next_version, model_files)
 
     try:
@@ -411,7 +450,7 @@ def register_model_version_service(
             data={"detail": str(e)},
         )
 
-    # === 4. DB 기록 ===
+    # === 3. DB 기록 ===
     try:
         version = _save_model_version(db, model_id, user.user_id, next_version)
         for f in saved_files:
@@ -419,6 +458,8 @@ def register_model_version_service(
         save_model_release(
             db, user.user_id, ReleaseType.VERSION, ReleaseAction.CREATE, model_id, description or "모델 버전 추가"
         )
+
+        model.last_version_num = next_version
 
         db.commit()
     except Exception as e:
@@ -451,8 +492,43 @@ def register_model_version_service(
 # =====================================================
 # 5. 모델 버전 삭제
 # =====================================================
+def _delete_version_files_and_db(model, version: int, db: Session):
+    try:
+        version_obj = (
+            db.query(ModelVersion)
+            .filter(ModelVersion.model_id == model.model_id, ModelVersion.version == version)
+            .first()
+        )
+        if not version_obj:
+            raise CustomHTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                code=CustomCode.ERR_404.value,
+                message=Messages.MODEL_VERSION_NOT_FOUND.value,
+            )
+
+        db.delete(version_obj)
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.MODEL_DELETE_DB_ERROR.value,
+            data=str(e),
+        )
+
+    # 파일 삭제 (DB 성공 후만 수행)
+    vdir = MODEL_REPO_ROOT / model.name / str(version)
+    if vdir.exists():
+        shutil.rmtree(vdir, ignore_errors=True)
+    else:
+        # 파일이 없는 경우는 무시 (추후 로그 남길 수 있음)
+        pass
+
+
 def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRequest, db: Session):
-    # === 1. 모델 및 유저 검증 ===
+    # === 1. 모델, 버전, 유저 검증 ===
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
         raise CustomHTTPException(
@@ -463,7 +539,6 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
 
     user = _get_user_or_404(db, req.loginId)
 
-    # === 2. 버전 확인 ===
     version_obj = (
         db.query(ModelVersion).filter(ModelVersion.model_id == model_id, ModelVersion.version == version).first()
     )
@@ -474,22 +549,41 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
             Messages.MODEL_VERSION_NOT_FOUND.value,
         )
 
-    # === 3. Triton에서 모델 언로드 ===
+    # === 1-1. 버전 개수 확인 ===
+    total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
+    if total_versions <= 1:
+        raise CustomHTTPException(
+            status.HTTP_400_BAD_REQUEST, CustomCode.ERR_400.value, Messages.MODEL_VERSION_DELETE_SINGLE_FORBIDDEN.value
+        )
+
+    # === 2. 삭제 진행 ===
     try:
-        triton_client.unload_model(model_name=model.name)
-    except Exception:
-        pass  # 이미 내려가 있을 수도 있으니 무시
+        # 모델 전체 READY 상태 확인
+        model_ready = triton_client.client.is_model_ready(model_name=model.name)
 
-    # === 4. 파일/폴더 삭제 ===
-    vdir = MODEL_REPO_ROOT / model.name / str(version)
-    if vdir.exists():
-        shutil.rmtree(vdir, ignore_errors=True)
+        if model_ready:
+            # 해당 버전 READY 상태 확인
+            version_ready = triton_client.client.is_model_ready(model_name=model.name, model_version=str(version))
 
-    # === 5. DB 삭제 ===
-    db.query(ModelVersionFile).filter(ModelVersionFile.model_version_id == version_obj.model_version_id).delete()
-    db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.version == version).delete()
-    db.delete(version_obj)
-    db.commit()
+            if version_ready:
+                # 현재 로드 중인 버전 삭제, 삭제 후 모델 다시 로드
+                triton_client.unload_model(model.name)
+                _delete_version_files_and_db(model, version, db)
+                triton_client.load_model(model_name=model.name)
+            else:
+                # 다른 버전이 로드 중
+                _delete_version_files_and_db(model, version, db)
+        else:
+            # 모델 전체가 언로드 상태
+            _delete_version_files_and_db(model, version, db)
+
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code=CustomCode.ERR_503.value,
+            message=Messages.TRITON_CONNECTION_ERROR.value,
+            data={"detail": str(e)},
+        )
 
     # === 6. 삭제 이력 기록 ===
     save_model_release(
@@ -526,26 +620,31 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
 
     # === 2. Triton 언로드 ===
     try:
+        # 모델이 READY이든 아니든, 삭제 전엔 무조건 언로드 시도
         triton_client.unload_model(model_name=model.name)
-    except Exception:
-        pass
+    except Exception as e:
+        pass  # 삭제 로직이 중단되지 않아야 하므로 무시 가능 (추후 로그 남길 수 있음)
 
-    # === 3. 파일 폴더 삭제 ===
+    # === 3. DB 삭제 ===
+    try:
+        db.delete(model)
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.MODEL_DELETE_DB_ERROR.value,
+            data={"detail": str(e)},
+        )
+
+    # === 4. 파일 삭제 ===
     root_dir = MODEL_REPO_ROOT / model.name
     if root_dir.exists():
         shutil.rmtree(root_dir, ignore_errors=True)
-
-    # === 4. DB 삭제 ===
-    version_ids = [v.model_version_id for v in db.query(ModelVersion).filter(ModelVersion.model_id == model_id).all()]
-    if version_ids:
-        db.query(ModelVersionFile).filter(ModelVersionFile.model_version_id.in_(version_ids)).delete(
-            synchronize_session=False
-        )
-
-    db.query(ModelConfig).filter(ModelConfig.model_id == model_id).delete()
-    db.query(ModelVersion).filter(ModelVersion.model_id == model_id).delete()
-    db.delete(model)
-    db.commit()
+    else:
+        pass  # 이미 없으면 무시
 
     # === 5. 삭제 이력 ===
     save_model_release(
@@ -559,3 +658,68 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
     db.commit()
 
     return create_response(CustomCode.MODEL_006.value, Messages.MODEL_DELETE_SUCCESS.value, None)
+
+
+# =====================================================
+# 9. 특정 모델의 버전 목록 및 현재 Config 조회
+# =====================================================
+def get_model_detail_service(model_id: int, db: Session):
+    from app.services.model_config_service import get_current_config_service
+
+    # 모델 존재 확인
+    model = db.query(Model).filter(Model.model_id == model_id).first()
+    if not model:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=Messages.MODEL_NOT_FOUND_FOUND.value,
+        )
+
+    # 버전 목록 조회
+    versions = (
+        db.query(ModelVersion, User)
+        .join(User, User.user_id == ModelVersion.created_by, isouter=True)
+        .filter(ModelVersion.model_id == model_id)
+        .order_by(ModelVersion.version.asc())
+        .all()
+    )
+
+    version_list = []
+    for mv, user in versions:
+        file_record = (
+            db.query(ModelVersionFile.file_name)
+            .filter(ModelVersionFile.model_version_id == mv.model_version_id)
+            .first()
+        )
+        version_list.append(
+            {
+                "versionId": mv.model_version_id,
+                "version": mv.version,
+                "fileName": file_record[0] if file_record else None,
+                "userName": user.login_id if user else None,
+                "createdAt": mv.created_at.strftime("%y-%m-%d %H:%M:%S"),
+            }
+        )
+
+    print(version_list)
+    # 현재 Config 조회
+    try:
+        current_config_resp = get_current_config_service(db, model_id)
+        config_data = current_config_resp.data
+    except CustomHTTPException:
+        config_data = None
+
+    # 응답 데이터 구조
+    data = {
+        "modelId": model.model_id,
+        "modelName": model.name,
+        "modelType": model.type,
+        "versions": version_list,
+        "config": config_data,
+    }
+
+    return create_response(
+        CustomCode.MODEL_009.value,
+        Messages.MODEL_LIST_FETCH_SUCCESS.value,
+        data,
+    )

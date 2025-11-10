@@ -32,4 +32,4 @@ class ModelRegisterRequest(BaseModel):
 
 class ModelDeleteRequest(BaseModel):
     loginId: str = Field(..., description="요청자 로그인 ID")
-    description: str = Field(..., description="삭제 이유")
+    description: Optional[str] = Field(None, description="삭제 이유")

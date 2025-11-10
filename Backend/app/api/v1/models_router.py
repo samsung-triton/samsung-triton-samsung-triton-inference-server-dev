@@ -12,6 +12,7 @@ from app.services.model_service import (
     register_model_version_service,
     delete_model_version_service,
     delete_model_service,
+    get_model_detail_service,
 )
 from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 
@@ -19,8 +20,8 @@ model_router = APIRouter(prefix="/api/v1/models", tags=["models"])
 
 
 @model_router.get("", response_model=BaseResponse, status_code=status.HTTP_200_OK, summary="모델 목록 (전체) 조회")
-def list_models():
-    return list_models_service()
+def list_models(db: Session = Depends(get_db)):
+    return list_models_service(db=db)
 
 
 @model_router.post("", summary="단일 모델 최초 등록")
@@ -85,3 +86,11 @@ def delete_model(
         req=req,
         db=db,
     )
+
+
+@model_router.get("/{model_id}", summary="모델 상세 (버전 + Config) 조회")
+def get_model_detail(
+    model_id: int = Path(..., description="모델 ID"),
+    db: Session = Depends(get_db),
+):
+    return get_model_detail_service(model_id=model_id, db=db)

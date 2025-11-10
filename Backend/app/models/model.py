@@ -30,6 +30,7 @@ class Model(Base):
     name = Column(String(64), unique=True, nullable=False)
     type = Column(Enum(ModelType, name="model_type"), nullable=False)
     storage_dir = Column(String(128), nullable=False)
+    last_version_num = Column(Integer, default=1, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
