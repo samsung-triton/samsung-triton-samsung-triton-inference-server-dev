@@ -2,9 +2,6 @@ from enum import Enum
 
 
 class Messages(str, Enum):
-    # ---- 롤백 메시지 ----
-    MODEL_REGISTER_DB_ERROR = "DB 저장 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
-
     # ---- Master Key ----
     LOGIN_SUCCESS = "로그인이 성공적으로 완료되었습니다."
     INVALID_PARAM = "요청 파라미터가 올바르지 않습니다."
@@ -39,6 +36,8 @@ class Messages(str, Enum):
 
     # ---- Model 공통 ----
     MODEL_NOT_FOUND_FOUND = "해당 모델을 찾을 수 없습니다."
+    MODEL_REGISTER_DB_ERROR = "DB 저장 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
+    MODEL_DELETE_DB_ERROR = "DB 삭제 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
 
     # ---- Model Version ----
     MODEL_VERSION_ADD_SUCCESS = "모델 버전이 성공적으로 추가되었습니다."
@@ -50,6 +49,10 @@ class Messages(str, Enum):
     MODEL_DELETE_SUCCESS = "모델이 성공적으로 삭제되었습니다."
     MODEL_DELETE_LOADED_IN_TRITON = "현재 모델이 Triton Server에 로드되어 있어 삭제할 수 없습니다."
     MODEL_DELETE_SERVER_ERROR = "모델 삭제 처리 중 서버 오류가 발생했습니다."
+
+    # ---- Triton 연결 및 응답 오류 ----
+    TRITON_CONNECTION_ERROR = "Triton 서버와의 연결 또는 응답 오류로 인해 요청을 수행할 수 없습니다."
+    TRITON_VERSION_READY_CHECK_ERROR = "Triton에서 모델 버전의 상태를 확인하는 중 오류가 발생했습니다."
 
     # ---- Model Load / Unload ----
     MODEL_LOAD_SUCCESS = "모델이 성공적으로 로드되었습니다."

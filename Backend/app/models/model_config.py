@@ -7,7 +7,7 @@ class ModelConfig(Base):
     __tablename__ = "model_configs"
 
     config_id = Column(BigInteger, primary_key=True, index=True)
-    model_id = Column(BigInteger, ForeignKey("model.model_id", ondelete="CASCADE"), nullable=False)
+    model_id = Column(BigInteger, ForeignKey("models.model_id", ondelete="CASCADE"), nullable=False)
     version = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
     file_path = Column(Text, nullable=False)

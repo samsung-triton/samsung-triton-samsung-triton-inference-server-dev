@@ -1,5 +1,6 @@
 from sqlalchemy import Column, BigInteger, String, TIMESTAMP, text
 from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 from enum import Enum as PyEnum
 
@@ -18,3 +19,7 @@ class User(Base):
     role = Column(ENUM(UserRole, name="user_role", create_type=False), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False)
     last_login_at = Column(TIMESTAMP(timezone=True))
+
+    versions = relationship("ModelVersion", back_populates="creator", cascade="all, delete-orphan")
+    configs = relationship("ModelConfig", back_populates="creator", cascade="all, delete-orphan")
+    releases = relationship("ModelRelease", back_populates="actor", cascade="all, delete-orphan")
