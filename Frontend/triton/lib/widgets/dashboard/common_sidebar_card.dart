@@ -73,10 +73,7 @@ class CommonSidebarCard extends StatelessWidget {
           Container(
             width: 20,
             height: 20,
-            decoration: BoxDecoration(
-              color: status ? Colors.lightGreenAccent : Colors.redAccent,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: status ? statusGreen : statusRed, shape: BoxShape.circle),
           ),
           const SizedBox(width: 12),
 
