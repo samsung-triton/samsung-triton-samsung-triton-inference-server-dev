@@ -23,6 +23,7 @@ class SidebarBase extends StatelessWidget {
 
     return Container(
       width: 300,
+      height: double.infinity, // 높이도 화면에 맞춰주기
       color: primaryLightest,
       child: Scrollbar(
         thumbVisibility: true,
