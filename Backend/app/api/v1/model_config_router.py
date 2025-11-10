@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form
+from fastapi import APIRouter, Depends
+from app.schemas.model_config_schema import ConfigUpdateRequest
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.base_schema import BaseResponse
@@ -23,11 +24,12 @@ async def get_selected_config(model_id: int, config_id: int, db: Session = Depen
 
 # 모델 Config 파일 교체 및 Triton 반영
 @model_config_router.patch("/{model_id}/config/apply", response_model=BaseResponse)
-async def update_model_config(
-    model_id: int,
-    loginId: str = Form(...),
-    description: str = Form(None),
-    configContent: str = Form(...), 
-    db: Session = Depends(get_db),
-):
+async def update_model_config(model_id: int, request: ConfigUpdateRequest, db: Session = Depends(get_db)):
+    return update_model_config_service(
+        model_id=model_id,
+        login_id=request.loginId,
+        config_content=request.configContent,
+        description=request.description,
+        db=db,
+    )
     return update_model_config_service(model_id, loginId, configContent, description, db)

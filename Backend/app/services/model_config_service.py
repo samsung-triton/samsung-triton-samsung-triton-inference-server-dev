@@ -146,8 +146,15 @@ def update_model_config_service(
         cfg_path.write_text(config_content, encoding="utf-8")
         time.sleep(0.5)
         # Triton 모델 재시작 (unload → load)
-        triton_client.unload_model(model_name=model.name)
-        triton_client.load_model(model_name=model.name)
+        try:
+            triton_client.unload_model(model_name=model.name)
+            triton_client.load_model(model_name=model.name)
+        except Exception as e:
+            raise CustomHTTPException(
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                CustomCode.ERR_500.value,
+                f"Triton 모델 재시작 중 오류 발생: {e}",
+            )
 
         # 기존 최신 Config 비활성화
         db.query(ModelConfig).filter(
