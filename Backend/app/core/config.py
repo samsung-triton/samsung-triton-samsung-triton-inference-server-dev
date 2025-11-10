@@ -20,7 +20,9 @@ class Settings(BaseSettings):
     DB_NAME: str
 
     # Triton
-    TRITON_URL: str                     # ex: http://localhost:8000
+    # TRITON_URL: str      
+    TRITON_GRPC_URL: str
+    TRITON_HTTP_URL: str               # ex: http://localhost:8000
     TRITON_IMAGE: str
     TRITON_CONTAINER_NAME: str
     TRITON_MODEL_PATH: str
