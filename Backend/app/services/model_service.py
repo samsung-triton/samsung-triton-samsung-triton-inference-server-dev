@@ -553,6 +553,13 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
             Messages.MODEL_VERSION_NOT_FOUND.value,
         )
 
+    # === 1-1. 버전 개수 확인 ===
+    total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
+    if total_versions <= 1:
+        raise CustomHTTPException(
+            status.HTTP_400_BAD_REQUEST, CustomCode.ERR_400.value, Messages.MODEL_VERSION_DELETE_SINGLE_FORBIDDEN.value
+        )
+
     # === 2. 삭제 진행 ===
     try:
         # 모델 전체 READY 상태 확인

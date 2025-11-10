@@ -44,10 +44,13 @@ class Messages(str, Enum):
     MODEL_VERSION_ADD_ERROR = "모델 버전 추가 중 오류가 발생했습니다."
     MODEL_VERSION_NOT_FOUND = "해당 모델 버전을 찾을 수 없습니다."
     MODEL_VERSION_DELETE_SUCCESS = "모델 버전이 성공적으로 삭제되었습니다."
+    MODEL_VERSION_DELETE_SINGLE_FORBIDDEN = (
+        "버전이 1개뿐인 모델은 삭제할 수 없습니다. 모델 전체를 삭제하거나 새 버전을 추가한 후 다시 시도하세요."
+    )
 
     # ---- Model Delete ----
     MODEL_DELETE_SUCCESS = "모델이 성공적으로 삭제되었습니다."
-    MODEL_DELETE_LOADED_IN_TRITON = "현재 모델이 Triton Server에 로드되어 있어 삭제할 수 없습니다."
+    # MODEL_DELETE_LOADED_IN_TRITON = "현재 모델이 Triton Server에 로드되어 있어 삭제할 수 없습니다."
     MODEL_DELETE_SERVER_ERROR = "모델 삭제 처리 중 서버 오류가 발생했습니다."
 
     # ---- Triton 연결 및 응답 오류 ----
