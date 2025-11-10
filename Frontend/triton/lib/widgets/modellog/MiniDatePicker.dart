@@ -5,7 +5,9 @@ import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 
 class MiniDatePicker extends StatefulWidget {
-  const MiniDatePicker({super.key});
+  final ValueChanged<DateTime>? onDateSelected;
+
+  const MiniDatePicker({super.key, this.onDateSelected});
 
   @override
   State<MiniDatePicker> createState() => _MiniDatePickerState();
@@ -86,6 +88,9 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
                     setState(() {
                       selectedDate = selected;
                     });
+
+                    widget.onDateSelected?.call(selected);
+
                     _removeOverlay(); // 날짜 선택 시 닫기
                   },
                 ),
@@ -106,6 +111,9 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (selectedDate != null) widget.onDateSelected?.call(selectedDate!);
+    });
     return GestureDetector(
       onTap: _toggleCalendar,
       child: Container(
