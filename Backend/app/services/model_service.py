@@ -120,7 +120,7 @@ def save_model_release(
 def list_models_service(db: Session) -> Dict[str, Any]:
     try:
         resp = triton_client.list_models()
-        print(resp)
+
         triton_models = resp.get("models", [])
         if not isinstance(triton_models, list):
             triton_models = []
@@ -271,7 +271,6 @@ def register_model_service(
     try:
         triton_client.load_model(model_name=model_name)
     except Exception as e:
-        # print(e)
         shutil.rmtree(MODEL_REPO_ROOT / model_name, ignore_errors=True)
 
         raise CustomHTTPException(
@@ -359,7 +358,6 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
     try:
         triton_client.load_model(model_name=model_name)
     except Exception as e:
-        # print(e)
         shutil.rmtree(MODEL_REPO_ROOT / model_name, ignore_errors=True)
 
         raise CustomHTTPException(
