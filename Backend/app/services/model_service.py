@@ -23,6 +23,8 @@ from app.models.model import (
 )
 from app.models.model_config import ModelConfig
 from app.models.user import User
+from app.services.model_config_service import get_current_config_service
+
 
 # =========================
 # 공통 설정
@@ -461,7 +463,7 @@ def register_model_version_service(
             actor_id=user.user_id,
             type_=ReleaseType.VERSION,
             action_=ReleaseAction.CREATE,
-            target_id=version.model_version_id,
+            target_id=model_id,
             reason=description or "모델 버전 추가",
         )
 
@@ -597,7 +599,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
         actor_id=user.user_id,
         type_=ReleaseType.VERSION,
         action_=ReleaseAction.DELETE,
-        target_id=version_obj.model_version_id,
+        target_id=model_id,
         reason=req.description or f"{model.name}의 {version}번 버전 삭제",
     )
     db.commit()
@@ -664,3 +666,66 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
     db.commit()
 
     return create_response(CustomCode.MODEL_006.value, Messages.MODEL_DELETE_SUCCESS.value, None)
+
+
+# =====================================================
+# 9. 특정 모델의 버전 목록 및 현재 Config 조회
+# =====================================================
+def get_model_detail_service(model_id: int, db: Session):
+    # 모델 존재 확인
+    model = db.query(Model).filter(Model.model_id == model_id).first()
+    if not model:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=Messages.MODEL_NOT_FOUND_FOUND.value,
+        )
+
+    # 버전 목록 조회
+    versions = (
+        db.query(ModelVersion, User)
+        .join(User, User.user_id == ModelVersion.created_by, isouter=True)
+        .filter(ModelVersion.model_id == model_id)
+        .order_by(ModelVersion.version.asc())
+        .all()
+    )
+
+    version_list = []
+    for mv, user in versions:
+        file_record = (
+            db.query(ModelVersionFile.file_name)
+            .filter(ModelVersionFile.model_version_id == mv.model_version_id)
+            .first()
+        )
+        version_list.append(
+            {
+                "versionId": mv.model_version_id,
+                "version": mv.version,
+                "fileName": file_record[0] if file_record else None,
+                "userName": user.login_id if user else None,
+                "createdAt": mv.created_at.strftime("%y-%m-%d %H:%M:%S"),
+            }
+        )
+
+    print(version_list)
+    # 현재 Config 조회
+    try:
+        current_config_resp = get_current_config_service(db, model_id)
+        config_data = current_config_resp.data
+    except CustomHTTPException:
+        config_data = None
+
+    # 응답 데이터 구조
+    data = {
+        "modelId": model.model_id,
+        "modelName": model.name,
+        "modelType": model.type,
+        "versions": version_list,
+        "config": config_data,
+    }
+
+    return create_response(
+        CustomCode.MODEL_009.value,
+        Messages.MODEL_LIST_FETCH_SUCCESS.value,
+        data,
+    )

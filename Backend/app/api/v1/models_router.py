@@ -12,6 +12,7 @@ from app.services.model_service import (
     register_model_version_service,
     delete_model_version_service,
     delete_model_service,
+    get_model_detail_service,
 )
 from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 
@@ -85,3 +86,11 @@ def delete_model(
         req=req,
         db=db,
     )
+
+
+@model_router.get("/{model_id}", summary="모델 상세 (버전 + Config) 조회")
+def get_model_detail(
+    model_id: int = Path(..., description="모델 ID"),
+    db: Session = Depends(get_db),
+):
+    return get_model_detail_service(model_id=model_id, db=db)
