@@ -31,6 +31,7 @@ class CustomCode(str, Enum):
     CONFIG_002 = "CONFIG-002"
     CONFIG_003 = "CONFIG-003"
     CONFIG_004 = "CONFIG-004"
+    CONFIG_005 = "CONFIG-005"
 
     UPLOAD_001 = "UPLOAD-001"
 
