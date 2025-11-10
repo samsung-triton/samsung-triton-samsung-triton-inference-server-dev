@@ -23,7 +23,6 @@ from app.models.model import (
 )
 from app.models.model_config import ModelConfig
 from app.models.user import User
-from app.services.model_config_service import get_current_config_service
 
 
 # =========================
@@ -667,6 +666,8 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
 # 9. 특정 모델의 버전 목록 및 현재 Config 조회
 # =====================================================
 def get_model_detail_service(model_id: int, db: Session):
+    from app.services.model_config_service import get_current_config_service
+
     # 모델 존재 확인
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
