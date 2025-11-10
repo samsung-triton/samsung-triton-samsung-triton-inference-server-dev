@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/dashboard/dashboard_controller.dart';
-import 'package:triton/screen/dashboard/dashboard_sidebar.dart';
+import 'package:triton/widgets/dashboard/dashboard_sidebar.dart';
 import 'package:triton/widgets/dashboard/model_dashboard_panel.dart';
 import 'package:triton/widgets/dashboard/server_dashboard_panel.dart';
 
