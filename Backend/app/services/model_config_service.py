@@ -114,6 +114,49 @@ async def get_selected_config_service(db: Session, model_id: int, config_id: int
         data=data,
     )
 
+async def get_config_history_with_selected_service(db: Session, model_id: int, config_id: int | None = None):
+    """특정 모델의 전체 Config 상세 내용 + 이력 조회"""
+
+    results = (
+        db.query(ModelConfig, User)
+        .join(User, User.user_id == ModelConfig.created_by, isouter=True)
+        .filter(ModelConfig.model_id == model_id)
+        .order_by(ModelConfig.version.asc())
+        .all()
+    )
+
+    if not results:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=f"모델 ID {model_id}의 Config 이력이 없습니다.",
+        )
+
+    history = [
+        {
+            "configId": cfg.config_id,
+            "version": cfg.version,
+            "createdAt": cfg.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "userName": user.name if user else None,
+            "isCurrent": cfg.is_current,
+            "content": cfg.content,   
+        }
+        for cfg, user in results
+    ]
+
+    data = {
+        "modelId": model_id,
+        "configs": history   
+    }
+
+    return create_response(
+        code=CustomCode.CONFIG_005.value,
+        message=Messages.CONFIG_HISTORY_WITH_SELECTED_FETCH_SUCCESS.value,
+        data=data,
+    )
+
+
+
 def update_model_config_service(
     model_id: int,
     login_id: str,
