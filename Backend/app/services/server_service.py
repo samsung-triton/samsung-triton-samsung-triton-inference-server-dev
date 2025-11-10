@@ -10,7 +10,7 @@ from app.constants.messages import Messages
 from app.models.user import User
 
 
-def _get_user_or_404(db: Session, login_id: str) -> User:
+def get_user_or_404(db: Session, login_id: str) -> User:
     # 사용자 조회 (없으면 404 예외 발생)
     user = db.query(User).filter(User.login_id == login_id).first()
     if not user:
@@ -60,7 +60,7 @@ async def _execute_server_action(
     dual_log: bool = False,
 ):
     # 서버 시작/중지/재시작 공통 로직
-    user = _get_user_or_404(db, actor_login_id)
+    user = get_user_or_404(db, actor_login_id)
 
     try:
         result = await action_func()

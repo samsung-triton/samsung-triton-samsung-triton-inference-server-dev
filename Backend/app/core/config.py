@@ -19,8 +19,9 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
 
-    # Triton
-    TRITON_URL: str  # ex: http://localhost:8000
+    # Triton     
+    TRITON_GRPC_URL: str
+    TRITON_HTTP_URL: str               # ex: http://localhost:8000
     TRITON_IMAGE: str
     TRITON_CONTAINER_NAME: str
     TRITON_MODEL_PATH: str
@@ -31,6 +32,9 @@ class Settings(BaseSettings):
 
     # Data
     INFER_DATA_SAVE_PATH: str
+
+    TRITON_MODEL_REPO: str
+    ALLOW_OVERWRITE: bool = False
 
     class Config:
         env_file = ".env"

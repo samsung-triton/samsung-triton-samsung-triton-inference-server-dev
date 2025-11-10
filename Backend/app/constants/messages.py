@@ -19,8 +19,12 @@ class Messages(str, Enum):
 
     # ---- Model Register ----
     MODEL_REGISTER_SUCCESS = "모델이 성공적으로 등록되었습니다."
-    MODEL_REGISTER_MISSING_REQUIRED = "필수 입력값(modelName, modelType, description, files≥2)을 모두 입력해야 합니다."
+    MODEL_REGISTER_MISSING_REQUIRED = (
+        "필수 입력값(modelName, modelType, description, config.pbtxt)을 모두 입력해야 합니다."
+    )
+    MODEL_REGISTER_INVALID_NAME = "모델 이름이 유효하지 않습니다."
     MODEL_REGISTER_DUPLICATE_NAME = "이미 동일한 이름의 모델이 존재합니다."
+    MODEL_REGISTER_INVALID_FILE_NAME = "유효한 모델 파일 이름이 아닙니다."
     MODEL_REGISTER_UPLOAD_ERROR = "모델 파일 업로드 또는 등록 과정에서 오류가 발생했습니다."
 
     # ---- Ensemble Register ----
@@ -32,15 +36,26 @@ class Messages(str, Enum):
 
     # ---- Model 공통 ----
     MODEL_NOT_FOUND_FOUND = "해당 모델을 찾을 수 없습니다."
+    MODEL_REGISTER_DB_ERROR = "DB 저장 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
+    MODEL_DELETE_DB_ERROR = "DB 삭제 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
 
     # ---- Model Version ----
     MODEL_VERSION_ADD_SUCCESS = "모델 버전이 성공적으로 추가되었습니다."
     MODEL_VERSION_ADD_ERROR = "모델 버전 추가 중 오류가 발생했습니다."
+    MODEL_VERSION_NOT_FOUND = "해당 모델 버전을 찾을 수 없습니다."
+    MODEL_VERSION_DELETE_SUCCESS = "모델 버전이 성공적으로 삭제되었습니다."
+    MODEL_VERSION_DELETE_SINGLE_FORBIDDEN = (
+        "버전이 1개뿐인 모델은 삭제할 수 없습니다. 모델 전체를 삭제하거나 새 버전을 추가한 후 다시 시도하세요."
+    )
 
     # ---- Model Delete ----
     MODEL_DELETE_SUCCESS = "모델이 성공적으로 삭제되었습니다."
-    MODEL_DELETE_LOADED_IN_TRITON = "현재 모델이 Triton Server에 로드되어 있어 삭제할 수 없습니다."
+    # MODEL_DELETE_LOADED_IN_TRITON = "현재 모델이 Triton Server에 로드되어 있어 삭제할 수 없습니다."
     MODEL_DELETE_SERVER_ERROR = "모델 삭제 처리 중 서버 오류가 발생했습니다."
+
+    # ---- Triton 연결 및 응답 오류 ----
+    TRITON_CONNECTION_ERROR = "Triton 서버와의 연결 또는 응답 오류로 인해 요청을 수행할 수 없습니다."
+    TRITON_VERSION_READY_CHECK_ERROR = "Triton에서 모델 버전의 상태를 확인하는 중 오류가 발생했습니다."
 
     # ---- Model Load / Unload ----
     MODEL_LOAD_SUCCESS = "모델이 성공적으로 로드되었습니다."
@@ -66,6 +81,7 @@ class Messages(str, Enum):
     CONFIG_HISTORY_FETCH_SUCCESS = "Config 이력 목록이 조회되었습니다."
     CONFIG_ONE_FETCH_SUCCESS = "선택한 Config 내용이 조회되었습니다."
     CONFIG_APPLY_SUCCESS = "새로운 Config가 저장되고 Triton 서버에 적용되었습니다."
+    CONFIG_HISTORY_WITH_SELECTED_FETCH_SUCCESS = "Config 이력 및 선택된 Config가 조회되었습니다."
 
     # ---- Data / Inference ----
     INPUT_DATA_SAVE_SUCCESS = "입력 데이터 저장 완료"
