@@ -137,6 +137,7 @@ def list_models_service(db: Session) -> Dict[str, Any]:
         for model in db_models:
             model_id = model.model_id
             name = model.name
+            type = model.type
             total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
 
             # 상태 확인
@@ -154,6 +155,7 @@ def list_models_service(db: Session) -> Dict[str, Any]:
                 {
                     "modelId": model_id,
                     "name": name,
+                    "type": type,
                     "status": status_bool,  # True / False
                     "lastLoadedVersion": last_loaded,  # "4" or "N/A"
                     "totalVersions": total_versions,  # from DB
