@@ -8,6 +8,7 @@ from app.core.customException import CustomHTTPException
 from app.constants.codes import CustomCode
 from app.constants.messages import Messages
 from app.core.config import settings
+from fastapi import status
 
 
 # ==============================
@@ -92,15 +93,29 @@ def store_model_files(model_name: str, version: int, model_files: List[UploadFil
 
             # 유효한 zip인지 검사
             if not zipfile.is_zipfile(zip_path):
-                file.file.seek(0)
-                dst = base_dir / filename
-                save_stream(dst, file)
-                saved_files.append({"fileName": filename, "filePath": str(dst)})
-                continue
-
+                raise CustomHTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    code=CustomCode.ERR_400.value,
+                    message=Messages.INVALID_ARCHIVE_FORMAT.value,
+                )
+            
             # 압축 해제
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                zip_ref.extractall(base_dir)
+                # 공통 접두 디렉토리 추출 (예: yolotiny_onnx/1/)
+                common_prefix = os.path.commonprefix(zip_ref.namelist())
+                
+                for member in zip_ref.infolist():
+                    if member.is_dir():
+                        continue
+
+                    # 상대경로 계산: 상위 불필요한 폴더 제거
+                    rel_path = os.path.relpath(member.filename, common_prefix)
+                    target_path = base_dir / rel_path
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    # 파일 추출
+                    with zip_ref.open(member, "r") as src, open(target_path, "wb") as dst:
+                        dst.write(src.read())
 
             # zip 파일은 삭제 가능
             zip_path.unlink(missing_ok=True)

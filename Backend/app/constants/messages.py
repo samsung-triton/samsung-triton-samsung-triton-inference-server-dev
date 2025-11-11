@@ -26,6 +26,8 @@ class Messages(str, Enum):
     MODEL_REGISTER_DUPLICATE_NAME = "이미 동일한 이름의 모델이 존재합니다."
     MODEL_REGISTER_INVALID_FILE_NAME = "유효한 모델 파일 이름이 아닙니다."
     MODEL_REGISTER_UPLOAD_ERROR = "모델 파일 업로드 또는 등록 과정에서 오류가 발생했습니다."
+    
+    INVALID_ARCHIVE_FORMAT = "유효하지 않은 압축파일입니다. ZIP, TAR.GZ 형식만 지원합니다."
 
     # ---- Ensemble Register ----
     ENSEMBLE_REGISTER_SUCCESS = "앙상블 모델이 성공적으로 등록되었습니다."
