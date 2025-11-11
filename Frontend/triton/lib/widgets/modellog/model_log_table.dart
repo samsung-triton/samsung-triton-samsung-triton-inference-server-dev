@@ -55,7 +55,7 @@ class ModelLogTable extends StatelessWidget {
                     return ModelLogTableRow(
                       log: {
                         // 기존 구조에 맞게 변환
-                        'date': DateFormat('yyyy-MM-dd HH:mm:ss').format(log['date']),
+                        'date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.parse(log['date'])), //출력 파싱
                         'level': log['level'],
                         'detail': log['message'],
                       },
