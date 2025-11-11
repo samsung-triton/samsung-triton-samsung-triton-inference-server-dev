@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy.orm import Session
 from app.models.inference_logs import InferenceLogs
 from app.models.model import Model
@@ -26,7 +27,9 @@ def generate_custom_uid() -> str:
 logger = logging.getLogger(__name__)
 
 
-def save_input_before_infer_service(clientId: str, modelName: str, dataFile: UploadFile, db: Session) -> BaseResponse:
+def save_input_before_infer_service(
+    clientId: str, modelName: str, dataFiles: List[UploadFile], db: Session
+) -> BaseResponse:
     model = db.query(Model).filter(Model.name == modelName).first()
 
     if not model:
@@ -42,15 +45,20 @@ def save_input_before_infer_service(clientId: str, modelName: str, dataFile: Upl
         save_dir.mkdir(parents=True, exist_ok=True)
 
         uid = generate_custom_uid()
-        file_path = save_dir / f"{uid}_{dataFile.filename}"
+        saved_paths = []
 
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(dataFile.file, buffer)
+        # ✅ 여러 파일 저장 (로그는 한 번만 남김)
+        for file in dataFiles:
+            file_path = save_dir / f"{uid}_{file.filename}"
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            saved_paths.append(str(file_path))
 
+        # ✅ 로그
         new_log = InferenceLogs(
             uid=uid,
             client_id=clientId,
-            input_path=str(file_path),
+            input_path=",".join(saved_paths),  # 여러 경로를 문자열로 저장 (또는 JSON 필드라면 리스트로)
             model_id=model.model_id,
         )
         db.add(new_log)
@@ -60,11 +68,14 @@ def save_input_before_infer_service(clientId: str, modelName: str, dataFile: Upl
         return create_response(
             CustomCode.UPLOAD_001,
             Messages.INPUT_DATA_SAVE_SUCCESS.value,
-            {"uid": uid, "input_path": str(file_path)},
+            {
+                "uid": uid,
+                "input_path": saved_paths,  # ✅ 리스트 형태 반환
+            },
         )
 
     except Exception as e:
-        logger.error(f"데이터 저장 중 오류 발생: {e}")  # ✅ 로그 출력 추가
+        logger.error(f"데이터 저장 중 오류 발생: {e}")
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
