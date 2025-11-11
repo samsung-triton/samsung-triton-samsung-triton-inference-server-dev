@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:web/web.dart' as web;
+import 'dart:js_util' as js_util;
 
 class FilterController extends GetxController {
   @override
@@ -18,56 +20,216 @@ class FilterController extends GetxController {
 
   /// 고정된 더미 로그 데이터 (100개)
   final List<Map<String, dynamic>> dummyLogs = [
+    // yolov8-detector
     {
       'model': 'yolov8-detector',
-      'date': '2020-02-26 11:45:01.971002',
+      'date': '2025-11-01 09:15:22.104512',
       'level': 'INFO',
       'message': 'Model initialized successfully',
     },
     {
       'model': 'yolov8-detector',
-      'date': '2025-11-09 11:09:01.971002',
+      'date': '2025-11-01 10:45:33.712400',
       'level': 'DEBUG',
       'message': 'Loading weights from checkpoint',
     },
     {
       'model': 'yolov8-detector',
-      'date': '2025-11-09 11:09:01.971002',
+      'date': '2025-11-02 08:13:41.982112',
       'level': 'INFO',
       'message': 'Preprocessing input batch #1',
     },
     {
       'model': 'yolov8-detector',
-      'date': '2025-11-09 11:09:01.971002',
+      'date': '2025-11-02 11:57:10.774501',
       'level': 'WARN',
       'message': 'Low GPU memory detected, switching to half precision',
     },
     {
       'model': 'yolov8-detector',
-      'date': '2025-11-09 11:09:01.971002',
+      'date': '2025-11-03 14:02:18.441220',
       'level': 'ERROR',
       'message': 'Inference failed due to tensor shape mismatch',
     },
     {
       'model': 'yolov8-detector',
-      'date': '2025-11-08 11:09:01.971002',
+      'date': '2025-11-03 17:29:47.221932',
       'level': 'INFO',
       'message': 'TensorRT optimization completed',
     },
     {
       'model': 'yolov8-detector',
-      'date': '2025-11-08 11:09:01.971002',
+      'date': '2025-11-04 09:44:03.872210',
       'level': 'DEBUG',
       'message': 'Batch size: 16, Input resolution: 640x640',
     },
     {
       'model': 'yolov8-detector',
-      'date': '2025-11-08 11:09:01.971002',
+      'date': '2025-11-04 13:11:26.974332',
       'level': 'INFO',
       'message': 'Inference completed in 24ms',
     },
-
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-05 09:20:58.711009',
+      'level': 'INFO',
+      'message': 'Exported ONNX model to /models/yolov8.onnx',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-05 11:44:30.882112',
+      'level': 'WARN',
+      'message': 'Detected empty input tensor in batch #5',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-06 08:59:12.114002',
+      'level': 'INFO',
+      'message': 'Running inference on validation dataset',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-06 15:22:40.842992',
+      'level': 'DEBUG',
+      'message': 'Validation accuracy: 92.3%',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-07 10:33:21.711041',
+      'level': 'INFO',
+      'message': 'Quantization aware training started',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-07 14:09:00.513932',
+      'level': 'WARN',
+      'message': 'Gradient overflow detected, applying scaler',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-08 09:11:59.871022',
+      'level': 'ERROR',
+      'message': 'Failed to load calibration dataset',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-08 13:55:18.232002',
+      'level': 'INFO',
+      'message': 'Reverted to previous checkpoint version',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-09 11:09:01.971002',
+      'level': 'DEBUG',
+      'message': 'Profiling inference latency per layer',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-10 10:45:02.554002',
+      'level': 'INFO',
+      'message': 'Batch inference completed successfully',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-10 14:31:21.872112',
+      'level': 'ERROR',
+      'message': 'Invalid tensor dimensions during concatenation',
+    },
+    {
+      'model': 'yolov8-detector',
+      'date': '2025-11-11 09:12:48.321222',
+      'level': 'INFO',
+      'message': 'Model shutdown and resources released',
+    },
     // 🔵 resnet-50
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-01 09:30:12.671002',
+      'level': 'INFO',
+      'message': 'Model initialized successfully',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-02 10:15:43.971002',
+      'level': 'DEBUG',
+      'message': 'Layer weights loaded: 50/50',
+    },
+    {'model': 'resnet-50', 'date': '2025-11-02 11:50:11.971002', 'level': 'INFO', 'message': 'Forward pass complete'},
+    {'model': 'resnet-50', 'date': '2025-11-03 14:25:05.971002', 'level': 'WARN', 'message': 'CPU fallback triggered'},
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-03 16:39:20.971002',
+      'level': 'ERROR',
+      'message': 'NaN value detected in output tensor',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-04 09:10:35.971002',
+      'level': 'INFO',
+      'message': 'Batch normalization layers updated',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-04 12:33:49.971002',
+      'level': 'DEBUG',
+      'message': 'Gradient accumulation step: 4/8',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-05 10:22:41.971002',
+      'level': 'INFO',
+      'message': 'Loss value stabilized at 0.023',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-05 15:45:13.971002',
+      'level': 'WARN',
+      'message': 'Learning rate too high, applying decay schedule',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-06 09:12:54.971002',
+      'level': 'INFO',
+      'message': 'Evaluation mode activated',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-06 11:59:21.971002',
+      'level': 'DEBUG',
+      'message': 'Batch size: 32, Input resolution: 224x224',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-07 14:18:17.971002',
+      'level': 'ERROR',
+      'message': 'Overflow in gradient tensor detected',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-07 17:55:48.971002',
+      'level': 'INFO',
+      'message': 'Checkpoints saved successfully',
+    },
+    {'model': 'resnet-50', 'date': '2025-11-08 09:47:03.971002', 'level': 'INFO', 'message': 'Forward pass complete'},
+    {'model': 'resnet-50', 'date': '2025-11-08 11:09:01.971002', 'level': 'WARN', 'message': 'CPU fallback triggered'},
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-09 09:11:54.971002',
+      'level': 'DEBUG',
+      'message': 'Weight gradients clipped (threshold=0.1)',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-09 11:09:01.971002',
+      'level': 'INFO',
+      'message': 'Training step #340 completed',
+    },
+    {
+      'model': 'resnet-50',
+      'date': '2025-11-10 10:58:33.971002',
+      'level': 'INFO',
+      'message': 'Validation accuracy reached 94.8%',
+    },
     {
       'model': 'resnet-50',
       'date': '2025-11-10 11:09:01.971002',
@@ -76,49 +238,84 @@ class FilterController extends GetxController {
     },
     {
       'model': 'resnet-50',
-      'date': '2025-11-09 11:09:01.971002',
-      'level': 'DEBUG',
-      'message': 'Layer weights loaded: 50/50',
-    },
-    {'model': 'resnet-50', 'date': '2025-11-08 11:09:01.971002', 'level': 'INFO', 'message': 'Forward pass complete'},
-    {'model': 'resnet-50', 'date': '2025-11-08 11:09:01.971002', 'level': 'WARN', 'message': 'CPU fallback triggered'},
-    {
-      'model': 'resnet-50',
-      'date': '2025-11-07 11:09:01.971002',
-      'level': 'ERROR',
-      'message': 'NaN value detected in output tensor',
+      'date': '2025-11-11 09:59:10.971002',
+      'level': 'INFO',
+      'message': 'Model shutdown and GPU resources released',
     },
 
     // 🟣 llama-3
     {
       'model': 'llama-3',
-      'date': '2025-11-10 11:09:01.971002',
+      'date': '2025-11-01 09:10:01.971002',
       'level': 'INFO',
       'message': 'Language model loaded successfully',
     },
     {
       'model': 'llama-3',
-      'date': '2025-11-09 11:09:01.971002',
+      'date': '2025-11-01 11:32:42.971002',
       'level': 'DEBUG',
       'message': 'Tokenizer initialized with 32K vocab',
     },
     {
       'model': 'llama-3',
-      'date': '2025-11-08 11:09:01.971002',
+      'date': '2025-11-02 10:24:15.971002',
+      'level': 'INFO',
+      'message': 'Prompt processed: 128 tokens',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-02 13:11:33.971002',
+      'level': 'DEBUG',
+      'message': 'Batch tokenization took 56ms',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-03 09:44:12.971002',
       'level': 'INFO',
       'message': 'Response generated in 1.2s',
     },
     {
       'model': 'llama-3',
-      'date': '2025-11-08 11:09:01.971002',
+      'date': '2025-11-03 12:51:44.971002',
       'level': 'WARN',
       'message': 'Token overflow in sentence #43',
     },
     {
       'model': 'llama-3',
-      'date': '2025-11-08 11:09:01.971002',
+      'date': '2025-11-04 10:39:09.971002',
       'level': 'ERROR',
       'message': 'Attention layer dimension mismatch',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-04 15:12:28.971002',
+      'level': 'INFO',
+      'message': 'Cache updated for new vocabulary',
+    },
+    {'model': 'llama-3', 'date': '2025-11-05 09:27:35.971002', 'level': 'DEBUG', 'message': 'KV cache hits: 92.4%'},
+    {
+      'model': 'llama-3',
+      'date': '2025-11-05 14:10:51.971002',
+      'level': 'INFO',
+      'message': 'Inference completed with temperature=0.7',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-06 10:55:03.971002',
+      'level': 'WARN',
+      'message': 'Context length exceeded 8192 tokens',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-06 13:22:47.971002',
+      'level': 'INFO',
+      'message': 'Sampling method switched to nucleus (top_p=0.9)',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-07 09:18:22.971002',
+      'level': 'DEBUG',
+      'message': 'Batch tokenization took 56ms',
     },
     {
       'model': 'llama-3',
@@ -128,23 +325,125 @@ class FilterController extends GetxController {
     },
     {
       'model': 'llama-3',
-      'date': '2025-11-07 11:09:01.971002',
+      'date': '2025-11-08 09:59:55.971002',
+      'level': 'ERROR',
+      'message': 'Attention layer dimension mismatch',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-08 11:09:01.971002',
+      'level': 'WARN',
+      'message': 'Token overflow in sentence #43',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-09 10:30:02.971002',
+      'level': 'INFO',
+      'message': 'Response generated in 1.2s',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-09 11:09:01.971002',
       'level': 'DEBUG',
-      'message': 'Batch tokenization took 56ms',
+      'message': 'Tokenizer initialized with 32K vocab',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-10 11:09:01.971002',
+      'level': 'INFO',
+      'message': 'Language model loaded successfully',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-11 09:19:44.971002',
+      'level': 'INFO',
+      'message': 'Session closed and memory released',
     },
 
     // 🟠 custom-ensemble
     {
       'model': 'custom-ensemble',
-      'date': '2025-11-10 11:09:01.971002',
+      'date': '2025-11-01 09:12:01.971002',
       'level': 'INFO',
       'message': 'Pipeline initialized',
     },
     {
       'model': 'custom-ensemble',
-      'date': '2025-11-09 11:09:01.971002',
+      'date': '2025-11-01 10:35:22.971002',
       'level': 'DEBUG',
       'message': 'Sub-model A weights loaded',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-02 09:44:18.971002',
+      'level': 'INFO',
+      'message': 'Sub-model B initialized with config v1.3',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-02 11:19:41.971002',
+      'level': 'DEBUG',
+      'message': 'Sub-model C weights verified (SHA256 ok)',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-03 09:21:03.971002',
+      'level': 'INFO',
+      'message': 'Ensemble inference started',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-03 13:09:55.971002',
+      'level': 'INFO',
+      'message': 'Model A→B→C sequence configured',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-04 08:57:44.971002',
+      'level': 'DEBUG',
+      'message': 'Batch input distributed to sub-models',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-04 11:48:27.971002',
+      'level': 'WARN',
+      'message': 'Sub-model B returned empty tensor',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-05 10:33:14.971002',
+      'level': 'ERROR',
+      'message': 'Fusion layer dimension mismatch detected',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-05 14:52:38.971002',
+      'level': 'INFO',
+      'message': 'Fallback path activated (Model C only)',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-06 11:09:01.971002',
+      'level': 'WARN',
+      'message': 'Sub-model B returned empty tensor',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-06 15:26:09.971002',
+      'level': 'DEBUG',
+      'message': 'Intermediate outputs cached for analysis',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-07 09:42:32.971002',
+      'level': 'INFO',
+      'message': 'Fusion node output verified successfully',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-07 12:18:57.971002',
+      'level': 'DEBUG',
+      'message': 'Latency per model: A=22ms, B=31ms, C=18ms',
     },
     {
       'model': 'custom-ensemble',
@@ -154,9 +453,33 @@ class FilterController extends GetxController {
     },
     {
       'model': 'custom-ensemble',
-      'date': '2025-11-06 11:09:01.971002',
-      'level': 'WARN',
-      'message': 'Sub-model B returned empty tensor',
+      'date': '2025-11-08 14:40:44.971002',
+      'level': 'ERROR',
+      'message': 'Output tensor fusion failed at node #7',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-09 11:09:01.971002',
+      'level': 'DEBUG',
+      'message': 'Sub-model A weights loaded',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-09 13:23:17.971002',
+      'level': 'INFO',
+      'message': 'Pipeline validation accuracy: 93.1%',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-10 11:09:01.971002',
+      'level': 'INFO',
+      'message': 'Pipeline initialized',
+    },
+    {
+      'model': 'custom-ensemble',
+      'date': '2025-11-11 09:59:33.971002',
+      'level': 'INFO',
+      'message': 'Pipeline shutdown and cache cleared',
     },
   ];
 
@@ -181,7 +504,7 @@ class FilterController extends GetxController {
       final matchesLevel = logLevel.value.isEmpty || log['level'] == logLevel.value;
       final matchesKeyword =
           keyword.value.isEmpty || log['message'].toLowerCase().contains(keyword.value.toLowerCase());
-      final logDate = log['date'] as DateTime;
+      final logDate = DateTime.parse(log['date']);
       final matchesStart = startDate.value == null || !logDate.isBefore(startDate.value!);
       final matchesEnd = endDate.value == null || !logDate.isAfter(endDate.value!);
 
@@ -189,7 +512,7 @@ class FilterController extends GetxController {
     }).toList();
 
     filteredLogs.assignAll(filtered);
-    print('[FilterController] ✅ 필터링 완료 (${filteredLogs.length}건)'); // 필터링 된 갯수 -> 삭제 예정
+    print('[FilterController] ✅ 필터 완료 (${filteredLogs.length}건)'); // 필터링 된 갯수 -> 삭제
   }
 
   void resetFilter() {
@@ -200,5 +523,36 @@ class FilterController extends GetxController {
     logLevel.value = '';
     keyword.value = '';
     modelName.value = '';
+  }
+}
+
+// ✅ 확장 기능 (다운로드 기능 포함)
+extension FilterExportExtension on FilterController {
+  Future<void> exportFilteredLogsAsTxt() async {
+    if (filteredLogs.isEmpty) {
+      web.window.alert('No filtered logs to export.');
+      return;
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln('=== Logs Export ===');
+    buffer.writeln('Created at: ${DateTime.now()}');
+    buffer.writeln('');
+
+    for (var log in filteredLogs) {
+      final date = log['date'].toString().split('.')[0];
+      buffer.writeln('${log['model']} | $date | [${log['level']}] | ${log['message']}');
+      buffer.writeln('');
+    }
+
+    final blob = web.Blob(js_util.jsify([buffer.toString()]));
+
+    final url = web.URL.createObjectURL(blob);
+    final anchor = web.HTMLAnchorElement()
+      ..href = url
+      ..download = 'filtered_logs_${DateTime.now().toIso8601String()}.txt'
+      ..click();
+
+    web.URL.revokeObjectURL(url);
   }
 }
