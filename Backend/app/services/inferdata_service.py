@@ -47,14 +47,14 @@ def save_input_before_infer_service(
         uid = generate_custom_uid()
         saved_paths = []
 
-        # ✅ 여러 파일 저장 (로그는 한 번만 남김)
+        # 여러 파일 저장 (로그는 한 번만 남김)
         for file in dataFiles:
             file_path = save_dir / f"{uid}_{file.filename}"
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
             saved_paths.append(str(file_path))
 
-        # ✅ 로그
+        # 로그
         new_log = InferenceLogs(
             uid=uid,
             client_id=clientId,
@@ -70,7 +70,7 @@ def save_input_before_infer_service(
             Messages.INPUT_DATA_SAVE_SUCCESS.value,
             {
                 "uid": uid,
-                "input_path": saved_paths,  # ✅ 리스트 형태 반환
+                "input_path": saved_paths,  # 리스트 형태 반환
             },
         )
 
