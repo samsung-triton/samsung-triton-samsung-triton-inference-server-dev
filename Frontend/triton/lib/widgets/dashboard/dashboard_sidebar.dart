@@ -9,68 +9,50 @@ class DashboardSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<DashboardController>();
+    // ✅ 이제 DashboardController만 사용
+    final controller = Get.find<DashboardController>();
 
     return Obx(() {
-      final current = c.selectedMenu.value;
+      final selectedType = controller.selectedType.value;
 
       return SidebarBase(
         children: [
-          // Triton Server (기존 서버 대시보드)
+          // ✅ Triton Server (서버 대시보드)
           CommonSidebarCard(
             type: SidebarCardType.header,
             title: 'Triton Server',
-            active: current == 'server',
-            onTap: () => c.changeMenu('server'),
+            active: controller.selectedType.value == DashboardType.server,
+            onTap: () => controller.changeType(DashboardType.server, item: 'server'),
           ),
 
-          // 모델들
           CommonSidebarCard(
             type: SidebarCardType.normal,
             title: 'Model 1',
             status: true,
-            active: current == 'model1',
-            current: 2720, // ✅ 현재값
-            total: 2894, // ✅ 전체값
-            onTap: () => c.changeMenu('model1'),
+            active: controller.selectedItem.value == 'model1',
+            current: 2720,
+            total: 2894,
+            onTap: () => controller.changeType(DashboardType.model, item: 'model1'),
           ),
+
           CommonSidebarCard(
             type: SidebarCardType.normal,
             title: 'Model 2',
             status: true,
-            active: current == 'model2',
-            current: 2720, // ✅ 현재값
-            total: 2894, // ✅ 전체값
-            onTap: () => c.changeMenu('model2'),
+            active: controller.selectedItem.value == 'model2',
+            current: 2650,
+            total: 2894,
+            onTap: () => controller.changeType(DashboardType.model, item: 'model2'),
           ),
 
-          // 앙상블
           CommonSidebarCard(
             type: SidebarCardType.normal,
             title: 'Ensemble 1',
             status: false,
-            active: current == 'ensemble1',
-            current: 2720, // ✅ 현재값
-            total: 2894, // ✅ 전체값
-            onTap: () => c.changeMenu('ensemble1'),
-          ),
-          CommonSidebarCard(
-            type: SidebarCardType.normal,
-            title: 'Ensemble 2',
-            status: false,
-            active: current == 'ensemble2',
-            current: 2720, // ✅ 현재값
-            total: 2894, // ✅ 전체값
-            onTap: () => c.changeMenu('ensemble2'),
-          ),
-          CommonSidebarCard(
-            type: SidebarCardType.normal,
-            title: 'Ensemble 2',
-            status: false,
-            active: current == 'ensemble2',
-            current: 2720, // ✅ 현재값
-            total: 2894, // ✅ 전체값
-            onTap: () => c.changeMenu('ensemble2'),
+            active: controller.selectedItem.value == 'ensemble1',
+            current: 2500,
+            total: 2894,
+            onTap: () => controller.changeType(DashboardType.ensemble, item: 'ensemble1'),
           ),
         ],
       );

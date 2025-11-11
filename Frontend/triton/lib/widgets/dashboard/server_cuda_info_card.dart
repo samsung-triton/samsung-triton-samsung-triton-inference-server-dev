@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import '../../model/dashboard/server_metrics.dart';
+import 'package:triton/controller/dashboard/server_cuda_controller.dart';
 
 class ServerCudaInfoCard extends StatelessWidget {
-  final ServerMetrics metrics;
-  const ServerCudaInfoCard({super.key, required this.metrics});
+  const ServerCudaInfoCard({super.key});
 
   Widget _buildBar(String title, String desc, double value, String unit) {
     return Container(
@@ -41,25 +41,31 @@ class ServerCudaInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false), // ✅ 스크롤바 제거
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(), // ✅ 자연스러운 스크롤 감속
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBar('SM Utilization (%)', 'GPU CUDA Core Occupancy', metrics.smUtil, '%'),
-            _buildBar('Tensor Core Utilization (%)', 'TensorRT / FP16 Model Proportion', metrics.tensorCoreUtil, '%'),
-            _buildBar('FP32 Utilization (%)', 'Standard Operation Proportion', metrics.fp32Util, '%'),
-            _buildBar(
-              'Inference Throughput (req/s)',
-              'Server Throughput (TPS)',
-              metrics.inferenceThroughput.toDouble(),
-              ' req/s',
-            ),
-          ],
+    final controller = Get.find<ServerCudaController>();
+
+    return Obx(() {
+      final metrics = controller.metrics.value;
+
+      return ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildBar('SM Utilization (%)', 'GPU CUDA Core Occupancy', metrics.smUtil, '%'),
+              _buildBar('Tensor Core Utilization (%)', 'TensorRT / FP16 Model Proportion', metrics.tensorCoreUtil, '%'),
+              _buildBar('FP32 Utilization (%)', 'Standard Operation Proportion', metrics.fp32Util, '%'),
+              _buildBar(
+                'Inference Throughput (req/s)',
+                'Server Throughput (TPS)',
+                metrics.inferenceThroughput.toDouble(),
+                ' req/s',
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

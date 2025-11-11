@@ -1,96 +1,118 @@
+import 'dart:async';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:triton/controller/dashboard/server_cpu_controller.dart';
+import 'package:triton/controller/dashboard/server_gpu_controller.dart';
+import 'package:triton/controller/dashboard/server_cuda_controller.dart';
+import 'package:triton/controller/dashboard/server_ram_controller.dart';
 
-class DashboardItem {
-  final int id;
-  final String name;
+/// 대시보드 타입 (서버 / 모델)
+enum DashboardType { server, model, ensemble }
 
-  /// 서버 활성화 여부 (대시보드에서 선택 or 실행 중)
-  final bool isActive;
-
-  /// Triton 상태 (READY / UNAVAILABLE)
-  final bool isReady;
-
-  /// CPU / GPU 사용률
-  final double cpuUsage;
-  final double gpuUsage;
-
-  const DashboardItem({
-    required this.id,
-    required this.name,
-    required this.isActive,
-    required this.isReady,
-    required this.cpuUsage,
-    required this.gpuUsage,
-  });
-
-  DashboardItem copyWith({int? id, String? name, bool? isActive, bool? isReady, double? cpuUsage, double? gpuUsage}) {
-    return DashboardItem(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      isActive: isActive ?? this.isActive,
-      isReady: isReady ?? this.isReady,
-      cpuUsage: cpuUsage ?? this.cpuUsage,
-      gpuUsage: gpuUsage ?? this.gpuUsage,
-    );
-  }
-}
-
+/// 중앙 통합 컨트롤러
+/// - 하위 서버/모델 컨트롤러를 통합 관리
+/// - 60초마다 자동 fetch
+/// - 상단 헤더에서 Last Updated 시간 표시
 class DashboardController extends GetxController {
-  /// 전체 서버 리스트
-  final servers = <DashboardItem>[].obs;
+  /// 현재 선택된 대시보드 유형
+  final selectedType = DashboardType.server.obs;
+  final selectedItem = ''.obs; // ← 추가됨
 
-  /// 현재 선택된 서버 ID
-  final selectedId = RxnInt();
+  /// 마지막 갱신 시각
+  final lastUpdated = Rxn<DateTime>();
 
-  /// 현재 선택된 메뉴 (서버 / 모델 / 앙상블)
-  /// 'server' / 'model1' / 'model2' / 'ensemble1' 등
-  final selectedMenu = 'server'.obs;
+  /// 60초 주기 타이머
+  Timer? _timer;
 
-  /// 초기 로드 (서버 상태 불러오기)
-  Future<void> loadServers() async {
-    // TODO: 실제 Triton API 연동 (지금은 더미 데이터)
-    final dummy = List.generate(
-      4,
-      (i) => DashboardItem(
-        id: i + 1,
-        name: i < 2 ? "Model ${i + 1}" : "Ensemble ${i - 1}",
-        isActive: i == 0, // 첫 번째 서버만 활성화
-        isReady: i % 3 != 0, // 일부는 READY, 일부는 UNAVAILABLE
-        cpuUsage: 30 + (i * 8) % 70,
-        gpuUsage: 20 + (i * 10) % 80,
-      ),
-    );
-    servers.assignAll(dummy);
-
-    if (servers.isNotEmpty) {
-      selectServer(servers.first.id);
-    }
-  }
-
-  /// 서버 선택 (기존)
-  void selectServer(int id) {
-    selectedId.value = id;
-  }
-
-  /// ✅ 메뉴 변경 (서버 ↔ 모델/앙상블)
-  void changeMenu(String menu) {
-    selectedMenu.value = menu;
-  }
-
-  /// ✅ 서버 추가 (더미)
-  void addServer() {
-    final newId = (servers.isEmpty ? 1 : servers.last.id + 1);
-    servers.add(
-      DashboardItem(id: newId, name: "Server-$newId", isActive: true, isReady: true, cpuUsage: 0, gpuUsage: 0),
-    );
-  }
-
-  /// ✅ 선택된 메뉴가 서버인지 여부 확인
-  bool get isServerView => selectedMenu.value == 'server';
+  /// 하위 컨트롤러 참조
+  late final ServerCudaController cudaController;
+  late final ServerCpuController cpuController;
+  late final ServerGpuController gpuController;
+  late final ServerRamController ramController;
 
   @override
   void onInit() {
     super.onInit();
-    loadServers(); // 시작 시 1회 로딩
+
+    // ✅ 등록 안 되어 있으면 직접 등록 (중복 방지)
+    if (!Get.isRegistered<ServerCudaController>()) {
+      Get.lazyPut(() => ServerCudaController(), fenix: true);
+    }
+    if (!Get.isRegistered<ServerCpuController>()) {
+      Get.lazyPut(() => ServerCpuController(), fenix: true);
+    }
+    if (!Get.isRegistered<ServerGpuController>()) {
+      Get.lazyPut(() => ServerGpuController(), fenix: true);
+    }
+    if (!Get.isRegistered<ServerRamController>()) {
+      Get.lazyPut(() => ServerRamController(), fenix: true);
+    }
+
+    // ✅ 안전하게 컨트롤러 가져오기
+    cudaController = Get.find<ServerCudaController>();
+    cpuController = Get.find<ServerCpuController>();
+    gpuController = Get.find<ServerGpuController>();
+    ramController = Get.find<ServerRamController>();
+
+    // ✅ 초기 1회 fetch
+    _fetchCurrentGroup();
+
+    // ✅ 60초 주기 자동 갱신
+    _timer = Timer.periodic(const Duration(seconds: 60), (_) {
+      _fetchCurrentGroup();
+    });
+  }
+
+  /// 서버/모델 전환
+  void changeType(DashboardType type, {String? item}) {
+    selectedType.value = type;
+    if (item != null) {
+      selectedItem.value = item;
+    } else {
+      selectedItem.value = '';
+    }
+    _fetchCurrentGroup();
+  }
+
+  /// 현재 선택된 타입의 하위 컨트롤러들 fetch
+  Future<void> _fetchCurrentGroup() async {
+    switch (selectedType.value) {
+      case DashboardType.server:
+        await Future.wait([
+          cudaController.fetch(),
+          cpuController.fetch(),
+          gpuController.fetch(),
+          ramController.fetch(),
+        ]);
+        break;
+
+      case DashboardType.model:
+        // TODO: Model 관련 컨트롤러 fetch 추가 예정
+        break;
+      case DashboardType.ensemble:
+        // TODO: Ensemble 관련 컨트롤러 fetch 추가 예정
+        break;
+    }
+
+    // ✅ 공통 갱신 시간 업데이트
+    lastUpdated.value = DateTime.now();
+  }
+
+  /// UI 표시에 사용할 포맷 문자열
+  String get formattedLastUpdated {
+    final t = lastUpdated.value;
+    if (t == null) return '-';
+    return DateFormat('MMM d, yyyy • hh:mm a').format(t);
+  }
+
+  /// ✅ 즉시 수동 업데이트 (Update 버튼 클릭 시)
+  Future<void> manualUpdate() async {
+    await _fetchCurrentGroup();
+  }
+
+  @override
+  void onClose() {
+    _timer?.cancel();
+    super.onClose();
   }
 }
