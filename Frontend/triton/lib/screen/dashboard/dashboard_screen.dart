@@ -14,6 +14,7 @@ class DashboardScreen extends StatelessWidget {
     final dashboardController = Get.put(DashboardController());
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

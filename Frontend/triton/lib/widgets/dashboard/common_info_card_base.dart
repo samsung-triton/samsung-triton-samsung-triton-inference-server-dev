@@ -16,7 +16,7 @@ class CommonInfoCardBase extends StatelessWidget {
         color: white, // 배경색 유지
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: black, // ✅ 외곽선 색상
+          color: primaryDarkest, // ✅ 외곽선 색상
           width: 0.5, // ✅ 선 두께
         ),
       ),
