@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import re
 from sqlalchemy.orm import Session
+import os
 
 from app.clients.triton_client import triton_client
 from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
@@ -23,31 +24,12 @@ from app.models.model import (
 )
 from app.models.model_config import ModelConfig
 from app.models.user import User
-
+from app.core.file_utils import safe_name, save_model_config_file, store_model_files
 
 # =========================
 # 공통 설정
 # =========================
-SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.\-]+")
-
 MODEL_REPO_ROOT = Path(settings.TRITON_MODEL_REPO)
-
-
-def _safe_name(name: str) -> str:
-    return SAFE_NAME_RE.sub("_", name.strip())
-
-
-def _save_stream(dst: Path, up: UploadFile) -> int:
-    """
-    UploadFile 스트림을 로컬 파일로 저장.
-    - chunk 단위 복사로 대용량 안전
-    - 반환: 저장된 파일 크기(byte)
-    """
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    up.file.seek(0)
-    with dst.open("wb") as f:
-        shutil.copyfileobj(up.file, f)
-    return dst.stat().st_size
 
 
 # =====================================================
@@ -71,8 +53,12 @@ def _save_model(db: Session, name: str, model_type: str, storage_dir: str) -> Mo
     return model
 
 
-def _save_model_version(db: Session, model_id: int, user_id: int, version_num: int) -> ModelVersion:
-    version = ModelVersion(model_id=model_id, version=version_num, created_by=user_id)
+def _save_model_version(
+    db: Session, model_id: int, user_id: int, version_num: int, represent_file: str
+) -> ModelVersion:
+    version = ModelVersion(
+        model_id=model_id, version=version_num, represent_file_name=represent_file, created_by=user_id
+    )
     db.add(version)
     db.flush()
     return version
@@ -190,43 +176,33 @@ def list_models_service(db: Session) -> Dict[str, Any]:
         )
 
 
-# =====================================================
-# 모델 파일 저장 유틸
-# =====================================================
-def _save_model_config_file(model_name: str, config_file: UploadFile) -> Path:
-    """config.pbtxt 저장 및 경로 반환"""
-    root_dir = MODEL_REPO_ROOT / model_name
-    cfg_path = root_dir / "config.pbtxt"
-    try:
-        _save_stream(cfg_path, config_file)
-    except Exception:
-        raise CustomHTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            CustomCode.ERR_500.value,
-            Messages.MODEL_REGISTER_UPLOAD_ERROR.value,
-        )
-    return cfg_path
-
-
-def _save_model_files(model_name: str, version_num: int, model_files: List[UploadFile]) -> List[Dict[str, str]]:
-    """모델 파일(version 폴더 내) 저장 및 파일 리스트 반환"""
-    vdir = MODEL_REPO_ROOT / model_name / str(version_num)
-    vdir.mkdir(parents=True, exist_ok=True)
-
-    saved_files = []
-    for f in model_files or []:
-        if not f or not f.filename:
-            continue
-        fname = _safe_name(f.filename)
-        dst = vdir / fname
-        _save_stream(dst, f)
-        saved_files.append({"fileName": fname, "filePath": str(dst)})
-    return saved_files
-
-
 # =========================================================
 # 2. 일반 모델 최초 등록
 # =========================================================
+
+MODEL_EXTS = [".onnx", ".pt", ".pth", ".pb", ".plan", ".trt", ".py"]
+
+
+def _choose_represent_file(file_names: list[str]) -> str | None:
+    # config.pbtxt 제외, 확장자 필터, 'model' 포함, 첫 번째만 선택
+    if not file_names:
+        return None
+
+    valid_files = [f for f in file_names if "config.pbtxt" not in f.lower()]
+    if not valid_files:
+        return None
+
+    model_files = [f for f in valid_files if os.path.splitext(f)[1].lower() in MODEL_EXTS]
+    if not model_files:
+        return None
+
+    model_named = [f for f in model_files if "model" in f.lower()]  # 경로 전체에 'model'이 포함된 경우도 인식
+
+    if model_named:
+        return model_named[0]
+    return model_files[0]
+
+
 def register_model_service(
     req: ModelRegisterRequest,
     model_files: List[UploadFile],
@@ -235,7 +211,8 @@ def register_model_service(
 ) -> Dict[str, Any]:
     """단일 모델 등록 서비스"""
     # 필수값 검증
-    if not req.modelName or not req.modelType or not req.LoginId or not model_files or not config_file:
+    # if not req.modelName or not req.modelType or not req.LoginId or not model_files or not config_file:
+    if not model_files or not config_file:
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
@@ -243,13 +220,12 @@ def register_model_service(
         )
 
     # 모델명 확인
-    model_name = _safe_name(req.modelName)
+    model_name = safe_name(req.modelName)
     if not model_name:
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
             message=Messages.MODEL_REGISTER_INVALID_NAME.value,
-            data=None,
         )
 
     # 모델명 중복 체크
@@ -259,12 +235,15 @@ def register_model_service(
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.MODEL_003.value,  # 중복 에러
             message=Messages.MODEL_REGISTER_DUPLICATE_NAME.value,
-            data=None,
         )
 
     # 1) 파일 저장
-    cfg_path = _save_model_config_file(model_name, config_file)
-    saved_model_files = _save_model_files(model_name, 1, model_files)
+    saved_model_files = store_model_files(model_name, 1, model_files)
+    cfg_path = save_model_config_file(model_name, config_file)
+
+    file_names = [f["fileName"] for f in saved_model_files]
+    represent_file = _choose_represent_file(file_names)  # 대표 파일명 자동 선택
+
     saved_files = [{"fileName": "config.pbtxt", "filePath": str(cfg_path)}] + saved_model_files
 
     # 2) 트리톤 모델 로드
@@ -286,7 +265,7 @@ def register_model_service(
 
     try:
         model = _save_model(db, model_name, req.modelType.value, str(MODEL_REPO_ROOT / model_name))
-        version = _save_model_version(db, model.model_id, user.user_id, 1)
+        version = _save_model_version(db, model.model_id, user.user_id, 1, represent_file)
         for f in saved_files:
             _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
         save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
@@ -320,7 +299,7 @@ def register_model_service(
             "modelName": model.name,
             "modelType": req.modelType.value,
             "files": saved_files,
-            "description": req.description,
+            # "description": req.description,
             # "createdBy": req.LoginId,
             "createdAt": version.created_at.isoformat(),
         },
@@ -340,7 +319,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
         )
 
     # 모델명 확인
-    model_name = _safe_name(req.modelName)
+    model_name = safe_name(req.modelName)
     exists = db.query(Model).filter(Model.name == model_name).first()
     if exists:
         raise CustomHTTPException(
@@ -350,9 +329,9 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
         )
 
     # === 1. config 랑 폴더 저장 ===
-    cfg_path = _save_model_config_file(model_name, config_file)
+    cfg_path = save_model_config_file(model_name, config_file)
     config_text = cfg_path.read_text(encoding="utf-8", errors="ignore")
-    _save_model_files(model_name, 1, [])
+    store_model_files(model_name, 1, [])
 
     # === 2. 트리톤 모델 로드
     try:
@@ -372,7 +351,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
 
     try:
         model = _save_model(db, model_name, "ENSEMBLE", str(MODEL_REPO_ROOT / model_name))
-        version = _save_model_version(db, model.model_id, user.user_id, 1)
+        version = _save_model_version(db, model.model_id, user.user_id, 1, None)
         _save_version_file(db, version.model_version_id, "config.pbtxt", str(cfg_path))
         save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
         save_model_release(
@@ -405,7 +384,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
             "modelName": model.name,
             "modelType": req.modelType.value,
             "filePath": str(cfg_path),
-            "description": req.description,
+            # "description": req.description,
             # "createdBy": req.LoginId,
             "createdAt": version.created_at.isoformat(),
         },
@@ -432,8 +411,12 @@ def register_model_version_service(
     next_version = (model.last_version_num or 1) + 1
 
     # === 2. 모델 파일 저장 ===
-    saved_files = _save_model_files(model.name, next_version, model_files)
+    saved_files = store_model_files(model.name, next_version, model_files)
 
+    file_names = [f["fileName"] for f in saved_files]
+    represent_file = _choose_represent_file(file_names)  # 대표 파일명 자동 선택
+
+    # === 3. Triton 재로드 ===
     try:
         triton_client.unload_model(model_name=model.name)
         triton_client.load_model(model_name=model.name)
@@ -452,7 +435,7 @@ def register_model_version_service(
 
     # === 3. DB 기록 ===
     try:
-        version = _save_model_version(db, model_id, user.user_id, next_version)
+        version = _save_model_version(db, model_id, user.user_id, next_version, represent_file)
         for f in saved_files:
             _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
         save_model_release(
@@ -462,12 +445,14 @@ def register_model_version_service(
         model.last_version_num = next_version
 
         db.commit()
+
     except Exception as e:
         db.rollback()
         triton_client.unload_model(model_name=model.name)
         vdir = MODEL_REPO_ROOT / model.name / str(next_version)
         if vdir.exists():
             shutil.rmtree(vdir, ignore_errors=True)
+
         raise CustomHTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             CustomCode.ERR_500.value,
@@ -482,7 +467,7 @@ def register_model_version_service(
             "modelId": model_id,
             "version": next_version,
             "files": saved_files,
-            "description": description,
+            # "description": description,
             # "createdBy": login_id,
             "createdAt": version.created_at.isoformat(),
         },
@@ -664,8 +649,6 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
 # 9. 특정 모델의 버전 목록 및 현재 Config 조회
 # =====================================================
 def get_model_detail_service(model_id: int, db: Session):
-    from app.services.model_config_service import get_current_config_service
-
     # 모델 존재 확인
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
@@ -675,48 +658,58 @@ def get_model_detail_service(model_id: int, db: Session):
             message=Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    # 버전 목록 조회
-    versions = (
-        db.query(ModelVersion, User)
-        .join(User, User.user_id == ModelVersion.created_by, isouter=True)
-        .filter(ModelVersion.model_id == model_id)
-        .order_by(ModelVersion.version.asc())
-        .all()
-    )
+    # 현재 Config 조회
+    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
 
-    version_list = []
-    for mv, user in versions:
-        file_record = (
-            db.query(ModelVersionFile.file_name)
-            .filter(ModelVersionFile.model_version_id == mv.model_version_id)
-            .first()
+    config_data = None
+    if config:
+        config_data = {
+            "configId": config.config_id,
+            "version": config.version,
+            "filePath": config.file_path,
+            "content": config.content,
+            "createdAt": config.created_at.strftime("%y-%m-%d %H:%M:%S"),
+        }
+
+    # 모델 타입별 분기
+    if model.type == "ENSEMBLE":
+        # 앙상블 모델은 버전 리스트 없이 config만 반환
+        data = {
+            "modelId": model.model_id,
+            "modelName": model.name,
+            "modelType": model.type,
+            "versions": None,  # 또는 []
+            "config": config_data,
+        }
+
+    else:
+        # 일반 모델은 버전 리스트 포함
+        versions = (
+            db.query(ModelVersion, User)
+            .join(User, User.user_id == ModelVersion.created_by, isouter=True)
+            .filter(ModelVersion.model_id == model_id)
+            .order_by(ModelVersion.version.asc())
+            .all()
         )
-        version_list.append(
+
+        version_list = [
             {
                 "versionId": mv.model_version_id,
                 "version": mv.version,
-                "fileName": file_record[0] if file_record else None,
+                "fileName": mv.represent_file_name,
                 "userName": user.login_id if user else None,
                 "createdAt": mv.created_at.strftime("%y-%m-%d %H:%M:%S"),
             }
-        )
+            for mv, user in versions
+        ]
 
-    print(version_list)
-    # 현재 Config 조회
-    try:
-        current_config_resp = get_current_config_service(db, model_id)
-        config_data = current_config_resp.data
-    except CustomHTTPException:
-        config_data = None
-
-    # 응답 데이터 구조
-    data = {
-        "modelId": model.model_id,
-        "modelName": model.name,
-        "modelType": model.type,
-        "versions": version_list,
-        "config": config_data,
-    }
+        data = {
+            "modelId": model.model_id,
+            "modelName": model.name,
+            "modelType": model.type,
+            "versions": version_list,
+            "config": config_data,
+        }
 
     return create_response(
         CustomCode.MODEL_009.value,
