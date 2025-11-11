@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_block.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
+import 'package:triton/controller/model_log/filter_controller.dart';
 
 class ModelLogHeader extends StatefulWidget {
   const ModelLogHeader({super.key});
@@ -17,6 +19,8 @@ class _ModelLogHeaderState extends State<ModelLogHeader> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<FilterController>();
+
     return Column(
       children: [
         const SizedBox(height: 8),
@@ -34,13 +38,17 @@ class _ModelLogHeaderState extends State<ModelLogHeader> with SingleTickerProvid
                 children: [
                   Text("Model Log", style: T.t16(color: black, bold: true)),
                   const SizedBox(width: 12),
-                  Dropdown(items: const ['model-A', 'model-B', 'model-C'], width: 160, hintText: "model name"),
-                  const SizedBox(width: 12),
-                  DownloadIconButton(
-                    onPressed: () {
-                      print('다운로드 버튼 클릭!');
+                  Dropdown(
+                    items: const ['yolov8-detector', 'resnet-50', 'llama-3', 'custom-ensemble'], //TODO API 연결
+                    width: 244,
+                    hintText: "model name",
+                    onChanged: (value) {
+                      controller.modelName.value = value ?? '';
+                      controller.applyFilter(); // 즉시 필터링 실행
                     },
                   ),
+                  const SizedBox(width: 12),
+                  DownloadIconButton(onPressed: controller.exportFilteredLogsAsTxt),
                 ],
               ),
 
