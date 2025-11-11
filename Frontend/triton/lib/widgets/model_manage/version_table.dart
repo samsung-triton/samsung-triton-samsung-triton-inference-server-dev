@@ -18,7 +18,7 @@ class VersionTable extends StatelessWidget {
 
     return Obx(() {
       final items = versionManageController.versions;
-      final selected = versionManageController.selectedVersion.value;
+      final selectedId = versionManageController.selectedVersionId.value;
 
       return SizedBox(
         width: double.infinity,
@@ -51,9 +51,11 @@ class VersionTable extends StatelessWidget {
               ),
               Expanded(
                 child: RadioGroup<int>(
-                  groupValue: selected,
-                  onChanged: (val) {
-                    if (val != null) versionManageController.selectVersion(val);
+                  groupValue: selectedId,
+                  onChanged: (int? id) {
+                    if (id == null) return;
+                    final row = items.firstWhere((e) => e.versionId == id);
+                    versionManageController.selectVersion(row.versionId, row.version);
                   },
                   child: Scrollbar(
                     thumbVisibility: true,
@@ -63,7 +65,7 @@ class VersionTable extends StatelessWidget {
                       separatorBuilder: (_, __) => const Divider(height: 1, thickness: 1, color: primaryLightest),
                       itemBuilder: (context, i) {
                         final row = items[i];
-                        final isSelected = selected == row.version;
+                        final isSelected = selectedId == row.versionId;
                         return VersionListRow(item: row, isSelected: isSelected);
                       },
                     ),
