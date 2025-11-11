@@ -48,11 +48,7 @@ class _ModelLogHeaderState extends State<ModelLogHeader> with SingleTickerProvid
                     },
                   ),
                   const SizedBox(width: 12),
-                  DownloadIconButton(
-                    onPressed: () {
-                      print('다운로드 버튼 클릭!');
-                    },
-                  ),
+                  DownloadIconButton(onPressed: controller.exportFilteredLogsAsTxt),
                 ],
               ),
 
