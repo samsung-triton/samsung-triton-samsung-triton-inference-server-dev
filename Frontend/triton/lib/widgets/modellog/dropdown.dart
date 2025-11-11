@@ -28,7 +28,16 @@ class Dropdown extends StatefulWidget {
 }
 
 class _DropdownState extends State<Dropdown> {
-  String? selectedModel;
+  String? selectedItem;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.value != null && widget.items.contains(widget.value)) {
+      selectedItem = widget.value;
+    }
+    selectedItem;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +48,7 @@ class _DropdownState extends State<Dropdown> {
         child: DropdownButton2<String>(
           isExpanded: true,
           hint: Text(widget.hintText, style: T.t12(color: gray, bold: false)),
-          value: selectedModel,
+          value: selectedItem,
           iconStyleData: const IconStyleData(icon: Icon(Icons.arrow_drop_down, color: black), iconSize: 20),
           buttonStyleData: ButtonStyleData(
             height: widget.height ?? 28,
@@ -59,7 +68,6 @@ class _DropdownState extends State<Dropdown> {
               border: Border.all(color: lightGray, width: 1),
             ),
             scrollbarTheme: ScrollbarThemeData(
-              //스크롤디자인
               radius: const Radius.circular(4),
               thickness: WidgetStateProperty.all(8),
               thumbVisibility: WidgetStateProperty.all(true),
@@ -78,7 +86,7 @@ class _DropdownState extends State<Dropdown> {
           ),
           onChanged: (String? newValue) {
             setState(() {
-              selectedModel = newValue!;
+              selectedItem = newValue!;
             });
             widget.onChanged?.call(newValue); // 외부에 전달
           },
