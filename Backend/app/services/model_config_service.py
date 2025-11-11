@@ -114,6 +114,43 @@ async def get_selected_config_service(db: Session, model_id: int, config_id: int
         data=data,
     )
 
+async def delete_selected_config_service(db: Session, model_id: int, config_id: int):
+    """특정 모델의 선택된 Config를 삭제"""
+
+    # 해당 모델의 Config 존재 여부 확인
+    config = (
+        db.query(ModelConfig)
+        .filter(
+            ModelConfig.model_id == model_id,
+            ModelConfig.config_id == config_id
+        )
+        .first()
+    )
+
+    if not config:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=f"모델 ID {model_id}의 Config ID {config_id}를 찾을 수 없습니다.",
+        )
+
+    if config.is_current:
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=f"현재 사용 중인 Config ID {config_id}는 삭제할 수 없습니다.",
+        )
+
+    # Config 삭제
+    db.delete(config)
+    db.commit()
+
+    return create_response(
+        code=CustomCode.CONFIG_006.value,
+        message=Messages.CONFIG_DELETE_SUCCESS.value,
+        data={"configId": config_id},
+    )
+
 async def get_config_history_with_selected_service(db: Session, model_id: int, config_id: int | None = None):
     """특정 모델의 전체 Config 상세 내용 + 이력 조회"""
 

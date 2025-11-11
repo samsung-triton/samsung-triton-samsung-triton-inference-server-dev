@@ -82,6 +82,7 @@ class Messages(str, Enum):
     CONFIG_ONE_FETCH_SUCCESS = "선택한 Config 내용이 조회되었습니다."
     CONFIG_APPLY_SUCCESS = "새로운 Config가 저장되고 Triton 서버에 적용되었습니다."
     CONFIG_HISTORY_WITH_SELECTED_FETCH_SUCCESS = "Config 이력 및 선택된 Config가 조회되었습니다."
+    CONFIG_DELETE_SUCCESS = "선택한 Config가 성공적으로 삭제되었습니다."
 
     # ---- Data / Inference ----
     INPUT_DATA_SAVE_SUCCESS = "입력 데이터 저장 완료"
