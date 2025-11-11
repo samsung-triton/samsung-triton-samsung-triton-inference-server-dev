@@ -1,18 +1,32 @@
 // 컨피그 에디터 헤더
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controller/model_manage/code_editor_controller.dart';
+
+import '../../controller/model_manage/config_controller.dart';
+
 import '../../theme/typography.dart';
 import '../../theme/app_colors.dart';
 
+import '../../utils/modal_util.dart';
+
 import '../button/button_large.dart';
+
+import '../../widgets/modal/modal_rollback.dart';
 
 class EditorHeader extends StatelessWidget {
   const EditorHeader({super.key});
 
+  // 롤백 모달 열기
+  Future<void> _openRegisterModal(BuildContext context) async {
+    final codeEditorController = Get.find<ConfigController>();
+
+    await codeEditorController.loadRollbacks();
+    ModalPortal.open(context, builder: (dialogContext) => const ModalRollback());
+  }
+
   @override
   Widget build(BuildContext context) {
-    final codeEditorController = Get.find<CodeEditorController>();
+    final codeEditorController = Get.find<ConfigController>();
 
     return Container(
       height: 60,
@@ -24,26 +38,10 @@ class EditorHeader extends StatelessWidget {
           const Spacer(),
 
           // 롤백 버튼
-          Obx(() {
-            final enabled = codeEditorController.currentModelId.value != null;
-            return ButtonLarge(
-              onPressed: enabled ? codeEditorController.rollback : null,
-              text: 'rollback',
-              backgroundColor: primaryNormal,
-            );
-          }),
-
+          ButtonLarge(onPressed: () => _openRegisterModal(context), text: 'rollback', backgroundColor: primaryNormal),
           const SizedBox(width: 10),
-
           // 저장 버튼
-          Obx(() {
-            final enabled = codeEditorController.currentModelId.value != null;
-            return ButtonLarge(
-              onPressed: enabled ? codeEditorController.save : null,
-              text: 'save',
-              backgroundColor: primaryNormal,
-            );
-          }),
+          ButtonLarge(onPressed: () => codeEditorController.save, text: 'save', backgroundColor: primaryNormal),
         ],
       ),
     );
