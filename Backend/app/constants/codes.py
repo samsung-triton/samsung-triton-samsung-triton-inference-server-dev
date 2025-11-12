@@ -49,4 +49,3 @@ class CustomCode(str, Enum):
     LOG_002 = "LOG-002"
 
     STATIS_001 = "STATIS_001"
-    STATIS_002 = "STATIS_002"
