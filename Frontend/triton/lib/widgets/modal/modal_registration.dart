@@ -92,7 +92,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
     }
   }
 
-  // config 파일 등록
+  // setup 파일 등록
   Future<void> _browseSetupFile() async {
     final file = await _pickFile();
     if (file != null) {
@@ -126,8 +126,12 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         return false;
       }
     }
-    // 세팅 등록 검증
+    // 셋업 등록 검증
     else {
+      if (pickedModelFile == null && pickedSetupFile == null) {
+        _setError('at least one of model file or setup file is required');
+        return false;
+      }
       if (descCtrl.text.trim().isEmpty) {
         _setError('description is required');
         return false;
@@ -143,11 +147,13 @@ class _ModalRegistrationState extends State<ModalRegistration> {
 
     if (isModel) {
       final hasName = nameCtrl.text.trim().isNotEmpty;
-      final hasModel = isModel ? (modelType == 'ensemble' || pickedModelFile == null) : pickedModelFile == null;
-      final hasConfig = pickedSetupFile != null;
-      return hasName && hasModel && hasConfig && hasDesc;
+      final needModelFile = modelType == 'single';
+      final hasModelFile = pickedModelFile != null;
+      final hasConfigFile = pickedSetupFile != null;
+      return hasName && hasDesc && (!needModelFile || hasModelFile) && hasConfigFile;
     } else {
-      return hasDesc;
+      final hasAnyFile = (pickedModelFile != null) || (pickedSetupFile != null);
+      return hasDesc && hasAnyFile;
     }
   }
 
