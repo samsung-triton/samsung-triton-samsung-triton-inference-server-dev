@@ -5,14 +5,14 @@ import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/serverlog/server_log_table_row.dart';
 import 'package:triton/widgets/serverlog/server_log_table_header.dart';
-import 'package:triton/controller/server_log/filter_controller_server.dart';
+import 'package:triton/controller/server_log/server_log_controller.dart';
 
 class ServerLogTable extends StatelessWidget {
   const ServerLogTable({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<FilterControllerServer>();
+    final controller = Get.find<ServerLogController>();
 
     return Container(
       //margin: EdgeInsets.symmetric(vertical: 2),

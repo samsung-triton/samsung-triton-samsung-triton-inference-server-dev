@@ -6,14 +6,14 @@ import 'package:triton/widgets/input/input_small.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
-import 'package:triton/controller/server_log/filter_controller_server.dart';
+import 'package:triton/controller/server_log/server_log_controller.dart';
 
 class FilterBlockServer extends StatelessWidget {
   const FilterBlockServer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<FilterControllerServer>();
+    final controller = Get.find<ServerLogController>();
 
     final keywordCtrl = TextEditingController();
 

@@ -5,7 +5,7 @@ import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/serverlog/filter_block_server.dart';
 import 'package:get/get.dart';
-import 'package:triton/controller/server_log/filter_controller_server.dart';
+import 'package:triton/controller/server_log/server_log_controller.dart';
 
 class ServerLogHeader extends StatefulWidget {
   const ServerLogHeader({super.key});
@@ -19,7 +19,7 @@ class _ServerLogHeaderState extends State<ServerLogHeader> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<FilterControllerServer>();
+    final controller = Get.find<ServerLogController>();
 
     return Column(
       children: [
