@@ -6,8 +6,9 @@ import 'package:triton/theme/typography.dart';
 
 class MiniDatePicker extends StatefulWidget {
   final ValueChanged<DateTime>? onDateSelected;
+  final DateTime? firstDate;
 
-  const MiniDatePicker({super.key, this.onDateSelected});
+  const MiniDatePicker({super.key, this.onDateSelected, this.firstDate});
 
   @override
   State<MiniDatePicker> createState() => _MiniDatePickerState();
@@ -59,6 +60,10 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
                   focusedDay: selectedDate ?? DateTime.now(),
                   firstDay: DateTime(2020),
                   lastDay: DateTime(2030),
+                  enabledDayPredicate: (day) {
+                    if (widget.firstDate == null) return true;
+                    return !day.isBefore(widget.firstDate!);
+                  },
                   availableGestures: AvailableGestures.horizontalSwipe,
                   rowHeight: 32,
                   daysOfWeekHeight: 18,
@@ -72,11 +77,12 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
                   calendarStyle: const CalendarStyle(
                     defaultTextStyle: TextStyle(fontSize: 10, color: black),
                     weekendTextStyle: TextStyle(fontSize: 10, color: black),
-                    todayTextStyle: TextStyle(fontSize: 10, color: white),
+                    todayTextStyle: TextStyle(fontSize: 10, color: black),
                     outsideTextStyle: TextStyle(fontSize: 10, color: gray),
+                    disabledTextStyle: TextStyle(fontSize: 10, color: lightGray),
                     isTodayHighlighted: true,
                     selectedDecoration: BoxDecoration(color: primaryNormal, shape: BoxShape.rectangle),
-                    todayDecoration: BoxDecoration(color: gray, shape: BoxShape.rectangle),
+                    todayDecoration: BoxDecoration(color: lightGray, shape: BoxShape.rectangle),
                     selectedTextStyle: TextStyle(fontSize: 11, color: white),
                   ),
                   daysOfWeekStyle: const DaysOfWeekStyle(
