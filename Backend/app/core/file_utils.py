@@ -8,8 +8,6 @@ from app.core.customException import CustomHTTPException
 from app.constants.codes import CustomCode
 from app.constants.messages import Messages
 from app.core.config import settings
-from fastapi import status
-
 
 # ==============================
 # 공통 설정
@@ -17,7 +15,7 @@ from fastapi import status
 MODEL_REPO_ROOT = Path(settings.TRITON_MODEL_REPO)
 
 # =====================================================
-# 0. 안전한 파일/모델명 치환 (영문/숫자/_만 허용)
+# 안전한 파일/모델명 치환 (영문/숫자/_만 허용)
 # =====================================================
 
 SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.\-]+")
@@ -44,28 +42,8 @@ def save_stream(dst: Path, up: UploadFile) -> int:
 
 
 # =====================================================
-# 2. config.pbtxt 저장
+# 압축 풀기
 # =====================================================
-def save_model_config_file(model_name: str, config_file: UploadFile) -> Path:
-    """config.pbtxt 저장 및 경로 반환"""
-
-    root_dir = MODEL_REPO_ROOT / model_name
-    cfg_path = root_dir / "config.pbtxt"
-    try:
-        save_stream(cfg_path, config_file)
-    except Exception:
-        raise CustomHTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            CustomCode.ERR_500.value,
-            Messages.MODEL_REGISTER_UPLOAD_ERROR.value,
-        )
-    return cfg_path
-
-
-# =====================================================
-# 3. 모델 파일 저장 (ZIP, TAR 포함 가능)
-# =====================================================
-
 def _extract_zip(zip_path: Path, base_dir: Path):
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         # 공통 경로 추출
@@ -73,10 +51,10 @@ def _extract_zip(zip_path: Path, base_dir: Path):
             common_prefix = os.path.commonpath(zip_ref.namelist())
         except ValueError:
             common_prefix = ""
-        
+
         # ZIP 내 모든 파일 반복
         for member in zip_ref.infolist():
-            if member.is_dir(): 
+            if member.is_dir():
                 continue
 
             try:
@@ -86,7 +64,7 @@ def _extract_zip(zip_path: Path, base_dir: Path):
 
             target_path = base_dir / rel_path
             target_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # 파일 바이너리 그대로 복사
             with zip_ref.open(member, "r") as src, open(target_path, "wb") as dst:
                 dst.write(src.read())
@@ -112,55 +90,112 @@ def _extract_tar(tar_path: Path, base_dir: Path):
                 shutil.copyfileobj(src, dst)
 
 
-def store_model_files(model_name: str, version: int, model_files: List[UploadFile]) -> List[Dict[str, str]]:
+def _is_conda_pack_filename(lower_name: str) -> bool:
+    # 소문자 기준 python*.tar.gz → conda-pack 간주(압축 해제 X)
+    return lower_name.startswith("python") and lower_name.endswith(".tar.gz")
+
+
+# =====================================================
+# 2. config.pbtxt 저장
+# =====================================================
+def save_model_config_file(model_name: str, config_file: UploadFile) -> Path:
+    """
+    설정 파일 저장:
+      - config.pbtxt(단일)  → 모델 루트에 저장 후 경로 반환
+      - zip/tar(.gz)/tgz   → 임시로 풀어 'config.pbtxt' 탐색, 찾으면 루트에 배치 후 경로 반환
+      - 소문자 python*.tar.gz → conda-pack으로 간주, '추출하지 않고' 루트에 그대로 저장 후 그 경로 반환
+        (주의: 이 경우 반환 파일은 config.pbtxt가 아님. 상위 서비스에서 텍스트 읽기 전에 확장자 체크 필요)
+    """
+
+    model_root = MODEL_REPO_ROOT / model_name
+    model_root.mkdir(parents=True, exist_ok=True)
+
+    fname = safe_name(config_file.filename)
+    lower = fname.lower()
+    dst = model_root / fname
+    save_stream(dst, config_file)
+
+    saved_files: List[Dict[str, str]] = []
+
+    # 1) config.pbtxt 단일
+    if lower.endswith("config.pbtxt"):
+        saved_files = [{"fileName": "config.pbtxt", "filePath": str(dst)}]
+        return saved_files
+
+    # 2) conda-pack (python*.tar.gz) → 압축 해제하지 않고 그대로 반환
+    if _is_conda_pack_filename(lower):
+        saved_files = [{"fileName": fname, "filePath": str(dst)}]
+        return saved_files
+
+    # 3) 일반 압축 파일(.zip, .tar, .tar.gz, .tgz)은 model_root에 바로 해제
+    try:
+        if zipfile.is_zipfile(dst):
+            _extract_zip(dst, model_root)
+            dst.unlink(missing_ok=True)
+        elif tarfile.is_tarfile(dst):
+            _extract_tar(dst, model_root)
+            dst.unlink(missing_ok=True)
+        else:
+            raise CustomHTTPException(
+                status_code=400, code=CustomCode.ERR_400.value, message=Messages.INVALID_ARCHIVE_FORMAT.value
+            )
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=400, code=CustomCode.ERR_400.value, message=Messages.ARCHIVE_EXTRACTION_ERROR.value, data=str(e)
+        )
+
+    # 4) 압축 해제 후 model_root 바로 아래 파일만 수집
+    for p in model_root.iterdir():
+        if p.is_file():
+            saved_files.append({"fileName": p.name, "filePath": str(p)})
+
+
+# =====================================================
+# 3. 모델 파일 저장 (ZIP, TAR 포함 가능)
+# =====================================================
+def store_model_file(model_name: str, version: int, model_file: UploadFile) -> List[Dict[str, str]]:
     """
     모델 파일 저장 (ZIP, TAR.GZ, TAR 및 일반 파일 지원)
     - /models/{model_name}/{version}/ 내부에 직접 저장
     - ZIP 파일이면 자동 압축 해제
     - 반환: DB 기록용 [{fileName, filePath}]
     """
-    base_dir = Path(settings.TRITON_MODEL_REPO) / model_name / str(version)
-    base_dir.mkdir(parents=True, exist_ok=True)
+    model_root = MODEL_REPO_ROOT / model_name
+    version_dir = model_root / str(version)
+    version_dir.mkdir(parents=True, exist_ok=True)
 
-    saved_files = []
+    # 일단 파일 등록
+    fname = safe_name(model_file.filename)
+    lower = fname.lower()
+    dst = version_dir / fname
+    save_stream(dst, model_file)
 
-    for file in model_files:
-        if not file or not file.filename:
-            continue
-
-        filename = safe_name(file.filename)
-        dst_path = base_dir / filename
-        
-        # 압축파일 저장
-        with open(dst_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
-
-        # ZIP
-        if zipfile.is_zipfile(dst_path):
-            _extract_zip(dst_path, base_dir)
-            dst_path.unlink(missing_ok=True)
-
-        # TAR / TAR.GZ
-        elif tarfile.is_tarfile(dst_path):
-            _extract_tar(dst_path, base_dir)
-            dst_path.unlink(missing_ok=True)
-
-        # 유효하지 않은 압축파일 (.zip으로 끝나는데 실제 zip 아님 등)
-        elif filename.lower().endswith((".zip", ".tar", ".tar.gz", ".tgz")):
+    # 압축이면 해제
+    try:
+        if zipfile.is_zipfile(dst):
+            _extract_zip(dst, version_dir)
+            dst.unlink(missing_ok=True)
+        elif tarfile.is_tarfile(dst):
+            _extract_tar(dst, version_dir)
+            dst.unlink(missing_ok=True)
+        elif lower.endswith((".zip", ".tar", ".tar.gz", ".tgz")):
             raise CustomHTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 code=CustomCode.ERR_400.value,
                 message=Messages.INVALID_ARCHIVE_FORMAT.value,
             )
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.ARCHIVE_EXTRACTION_ERROR.value,
+            data=str(e),
+        )
 
-        # 일반 파일
-        else:
-            saved_files.append({"fileName": filename, "filePath": str(dst_path)})
-
-        # 압축파일 처리 후 파일 수집
-        for p in base_dir.rglob("*"):
-            if p.is_file():
-                rel_path = p.relative_to(base_dir)
-                saved_files.append({"fileName": str(rel_path), "filePath": str(p)})
-
-    return saved_files
+    # 파일 목록 수집 (버전 디렉토리 기준 상대경로)
+    out: List[Dict[str, str]] = []
+    for p in version_dir.rglob("*"):
+        if p.is_file():
+            rel = p.relative_to(version_dir)
+            out.append({"fileName": str(rel), "filePath": str(p)})
+    return out

@@ -205,14 +205,14 @@ def _choose_represent_file(file_names: list[str]) -> str | None:
 
 def register_model_service(
     req: ModelRegisterRequest,
-    model_files: List[UploadFile],
+    model_file: UploadFile,
     config_file: UploadFile,
     db: Session,
 ) -> Dict[str, Any]:
     """단일 모델 등록 서비스"""
     # 필수값 검증
     # if not req.modelName or not req.modelType or not req.LoginId or not model_files or not config_file:
-    if not model_files or not config_file:
+    if not model_file or not config_file:
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
@@ -392,10 +392,10 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
 
 
 # =====================================================
-# 4. 모델 버전 추가
+# 4. 모델 관련 파일 추가
 # =====================================================
-def register_model_version_service(
-    model_id: int, login_id: str, description: str, model_files: List[UploadFile], db: Session
+def register_model_assets_service(
+    model_id: int, login_id: str, description: str, model_files: UploadFile, config_file: UploadFile, db: Session
 ):
     # === 1. 모델, 유저 검증 & 버전 계산 ===
     model = db.query(Model).filter(Model.model_id == model_id).first()
