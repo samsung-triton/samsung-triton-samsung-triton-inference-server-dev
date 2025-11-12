@@ -675,7 +675,7 @@ extension FilterExportExtension on ModelLogController {
     final blob = web.Blob(js_util.jsify([buffer.toString()]));
 
     final url = web.URL.createObjectURL(blob);
-    final anchor = web.HTMLAnchorElement()
+    web.HTMLAnchorElement()
       ..href = url
       ..download = 'filtered_logs_${DateTime.now().toIso8601String()}.txt'
       ..click();
