@@ -20,7 +20,7 @@ class ModelManageHeader extends StatelessWidget {
 
   // 등록 모달 열기
   void _openRegisterModal(BuildContext context) {
-    ModalPortal.open(context, builder: (dialogContext) => const ModalRegistration(kind: RegistrationKind.version));
+    ModalPortal.open(context, builder: (dialogContext) => const ModalRegistration(kind: RegistrationKind.setup));
   }
 
   // 삭제 모달 열기
