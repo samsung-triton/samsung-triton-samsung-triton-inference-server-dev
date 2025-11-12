@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 
 import '../../controller/model_manage/model_manage_controller.dart';
 import '../../controller/model_manage/version_manage_controller.dart';
-import '../../controller/model_manage/code_editor_controller.dart';
+import '../../controller/model_manage/config_controller.dart';
 
 import '../../widgets/model_manage/model_sidebar.dart';
 import '../../widgets/model_manage/version_table_header.dart';
@@ -22,7 +22,7 @@ class ModelManageScreen extends StatefulWidget {
 class _ModelManageScreenState extends State<ModelManageScreen> {
   late final ModelManageController modelManageController;
   late final VersionManageController versionManageController;
-  late final CodeEditorController codeEditorController;
+  late final ConfigController codeEditorController;
 
   @override
   void initState() {
@@ -31,7 +31,7 @@ class _ModelManageScreenState extends State<ModelManageScreen> {
     // 화면 스코프 주입
     modelManageController = Get.put(ModelManageController(), permanent: false);
     versionManageController = Get.put(VersionManageController(), permanent: false);
-    codeEditorController = Get.put(CodeEditorController(), permanent: false);
+    codeEditorController = Get.put(ConfigController(), permanent: false);
 
     // 모델들 불러오기
     modelManageController.loadModels();
@@ -41,7 +41,7 @@ class _ModelManageScreenState extends State<ModelManageScreen> {
   void dispose() {
     Get.delete<ModelManageController>();
     Get.delete<VersionManageController>();
-    Get.delete<CodeEditorController>();
+    Get.delete<ConfigController>();
     super.dispose();
   }
 

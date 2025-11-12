@@ -2,14 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:triton/widgets/header/header_nav.dart';
-import 'package:triton/widgets/header/server_status.dart';
-import 'package:triton/widgets/header/server_control.dart';
-import 'package:triton/widgets/header/name_text.dart';
-import 'package:triton/widgets/button/button_medium.dart';
-
 import 'router.dart';
-import 'theme/app_colors.dart';
+
+import './widgets/header/header_bar.dart';
 
 class AppFrame extends StatelessWidget {
   const AppFrame({super.key, required this.child});
@@ -44,7 +39,14 @@ class AppFrame extends StatelessWidget {
             child: Stack(
               children: [
                 // 헤더 위치 고정
-                if (showHeader) Positioned(left: 0, right: 0, top: 0, height: headerH, child: _HeaderBar()),
+                if (showHeader)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    height: headerH,
+                    child: HeaderBar(headerH: headerH),
+                  ),
 
                 // 자식 페이지
                 Positioned.fill(
@@ -81,52 +83,6 @@ class AppFrame extends StatelessWidget {
 
           return SafeArea(child: content);
         },
-      ),
-    );
-  }
-}
-
-// 헤더바
-class _HeaderBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: AppFrame.minW,
-        minHeight: AppFrame.headerH,
-        maxHeight: AppFrame.headerH,
-      ),
-      child: Container(
-        height: AppFrame.headerH,
-        padding: const EdgeInsets.symmetric(horizontal: 8).copyWith(right: 32),
-        decoration: BoxDecoration(
-          color: white,
-          boxShadow: [BoxShadow(color: black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const HeaderNav(),
-            Row(
-              children: [
-                ServerStatus(status: "running", startTime: DateTime.now().subtract(const Duration(seconds: 25))),
-                const SizedBox(width: 16),
-                // TODO: 임시 콜백(서버 제어 API 연동 전)
-                ServerControl(
-                  onStart: () => print("서버 시작"),
-                  onStop: () => print("서버 중지"),
-                  onRestart: () => print("서버 재시작"),
-                ),
-                const SizedBox(width: 16),
-                Container(width: 2, height: 24, color: black),
-                const SizedBox(width: 16),
-                const NameText(),
-                const SizedBox(width: 16),
-                const ButtonMedium(text: "Log Out", backgroundColor: black, textColor: white),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

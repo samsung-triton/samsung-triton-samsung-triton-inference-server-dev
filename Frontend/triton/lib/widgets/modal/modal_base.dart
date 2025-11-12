@@ -6,7 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 class ModalBase extends StatelessWidget {
   final String title;
   final List<Widget> children;
-  final VoidCallback? onClose;
 
   final double width;
   final double borderRadius;
@@ -19,10 +18,9 @@ class ModalBase extends StatelessWidget {
   final bool showDivider;
 
   const ModalBase({
-    Key? key,
+    super.key,
     required this.title,
     required this.children,
-    this.onClose,
     this.width = 428,
     this.borderRadius = 8,
     this.backgroundColor = white,
@@ -31,7 +29,7 @@ class ModalBase extends StatelessWidget {
     this.borderColor = Colors.transparent,
     this.contentSpacing = 0,
     this.showDivider = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +78,7 @@ class ModalBase extends StatelessWidget {
             Positioned(
               right: 4,
               child: InkWell(
-                onTap: onClose ?? () => Navigator.of(context).pop(),
+                onTap: () => Navigator.of(context).pop(),
                 borderRadius: BorderRadius.circular(20),
                 child: SvgPicture.asset(
                   'assets/icons/icon_close.svg',

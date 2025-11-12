@@ -1,44 +1,64 @@
 // 모델 사이드바 카드
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
 import 'package:triton/controller/model_manage/model_manage_controller.dart';
+
 import '../../theme/app_colors.dart';
 import '../../theme/typography.dart';
 
+import '../../utils/modal_util.dart';
+
 import '../sidebar/sidebar_card_base.dart';
 
+import '../../widgets/modal/modal_registration.dart';
+import '../../widgets/modal/modal_description.dart';
+
+// 모델 카드 종류
 enum ModelCardType { normal, add }
 
 class ModelCard extends StatelessWidget {
   final ModelCardType type;
-
-  // 보여줄 모델 아이템
-  // 모델 컨트롤러에 들어있음
   final ModelItem? item;
-
-  // 공통 인터랙션
   final bool active;
-  final VoidCallback? onTap;
-  final VoidCallback? onDelete;
 
-  // 일반 모델 카드
-  const ModelCard.normal({super.key, required this.item, this.active = false, this.onTap, this.onDelete})
-    : type = ModelCardType.normal;
+  const ModelCard({super.key, required this.type, this.item, this.active = false})
+    : assert(type != ModelCardType.normal || item != null, 'NORMAL 카드에서는 item이 필요합니다.');
 
-  // 추가 카드
-  const ModelCard.add({super.key, required this.onTap})
-    : item = null,
-      active = false,
-      onDelete = null,
-      type = ModelCardType.add;
+  // 등록 모달 열기
+  void _openRegisterModal(BuildContext context) {
+    ModalPortal.open(context, builder: (dialogContext) => const ModalRegistration(kind: RegistrationKind.model));
+  }
+
+  // 삭제 모달 열기
+  void _openDeleteModal(BuildContext context) {
+    final descCtrl = TextEditingController();
+    final modelId = item?.modelId;
+
+    ModalPortal.open(
+      context,
+      builder: (dialogCtx) => ModalDescription(
+        descCtrl: descCtrl,
+        confirmMsg: "Are you sure you want to delete it?",
+        onOK: () async {
+          final modelManageController = Get.find<ModelManageController>();
+          // TODO: 추후 descCtrl 글자 추가
+          await modelManageController.deleteModel(modelId!);
+          descCtrl.dispose();
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final isAdd = type == ModelCardType.add;
     final fg = active ? white : black;
+    final modelManageController = Get.find<ModelManageController>();
 
     return SidebarCardBase(
       isActive: active,
-      onTap: onTap,
+      onTap: isAdd ? () => _openRegisterModal(context) : () => modelManageController.selectModel(item!.modelId),
       child: SizedBox(
         width: double.infinity,
         child: isAdd
@@ -73,18 +93,18 @@ class ModelCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: (item?.isLoaded ?? false) ? secondaryLightest : lightGray,
+                          color: (item?.status ?? false) ? secondaryLightest : lightGray,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          (item?.isLoaded ?? false) ? 'load' : 'unload',
-                          style: T.t10(bold: true, color: (item?.isLoaded ?? false) ? secondaryDarkest : darkGray),
+                          (item?.status ?? false) ? 'load' : 'unload',
+                          style: T.t10(bold: true, color: (item?.status ?? false) ? secondaryDarkest : darkGray),
                         ),
                       ),
                       const Spacer(),
                       IconButton(
                         tooltip: 'delete',
-                        onPressed: onDelete,
+                        onPressed: () => _openDeleteModal(context),
                         icon: Icon(Icons.delete_outline, size: 20, color: active ? lightGray : gray),
                         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                         padding: EdgeInsets.zero,
@@ -107,14 +127,14 @@ class ModelCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'last loaded: ${item?.lastLoaded ?? '-'}',
+                          'last loaded: ${item?.lastLoadedVersion ?? 'N/A'}',
                           style: T.t8(color: active ? lightGray : gray),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
-                        '${item?.versionsCount ?? 0} versions',
+                        '${item?.totalVersions ?? 0} versions',
                         style: T.t8(color: active ? lightGray : gray),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

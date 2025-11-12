@@ -1,7 +1,7 @@
 // 코드 에디터 본문
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controller/model_manage/code_editor_controller.dart';
+import '../../controller/model_manage/config_controller.dart';
 import '../../theme/app_colors.dart';
 
 class CodeEditor extends StatefulWidget {
@@ -12,12 +12,12 @@ class CodeEditor extends StatefulWidget {
 }
 
 class _CodeEditorState extends State<CodeEditor> {
-  final codeEditorController = Get.find<CodeEditorController>();
+  final codeEditorController = Get.find<ConfigController>();
 
   @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: codeEditorController.textCtrl, // 에디터 컨트롤러 안 텍스트 컨트롤러 연결
+      controller: codeEditorController.editorCtrl, // 에디터 컨트롤러 안 텍스트 컨트롤러 연결
       expands: true,
       maxLines: null,
       minLines: null,
