@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_util' as js_util;
 
-class FilterController extends GetxController {
+class ModelLogController extends GetxController {
   @override
   void onInit() {
     super.onInit();
@@ -526,8 +526,8 @@ class FilterController extends GetxController {
   }
 }
 
-// ✅ 확장 기능 (다운로드 기능 포함)
-extension FilterExportExtension on FilterController {
+// 확장 기능 (다운로드 기능 포함)
+extension FilterExportExtension on ModelLogController {
   Future<void> exportFilteredLogsAsTxt() async {
     if (filteredLogs.isEmpty) {
       web.window.alert('No filtered logs to export.');
