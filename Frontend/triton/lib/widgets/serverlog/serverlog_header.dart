@@ -4,6 +4,8 @@ import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/serverlog/filter_block_server.dart';
+import 'package:get/get.dart';
+import 'package:triton/controller/server_log/filter_controller_server.dart';
 
 class ServerLogHeader extends StatefulWidget {
   const ServerLogHeader({super.key});
@@ -17,6 +19,8 @@ class _ServerLogHeaderState extends State<ServerLogHeader> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<FilterControllerServer>();
+
     return Column(
       children: [
         const SizedBox(height: 8),
@@ -34,13 +38,17 @@ class _ServerLogHeaderState extends State<ServerLogHeader> with SingleTickerProv
                 children: [
                   Text("Server Log", style: T.t16(color: black, bold: true)),
                   const SizedBox(width: 12),
-                  Dropdown(items: const ['Server', 'Triton'], width: 160, hintText: "server name"),
-                  const SizedBox(width: 12),
-                  DownloadIconButton(
-                    onPressed: () {
-                      print('다운로드 버튼 클릭!');
+                  Dropdown(
+                    items: const ['triton', 'server'],
+                    width: 160,
+                    hintText: "server name",
+                    onChanged: (value) {
+                      controller.serverName.value = value ?? '';
+                      controller.applyFilter(); // 즉시 필터링 실행
                     },
                   ),
+                  const SizedBox(width: 12),
+                  DownloadIconButton(onPressed: controller.exportFilteredLogsAsTxt),
                 ],
               ),
 
