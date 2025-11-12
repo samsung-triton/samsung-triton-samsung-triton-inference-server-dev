@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:triton/widgets/modellog/filter_block.dart';
+import 'package:triton/widgets/modellog/filter_block_model.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 
@@ -41,7 +41,7 @@ class _FilterToggleSectionState extends State<FilterToggleSection> {
             heightFactor: _isOpen ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 20),
             curve: Curves.easeInOut,
-            child: const FilterBlock(),
+            child: const FilterBlockModel(),
           ),
         ),
       ],

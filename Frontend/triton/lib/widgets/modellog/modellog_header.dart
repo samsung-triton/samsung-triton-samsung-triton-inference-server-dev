@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
-import 'package:triton/widgets/modellog/filter_block.dart';
+import 'package:triton/widgets/modellog/filter_block_model.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
@@ -73,7 +73,7 @@ class _ModelLogHeaderState extends State<ModelLogHeader> with SingleTickerProvid
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           child: _isFilterOpen
-              ? Container(width: double.infinity, color: white, child: const FilterBlock())
+              ? Container(width: double.infinity, color: white, child: const FilterBlockModel())
               : const SizedBox.shrink(),
         ),
       ],

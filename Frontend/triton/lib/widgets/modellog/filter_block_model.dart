@@ -8,8 +8,8 @@ import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
 
-class FilterBlock extends StatelessWidget {
-  const FilterBlock({super.key});
+class FilterBlockModel extends StatelessWidget {
+  const FilterBlockModel({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +37,24 @@ class FilterBlock extends StatelessWidget {
               MiniDatePicker(
                 onDateSelected: (date) {
                   controller.startDate.value = date;
+
+                  // 만약 종료 날짜가 시작보다 전이면 null로 리셋
+                  if (controller.endDate.value != null && controller.endDate.value!.isBefore(date)) {
+                    controller.endDate.value = null;
+                  }
                 },
               ),
               SizedBox(width: 8),
               Text('~', style: TextStyle(color: black)),
               SizedBox(width: 8),
-              MiniDatePicker(
-                onDateSelected: (date) {
-                  controller.endDate.value = date;
-                },
+              Obx(
+                () => MiniDatePicker(
+                  onDateSelected: (date) {
+                    controller.endDate.value = date;
+                  },
+                  // 시작 날짜 이후로만 선택 가능하게 제한
+                  firstDate: controller.startDate.value ?? DateTime(2000),
+                ),
               ),
             ],
           ),
