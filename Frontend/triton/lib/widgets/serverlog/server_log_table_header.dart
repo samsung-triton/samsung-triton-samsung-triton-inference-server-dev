@@ -12,9 +12,9 @@ class ServerLogTableHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Row(
         children: [
-          SizedBox(width: 100, child: Center(child: _headerText('user name'))),
           SizedBox(width: 150, child: Center(child: _headerText('created at'))),
           SizedBox(width: 100, child: Center(child: _headerText('log type'))),
+          SizedBox(width: 100, child: Center(child: _headerText('user name'))),
           SizedBox(width: 150, child: Center(child: _headerText('details'))),
           Expanded(child: Center(child: _headerText('description'))),
         ],
