@@ -16,33 +16,18 @@ class ModelLogTableRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start, // 여러 줄일 때 위로 정렬
         children: [
-          Expanded(
-            flex: 6,
-            child: Text(
-              log['date']!,
-              textAlign: TextAlign.center,
-              style: T.t10(color: black, bold: false),
-            ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Text(
-              log['level']!,
-              textAlign: TextAlign.center,
-              style: T.t10(color: black, bold: false),
-            ),
-          ),
-          Expanded(
-            flex: 58,
-            child: Text(
-              log['detail']!,
-              softWrap: true, // 자동 줄바꿈 허용
-              overflow: TextOverflow.visible, // 잘리지 않게
-              style: T.t10(color: black, bold: false),
-            ),
-          ),
+          _textCell(log['date']!, width: 120),
+          _textCell(log['level']!, width: 120),
+          _textCell(log['detail']!, expanded: true, textAlign: TextAlign.left),
         ],
       ),
     );
+  }
+
+  Widget _textCell(String text, {double? width, bool expanded = false, TextAlign textAlign = TextAlign.center}) {
+    final child = Text(text, style: T.t10(), softWrap: true, textAlign: textAlign);
+
+    if (expanded) return Expanded(child: child);
+    return SizedBox(width: width, child: child);
   }
 }
