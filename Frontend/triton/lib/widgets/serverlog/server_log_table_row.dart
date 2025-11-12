@@ -16,49 +16,20 @@ class ServerLogTableRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start, // 여러 줄일 때 위로 정렬
         children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              log['username']!,
-              textAlign: TextAlign.center,
-              style: T.t10(color: black, bold: false),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              log['date']!,
-              textAlign: TextAlign.center,
-              style: T.t10(color: black, bold: false),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              log['type']!,
-              textAlign: TextAlign.center,
-              style: T.t10(color: black, bold: false),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              log['detail']!,
-              textAlign: TextAlign.center,
-              style: T.t10(color: black, bold: false),
-            ),
-          ),
-          Expanded(
-            flex: 20,
-            child: Text(
-              log['description']!,
-              softWrap: true, // 자동 줄바꿈 허용
-              overflow: TextOverflow.visible, // 잘리지 않게
-              style: T.t10(color: black, bold: false),
-            ),
-          ),
+          _textCell(log['date']!, width: 150),
+          _textCell(log['type']!, width: 100),
+          _textCell(log['username']!, width: 100),
+          _textCell(log['detail']!, width: 150),
+          _textCell(log['description']!, expanded: true, textAlign: TextAlign.left),
         ],
       ),
     );
+  }
+
+  Widget _textCell(String text, {double? width, bool expanded = false, TextAlign textAlign = TextAlign.center}) {
+    final child = Text(text, style: T.t10(), softWrap: true, textAlign: textAlign);
+
+    if (expanded) return Expanded(child: child);
+    return SizedBox(width: width, child: child);
   }
 }

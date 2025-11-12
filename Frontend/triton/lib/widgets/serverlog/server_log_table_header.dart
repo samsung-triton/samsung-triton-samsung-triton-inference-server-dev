@@ -12,48 +12,23 @@ class ServerLogTableHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Row(
         children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              'user name',
-              textAlign: TextAlign.center,
-              style: T.t10(color: white, bold: true),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              'create at',
-              textAlign: TextAlign.center,
-              style: T.t10(color: white, bold: true),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'log type',
-              textAlign: TextAlign.center,
-              style: T.t10(color: white, bold: true),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'details',
-              textAlign: TextAlign.center,
-              style: T.t10(color: white, bold: true),
-            ),
-          ),
-          Expanded(
-            flex: 20,
-            child: Text(
-              'description',
-              textAlign: TextAlign.center,
-              style: T.t10(color: white, bold: true),
-            ),
-          ),
+          SizedBox(width: 150, child: Center(child: _headerText('created at'))),
+          SizedBox(width: 100, child: Center(child: _headerText('log type'))),
+          SizedBox(width: 100, child: Center(child: _headerText('user name'))),
+          SizedBox(width: 150, child: Center(child: _headerText('details'))),
+          Expanded(child: Center(child: _headerText('description'))),
         ],
       ),
+    );
+  }
+
+  Widget _headerText(String label) {
+    return Text(
+      label,
+      style: T.t10(bold: true, color: white),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
     );
   }
 }
