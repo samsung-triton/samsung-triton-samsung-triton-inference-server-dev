@@ -10,7 +10,7 @@ aggregation_time_router = APIRouter(prefix="/api/v1/models", tags=["aggregation_
 @aggregation_time_router.get("/aggregation-time", status_code=status.HTTP_200_OK)
 def get_current_aggregation_time():
     base_time = current_aggregation_time()
-    create_response(
+    return create_response(
         CustomCode.TIME_001.value,
         Messages.AGGREGATION_TIME_FETCH_SUCCESS.value,
         {"base_time": base_time},
