@@ -15,8 +15,8 @@ import '../button/button_large.dart';
 import '../../widgets/modal/modal_registration.dart';
 import '../../widgets/modal/modal_description.dart';
 
-class VersionTableHeader extends StatelessWidget {
-  const VersionTableHeader({super.key});
+class ModelManageHeader extends StatelessWidget {
+  const ModelManageHeader({super.key});
 
   // 등록 모달 열기
   void _openRegisterModal(BuildContext context) {

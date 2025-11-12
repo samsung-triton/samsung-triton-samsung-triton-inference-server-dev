@@ -7,7 +7,7 @@ import '../../controller/model_manage/version_manage_controller.dart';
 import '../../controller/model_manage/config_controller.dart';
 
 import '../../widgets/model_manage/model_sidebar.dart';
-import '../../widgets/model_manage/version_table_header.dart';
+import '../../widgets/model_manage/model_manage_header.dart';
 import '../../widgets/model_manage/version_table.dart';
 import '../../widgets/model_manage/editor_header.dart';
 import '../../widgets/model_manage/code_editor.dart';
@@ -59,7 +59,7 @@ class _ModelManageScreenState extends State<ModelManageScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                VersionTableHeader(),
+                ModelManageHeader(),
                 VersionTable(),
                 SizedBox(height: 24),
                 EditorHeader(),
