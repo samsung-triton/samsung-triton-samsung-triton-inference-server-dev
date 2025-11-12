@@ -12,15 +12,15 @@ from app.constants.messages import Messages
 from fastapi import status, UploadFile
 from pathlib import Path
 from app.core.config import settings
-from datetime import datetime, timezone, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
+from app.core.config import TIMEZONE
 import random
 import shutil
 import logging
 
 
 def generate_custom_uid() -> str:
-    now = datetime.now()
+    now = datetime.now(TIMEZONE)
     date_part = now.strftime("%Y%m%d")
     time_part = now.strftime("%H%M%S")
     rand_part = f"{random.randint(0, 99999):05d}"
@@ -108,7 +108,7 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
 
         inferenceData.output_path = str(file_path)
         inferenceData.result_text = result
-        inferenceData.completed_at = datetime.now(timezone.utc)
+        inferenceData.completed_at = datetime.now(TIMEZONE)
 
         if is_ok or not is_ok:
             inferenceData.request_status = "SUCCESS"
@@ -138,7 +138,7 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
 
 
 def get_aggregation_window_from_str(base_time_str: str) -> tuple[datetime, datetime]:
-    now = datetime.now(ZoneInfo("Asia/Seoul"))
+    now = datetime.now(TIMEZONE)
     hh, mm = map(int, base_time_str.split(":"))
     today_base = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
     if now >= today_base:

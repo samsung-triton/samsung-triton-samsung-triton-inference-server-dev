@@ -1,8 +1,9 @@
 from app.core.response_utils import create_response
 from app.constants.codes import CustomCode
 from app.constants.messages import Messages
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
+from app.core.config import TIMEZONE
 import json
 
 AGGREGATION_FILE = Path("app/state/aggregation_state.json")
@@ -14,7 +15,7 @@ def current_aggregation_time() -> str:
     날짜는 무시하고 HH:MM 형식만 사용
     """
     if not AGGREGATION_FILE.exists():
-        now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        now = datetime.now(TIMEZONE).replace(second=0, microsecond=0)
         base_time = now.strftime("%H:%M")  # 시:분만 저장
         return base_time
 
@@ -31,7 +32,7 @@ def get_aggregation_window(base_time_str: str = "15:00") -> tuple[datetime, date
     """
     HH:MM 형식의 기준 시각을 기준으로 현재 집계 구간 계산
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(TIMEZONE)
     base_hour, base_minute = map(int, base_time_str.split(":"))
 
     today_base = now.replace(hour=base_hour, minute=base_minute, second=0, microsecond=0)

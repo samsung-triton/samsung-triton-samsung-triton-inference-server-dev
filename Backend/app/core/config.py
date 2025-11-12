@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 class Settings(BaseSettings):
@@ -19,9 +20,9 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
 
-    # Triton     
+    # Triton
     TRITON_GRPC_URL: str
-    TRITON_HTTP_URL: str               # ex: http://localhost:8000
+    TRITON_HTTP_URL: str  # ex: http://localhost:8000
     TRITON_IMAGE: str
     TRITON_CONTAINER_NAME: str
     TRITON_MODEL_PATH: str
@@ -36,6 +37,8 @@ class Settings(BaseSettings):
     TRITON_MODEL_REPO: str
     ALLOW_OVERWRITE: bool = False
 
+    TIMEZONE: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -43,3 +46,4 @@ class Settings(BaseSettings):
 
 settings = Settings()
 Path(settings.INFER_DATA_SAVE_PATH).mkdir(parents=True, exist_ok=True)
+TIMEZONE = ZoneInfo(settings.TIMEZONE)

@@ -1,11 +1,12 @@
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime
 from app.core.response_utils import create_response
 from fastapi import status
 from app.core.customException import CustomHTTPException
 from app.constants.codes import CustomCode
 from app.constants.messages import Messages
 from app.core.config import settings
+from app.core.config import TIMEZONE
 
 
 def _run_compose(cmd: str, success_code, success_msg, error_code, error_msg):
@@ -35,7 +36,7 @@ async def get_triton_status():
 
     data = {
         "status": "ready" if is_running else "stopped",
-        "started_at": datetime.now(timezone.utc).isoformat() if is_running else None,
+        "started_at": datetime.now(TIMEZONE).isoformat() if is_running else None,
     }
 
     return create_response(
@@ -49,10 +50,10 @@ async def get_triton_status():
 async def start_triton():
     # Triton 컨테이너 실행 (중복 방지 포함)
     status_result = await get_triton_status()
-    
-    status_data = status_result.data if hasattr(status_result, 'data') else {}
+
+    status_data = status_result.data if hasattr(status_result, "data") else {}
     current_status = status_data.get("status") if isinstance(status_data, dict) else None
-    
+
     if current_status == "ready":
         return create_response(
             CustomCode.DOCKER_001.value,
@@ -73,7 +74,7 @@ async def start_triton():
         Messages.SERVER_START_SUCCESS.value,
         {
             "status": "running",
-            "started_at": datetime.now(timezone.utc).isoformat(),
+            "started_at": datetime.now(TIMEZONE).isoformat(),
         },
     )
 
@@ -113,6 +114,6 @@ async def restart_triton():
         Messages.SERVER_RESTART_SUCCESS.value,
         {
             "status": "restart",
-            "started_at": datetime.now(timezone.utc).isoformat(),
+            "started_at": datetime.now(TIMEZONE).isoformat(),
         },
     )
