@@ -315,7 +315,7 @@ class ServerLogController extends GetxController {
       // ✅ 선택한 필드 기준으로 검색
       bool matchesKeyword = true;
       if (keyword.value.isNotEmpty) {
-        final kw = (keyword.value ?? '').toLowerCase();
+        final kw = keyword.value.toLowerCase();
         if (field.isEmpty) {
           // 전체 검색 (모든 주요 필드)
           matchesKeyword =
@@ -386,7 +386,7 @@ extension FilterExportExtension on ServerLogController {
     final blob = web.Blob(js_util.jsify([buffer.toString()]));
 
     final url = web.URL.createObjectURL(blob);
-    final anchor = web.HTMLAnchorElement()
+    web.HTMLAnchorElement()
       ..href = url
       ..download = 'filtered_logs_${DateTime.now().toIso8601String()}.txt'
       ..click();
