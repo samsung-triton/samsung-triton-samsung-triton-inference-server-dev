@@ -6,14 +6,14 @@ import 'package:triton/widgets/input/input_small.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
-import 'package:triton/controller/model_log/filter_controller.dart';
+import 'package:triton/controller/model_log/model_log_controller.dart';
 
 class FilterBlock extends StatelessWidget {
   const FilterBlock({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<FilterController>();
+    final controller = Get.find<ModelLogController>();
 
     final keywordCtrl = TextEditingController();
 

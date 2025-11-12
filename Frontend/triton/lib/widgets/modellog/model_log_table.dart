@@ -5,14 +5,14 @@ import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/modellog/model_log_table_header.dart';
 import 'package:triton/widgets/modellog/model_log_table_row.dart';
-import 'package:triton/controller/model_log/filter_controller.dart';
+import 'package:triton/controller/model_log/model_log_controller.dart';
 
 class ModelLogTable extends StatelessWidget {
   const ModelLogTable({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<FilterController>();
+    final controller = Get.find<ModelLogController>();
 
     return Container(
       //margin: EdgeInsets.symmetric(vertical: 2),
