@@ -22,7 +22,7 @@ import '../modellog/dropdown.dart';
 import 'modal_confirmation.dart';
 
 // 모달 등록 종류
-enum RegistrationKind { model, version }
+enum RegistrationKind { model, setup }
 
 class PickedFile {
   final String name;
@@ -42,25 +42,25 @@ class ModalRegistration extends StatefulWidget {
 class _ModalRegistrationState extends State<ModalRegistration> {
   late final TextEditingController nameCtrl;
   late final TextEditingController modelFileCtrl;
-  late final TextEditingController configFileCtrl;
+  late final TextEditingController setupFileCtrl;
   late final TextEditingController descCtrl;
 
-  List<PickedFile> pickedModelFiles = [];
-  PickedFile? pickedConfigFile;
+  PickedFile? pickedModelFile;
+  PickedFile? pickedSetupFile;
 
   String modelType = 'single';
 
   String? errorText;
 
   bool get isModel => widget.kind == RegistrationKind.model;
-  bool get isVersion => widget.kind == RegistrationKind.version;
+  bool get isSetup => widget.kind == RegistrationKind.setup;
 
   @override
   void initState() {
     super.initState();
     nameCtrl = TextEditingController();
     modelFileCtrl = TextEditingController();
-    configFileCtrl = TextEditingController();
+    setupFileCtrl = TextEditingController();
     descCtrl = TextEditingController();
   }
 
@@ -68,65 +68,37 @@ class _ModalRegistrationState extends State<ModalRegistration> {
   void dispose() {
     nameCtrl.dispose();
     modelFileCtrl.dispose();
-    configFileCtrl.dispose();
+    setupFileCtrl.dispose();
     descCtrl.dispose();
     super.dispose();
   }
 
   // 파일 픽커
-  Future<PickedFile?> _pickFile({List<String>? exts}) async {
-    final res = await FilePicker.platform.pickFiles(
-      type: exts == null ? FileType.any : FileType.custom,
-      allowedExtensions: exts,
-      withData: true,
-    );
+  Future<PickedFile?> _pickFile() async {
+    final res = await FilePicker.platform.pickFiles(type: FileType.any, withData: true);
     if (res == null || res.files.isEmpty || res.files.single.bytes == null) return null;
     final file = res.files.single;
     return PickedFile(file.name, file.bytes!);
   }
 
-  // 여러 파일 픽커
-  Future<List<PickedFile>> _pickFiles({List<String>? exts}) async {
-    final res = await FilePicker.platform.pickFiles(
-      type: exts == null ? FileType.any : FileType.custom,
-      allowedExtensions: exts,
-      withData: true,
-      allowMultiple: true,
-    );
-    if (res == null || res.files.isEmpty) return [];
-    return res.files.where((f) => f.bytes != null).map((f) => PickedFile(f.name, f.bytes!)).toList();
-  }
-
-  // 다중 파일명 요약 (첫 파일 + 개수)
-  String _modelFilesSummary(List<PickedFile> files) {
-    if (files.isEmpty) return '';
-    if (files.length == 1) return files.first.name;
-    return '${files.first.name} + ${files.length - 1} more';
-  }
-
   // 모델 파일 등록
-  Future<void> _browseModel() async {
-    final files = await _pickFiles(exts: ['onnx', 'engine', 'pt', 'plan', 'zip', 'tar']);
-    if (files.isNotEmpty) {
+  Future<void> _browseModelFile() async {
+    final file = await _pickFile();
+    if (file != null) {
       setState(() {
-        pickedModelFiles = files;
-        modelFileCtrl.text = _modelFilesSummary(files);
+        pickedModelFile = file;
+        modelFileCtrl.text = file.name;
       });
     }
   }
 
-  // config 파일 등록
-  Future<void> _browseConfig() async {
-    final f = await _pickFile(exts: ['pbtxt']);
-    if (f != null) {
-      final isExactName = f.name == 'config.pbtxt';
-      if (!isExactName) {
-        _setError("config file must be named 'config.pbtxt'");
-        return;
-      }
+  // setup 파일 등록
+  Future<void> _browseSetupFile() async {
+    final file = await _pickFile();
+    if (file != null) {
       setState(() {
-        pickedConfigFile = f;
-        configFileCtrl.text = f.name;
+        pickedSetupFile = file;
+        setupFileCtrl.text = file.name;
       });
     }
   }
@@ -141,16 +113,12 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         _setError('model name is required');
         return false;
       }
-      if (modelType == 'single' && pickedModelFiles.isEmpty) {
+      if (modelType == 'single' && pickedModelFile == null) {
         _setError('model file is required');
         return false;
       }
-      if (pickedConfigFile == null) {
+      if (pickedSetupFile == null) {
         _setError('config file is required');
-        return false;
-      }
-      if (pickedConfigFile!.name != 'config.pbtxt') {
-        _setError("config file must be named 'config.pbtxt'");
         return false;
       }
       if (descCtrl.text.trim().isEmpty) {
@@ -158,10 +126,10 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         return false;
       }
     }
-    // 버전 등록 검증
+    // 셋업 등록 검증
     else {
-      if (pickedModelFiles.isEmpty) {
-        _setError('model file is required');
+      if (pickedModelFile == null && pickedSetupFile == null) {
+        _setError('at least one of model file or setup file is required');
         return false;
       }
       if (descCtrl.text.trim().isEmpty) {
@@ -176,14 +144,16 @@ class _ModalRegistrationState extends State<ModalRegistration> {
   // 버튼 활성화
   bool get _canRegisterPreview {
     final hasDesc = descCtrl.text.trim().isNotEmpty;
-    final hasModel = isModel ? (modelType == 'ensemble' || pickedModelFiles.isNotEmpty) : pickedModelFiles.isNotEmpty;
 
     if (isModel) {
       final hasName = nameCtrl.text.trim().isNotEmpty;
-      final hasConfig = pickedConfigFile != null;
-      return hasName && hasConfig && hasModel && hasDesc;
+      final needModelFile = modelType == 'single';
+      final hasModelFile = pickedModelFile != null;
+      final hasConfigFile = pickedSetupFile != null;
+      return hasName && hasDesc && (!needModelFile || hasModelFile) && hasConfigFile;
     } else {
-      return hasModel && hasDesc;
+      final hasAnyFile = (pickedModelFile != null) || (pickedSetupFile != null);
+      return hasDesc && hasAnyFile;
     }
   }
 
@@ -273,34 +243,32 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         ],
 
         // 모델 파일
-        if ((isModel && modelType == 'single') || isVersion) ...[
+        if ((isModel && modelType == 'single') || isSetup) ...[
           _LabelInputRow(
             label: 'model file',
             child: Row(
               children: [
                 InputMedium(controller: modelFileCtrl, readOnly: true, enableInteractiveSelection: false),
                 const SizedBox(width: 8),
-                ButtonSmall(text: 'browse', onPressed: _browseModel),
+                ButtonSmall(text: 'browse', onPressed: _browseModelFile),
               ],
             ),
           ),
           const SizedBox(height: 4),
         ],
 
-        // config 파일
-        if (isModel) ...[
-          _LabelInputRow(
-            label: 'config file',
-            child: Row(
-              children: [
-                InputMedium(controller: configFileCtrl, readOnly: true, enableInteractiveSelection: false),
-                const SizedBox(width: 8),
-                ButtonSmall(text: 'browse', onPressed: _browseConfig),
-              ],
-            ),
+        // 셋업 파일
+        _LabelInputRow(
+          label: 'setup file',
+          child: Row(
+            children: [
+              InputMedium(controller: setupFileCtrl, readOnly: true, enableInteractiveSelection: false),
+              const SizedBox(width: 8),
+              ButtonSmall(text: 'browse', onPressed: _browseSetupFile),
+            ],
           ),
-          const SizedBox(height: 4),
-        ],
+        ),
+        const SizedBox(height: 4),
 
         // 이유 입력
         _LabelInputRow(

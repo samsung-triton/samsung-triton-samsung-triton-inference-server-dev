@@ -2,15 +2,39 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/model_manage/version_manage_controller.dart';
+
 import '../../theme/typography.dart';
 import '../../theme/app_colors.dart';
 
+import '../../utils/modal_util.dart';
+
 import 'version_table_row.dart';
+
+import '../../widgets/modal/modal_description.dart';
 
 class VersionTable extends StatelessWidget {
   const VersionTable({super.key});
 
   static const double _headerH = 44.0;
+
+  // 삭제 모달 열기
+  void _openDeleteModal(BuildContext context) {
+    final descCtrl = TextEditingController();
+
+    ModalPortal.open(
+      context,
+      builder: (dialogCtx) => ModalDescription(
+        descCtrl: descCtrl,
+        confirmMsg: "Are you sure you want to delete it?",
+        onOK: () async {
+          final versionManageController = Get.find<VersionManageController>();
+          // TODO: 추후 descCtrl 글자 추가
+          await versionManageController.deleteSelectedVersion();
+          descCtrl.dispose();
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,13 +63,33 @@ class VersionTable extends StatelessWidget {
                   color: white,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                 ),
-                child: Row(
+                child: Stack(
                   children: [
-                    const SizedBox(width: 80),
-                    SizedBox(width: 120, child: Center(child: _headerText('version'))),
-                    Expanded(child: Center(child: _headerText('file name'))),
-                    SizedBox(width: 240, child: Center(child: _headerText('user name'))),
-                    SizedBox(width: 240, child: Center(child: _headerText('created at'))),
+                    Row(
+                      children: [
+                        const SizedBox(width: 80),
+                        SizedBox(width: 120, child: Center(child: _headerText('version'))),
+                        Expanded(child: Center(child: _headerText('file name'))),
+                        SizedBox(width: 240, child: Center(child: _headerText('user name'))),
+                        SizedBox(width: 240, child: Center(child: _headerText('created at'))),
+                      ],
+                    ),
+                    // 삭제 아이콘
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: IconButton(
+                            onPressed: () => _openDeleteModal(context),
+                            icon: Icon(Icons.delete_outline, size: 20, color: gray),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
