@@ -14,7 +14,7 @@ class VersionListRow extends StatelessWidget {
   Widget build(BuildContext context) {
     void selectThis() {
       // 부모에 정의된 라디오 그룹의 온체인지 호출
-      RadioGroup.maybeOf<int>(context)?.onChanged.call(item.version);
+      RadioGroup.maybeOf<int>(context)?.onChanged.call(item.versionId);
     }
 
     return Material(
@@ -26,10 +26,10 @@ class VersionListRow extends StatelessWidget {
           height: 48,
           child: Row(
             children: [
-              SizedBox(width: 80, child: Radio<int>(value: item.version)),
+              SizedBox(width: 80, child: Radio<int>(value: item.versionId)),
               _textCell('${item.version}', width: 120),
-              _textCell(item.file, expanded: true),
-              _textCell(item.user, width: 240),
+              _textCell(item.fileName, expanded: true),
+              _textCell(item.userName, width: 240),
               _textCell(item.createdAt, width: 240),
             ],
           ),

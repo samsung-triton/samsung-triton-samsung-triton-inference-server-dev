@@ -16,19 +16,14 @@ class ModelSidebar extends StatelessWidget {
 
     return Obx(() {
       final models = modelManageController.models;
-      final selected = modelManageController.selectedId.value;
+      final selected = modelManageController.selectedModelId.value;
 
       // 카드 리스트
       final cards = <Widget>[
         for (final model in models)
-          ModelCard.normal(
-            item: model,
-            active: model.id == selected,
-            onTap: () => modelManageController.selectModel(model.id),
-            onDelete: () => modelManageController.deleteModel(model.id),
-          ),
+          ModelCard(type: ModelCardType.normal, item: model, active: model.modelId == selected),
         // 맨 아래 추가 카드
-        ModelCard.add(onTap: () => modelManageController.registerModel()),
+        ModelCard(type: ModelCardType.add),
       ];
 
       return SidebarBase(children: cards);
