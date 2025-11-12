@@ -13,7 +13,6 @@ import '../../utils/modal_util.dart';
 import '../button/button_large.dart';
 
 import '../../widgets/modal/modal_registration.dart';
-import '../../widgets/modal/modal_description.dart';
 
 class ModelManageHeader extends StatelessWidget {
   const ModelManageHeader({super.key});
@@ -21,25 +20,6 @@ class ModelManageHeader extends StatelessWidget {
   // 등록 모달 열기
   void _openRegisterModal(BuildContext context) {
     ModalPortal.open(context, builder: (dialogContext) => const ModalRegistration(kind: RegistrationKind.setup));
-  }
-
-  // 삭제 모달 열기
-  void _openDeleteModal(BuildContext context) {
-    final descCtrl = TextEditingController();
-
-    ModalPortal.open(
-      context,
-      builder: (dialogCtx) => ModalDescription(
-        descCtrl: descCtrl,
-        confirmMsg: "Are you sure you want to delete it?",
-        onOK: () async {
-          final modelManageController = Get.find<VersionManageController>();
-          // TODO: 추후 descCtrl 글자 추가
-          await modelManageController.deleteSelectedVersion();
-          descCtrl.dispose();
-        },
-      ),
-    );
   }
 
   @override
@@ -61,13 +41,6 @@ class ModelManageHeader extends StatelessWidget {
 
           // 우측: 버전 관리 버튼
           ButtonLarge(onPressed: () => _openRegisterModal(context), text: 'register', backgroundColor: primaryNormal),
-          const SizedBox(width: 8),
-          ButtonLarge(
-            onPressed: () => _openDeleteModal(context),
-            text: 'delete',
-            backgroundColor: lightGray,
-            textColor: black,
-          ),
         ],
       ),
     );
