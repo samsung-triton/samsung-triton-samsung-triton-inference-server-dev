@@ -22,4 +22,4 @@ def save_input_before_infer(
 
 @inferdata_router.post("/save/after", response_model=BaseResponse, status_code=status.HTTP_200_OK)
 def save_output_after_infer(request: SaveInferenceResultRequest, db: Session = Depends(get_db)):
-    return save_output_after_infer_service(request.uid, request.result, db)
+    return save_output_after_infer_service(request.uid, request.is_ok, request.result, db)

@@ -84,7 +84,7 @@ def save_input_before_infer_service(
         )
 
 
-def save_output_after_infer_service(uid: str, result: str, db: Session) -> BaseResponse:
+def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Session) -> BaseResponse:
     inferenceData = db.query(InferenceLogs).filter(InferenceLogs.uid == uid).first()
 
     if not inferenceData:
@@ -107,6 +107,13 @@ def save_output_after_infer_service(uid: str, result: str, db: Session) -> BaseR
         inferenceData.result_text = result
         inferenceData.completed_at = datetime.now(timezone.utc)
 
+        if is_ok or not is_ok:
+            inferenceData.request_status = "SUCCESS"
+            if is_ok:
+                inferenceData.inference_status = "OK"
+            elif not is_ok:
+                inferenceData.inference_status = "NG"
+
         db.commit()
         db.refresh(inferenceData)
 
@@ -117,6 +124,7 @@ def save_output_after_infer_service(uid: str, result: str, db: Session) -> BaseR
         )
 
     except Exception as e:
+        db.rollback()
         logger.error(f"데이터 저장 중 오류 발생: {e}")
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
