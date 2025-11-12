@@ -359,6 +359,133 @@ class ModelLogController extends GetxController {
       'level': 'INFO',
       'message': 'Session closed and memory released',
     },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-12 09:19:44.971002',
+      'level': 'INFO',
+      'message':
+          'Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released. Session closed and memory released.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-11 09:19:44.971002',
+      'level': 'INFO',
+      'message': 'Session closed and memory released',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-12 10:25:12.512341',
+      'level': 'DEBUG',
+      'message': 'Model checkpoint successfully loaded from cache.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-13 14:42:07.923411',
+      'level': 'INFO',
+      'message': 'Inference started with batch size 16.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-14 21:58:31.114009',
+      'level': 'WARN',
+      'message': 'Token overflow detected — sequence truncated.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-15 11:09:44.443002',
+      'level': 'INFO',
+      'message': 'Session initialized on GPU:0 with mixed precision.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-16 08:33:25.111542',
+      'level': 'DEBUG',
+      'message': 'Optimizer state restored successfully.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-17 19:12:54.994003',
+      'level': 'INFO',
+      'message': 'Evaluation completed on validation set (loss=0.037).',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-18 22:08:47.000001',
+      'level': 'ERROR',
+      'message': 'CUDA out of memory — attempted allocation 1.2GB.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-19 07:42:33.231222',
+      'level': 'INFO',
+      'message': 'Model parameters updated after gradient accumulation.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-20 17:20:41.871992',
+      'level': 'INFO',
+      'message': 'Batch normalization statistics synchronized across GPUs.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-21 09:45:13.651234',
+      'level': 'DEBUG',
+      'message': 'Tokenizer vocabulary reloaded from disk.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-22 13:31:12.432554',
+      'level': 'INFO',
+      'message': 'Model compiled with optimization level O2.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-23 18:03:22.991002',
+      'level': 'WARN',
+      'message': 'Throughput degraded: inference latency exceeded threshold.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-24 07:50:09.241002',
+      'level': 'INFO',
+      'message': 'Pipeline parallelism initialized (4 stages).',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-25 16:02:41.071002',
+      'level': 'INFO',
+      'message': 'Session checkpoint saved successfully to /checkpoints/',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-26 11:29:05.811002',
+      'level': 'DEBUG',
+      'message': 'Graph optimization pass took 0.028s.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-27 20:12:44.971002',
+      'level': 'INFO',
+      'message': 'Weights quantized to INT8 for deployment.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-28 09:45:57.231002',
+      'level': 'WARN',
+      'message': 'Minor precision loss detected during quantization.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-29 22:19:11.514002',
+      'level': 'INFO',
+      'message': 'User session timeout after 30 minutes of inactivity.',
+    },
+    {
+      'model': 'llama-3',
+      'date': '2025-11-30 15:33:59.114002',
+      'level': 'INFO',
+      'message': 'Inference service stopped and GPU memory released.',
+    },
 
     // 🟠 custom-ensemble
     {

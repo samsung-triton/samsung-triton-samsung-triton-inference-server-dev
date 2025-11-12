@@ -12,32 +12,21 @@ class ModelLogTableHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Row(
         children: [
-          Expanded(
-            flex: 6,
-            child: Text(
-              'create at',
-              textAlign: TextAlign.center,
-              style: T.t10(color: white, bold: true),
-            ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Text(
-              'log level',
-              textAlign: TextAlign.center,
-              style: T.t10(color: white, bold: true),
-            ),
-          ),
-          Expanded(
-            flex: 58,
-            child: Text(
-              'details',
-              textAlign: TextAlign.center,
-              style: T.t10(color: white, bold: true),
-            ),
-          ),
+          SizedBox(width: 120, child: Center(child: _headerText('create at'))),
+          SizedBox(width: 120, child: Center(child: _headerText('log level'))),
+          Expanded(child: Center(child: _headerText('detail'))),
         ],
       ),
+    );
+  }
+
+  Widget _headerText(String label) {
+    return Text(
+      label,
+      style: T.t10(bold: true, color: white),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
     );
   }
 }
