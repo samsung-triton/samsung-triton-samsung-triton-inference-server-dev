@@ -251,20 +251,18 @@ class _ModalRegistrationState extends State<ModalRegistration> {
           const SizedBox(height: 4),
         ],
 
-        // config 파일
-        if (isModel) ...[
-          _LabelInputRow(
-            label: 'setup file',
-            child: Row(
-              children: [
-                InputMedium(controller: setupFileCtrl, readOnly: true, enableInteractiveSelection: false),
-                const SizedBox(width: 8),
-                ButtonSmall(text: 'browse', onPressed: _browseSetupFile),
-              ],
-            ),
+        // 셋업 파일
+        _LabelInputRow(
+          label: 'setup file',
+          child: Row(
+            children: [
+              InputMedium(controller: setupFileCtrl, readOnly: true, enableInteractiveSelection: false),
+              const SizedBox(width: 8),
+              ButtonSmall(text: 'browse', onPressed: _browseSetupFile),
+            ],
           ),
-          const SizedBox(height: 4),
-        ],
+        ),
+        const SizedBox(height: 4),
 
         // 이유 입력
         _LabelInputRow(
