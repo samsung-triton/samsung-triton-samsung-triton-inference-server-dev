@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import 'package:triton/controller/dashboard/server_cuda_controller.dart';
+import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
 
 class ServerCudaInfoCard extends StatelessWidget {
   const ServerCudaInfoCard({super.key});
@@ -41,7 +41,7 @@ class ServerCudaInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ServerCudaController>();
+    final controller = Get.find<ServerDashboardController>();
 
     return Obx(() {
       final metrics = controller.metrics.value;

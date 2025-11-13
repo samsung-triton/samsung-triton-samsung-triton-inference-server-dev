@@ -3,14 +3,14 @@ import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import 'package:triton/controller/dashboard/server_cpu_controller.dart';
+import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
 
 class ServerCpuUsageChart extends StatelessWidget {
   const ServerCpuUsageChart({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ServerCpuController>();
+    final controller = Get.find<ServerDashboardController>();
 
     return Obx(() {
       final usage = controller.metrics.value.cpuUsage;
