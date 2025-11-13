@@ -10,7 +10,7 @@ from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.constants.codes import CustomCode
 from app.constants.messages import Messages
-from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, MetricData
+from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, MetricData, NoneGPUSeriesItem
 from app.core.config import TIMEZONE
 
 
@@ -104,45 +104,25 @@ async def prom_query(promql: str):
         )
 
 
-async def prom_query_range(promql: str, start: datetime, end: datetime, step: str = "10m"):
-
+async def prom_query_range(promql: str, start: datetime, end: datetime, step: str = "600"):
     ep = f"{settings.PROM_URL.rstrip('/')}/api/v1/query_range"
 
-    def to_rfc3339(dt: datetime) -> str:
-        return dt.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M:%SZ")
+    def to_epoch(dt: datetime) -> float:
+        return dt.timestamp()
 
     params = {
         "query": promql,
-        "start": to_rfc3339(start),
-        "end": to_rfc3339(end),
-        "step": step,
+        "start": to_epoch(start),
+        "end": to_epoch(end),
+        "step": step,  # "600"
     }
 
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.get(ep, params=params)
-            r.raise_for_status()
-            data = r.json()
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        r = await client.get(ep, params=params)
+        r.raise_for_status()
+        data = r.json()
 
-            if data.get("status") != "success":
-                raise CustomHTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    code=CustomCode.ERR_500.value,
-                    message=Messages.PROMETHEUS_BAD_STATUS.value,
-                    data=None,
-                )
-
-            return data["data"]["result"]
-
-    except CustomHTTPException:
-        raise
-    except Exception as e:
-        raise CustomHTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            code=CustomCode.ERR_500.value,
-            message=f"{Messages.PROMETHEUS_QUERY_FAIL.value}: {e}",
-            data=None,
-        )
+        return data["data"]["result"]
 
 
 async def get_timeseries_service(end_iso: Optional[str] = None) -> create_response:
@@ -211,7 +191,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
                 except Exception:
                     continue
 
-            ram_series_list.append(SeriesItem(gpu_uuid=metric.get("gpu_uuid", "unknown"), values=points))
+            ram_series_list.append(NoneGPUSeriesItem(values=points))
 
         # 4) TimeWindow 생성
         time_window = TimeWindow(
