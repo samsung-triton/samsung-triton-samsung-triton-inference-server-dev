@@ -86,6 +86,7 @@ def _extract_tar(tar_path: Path, base_dir: Path):
 
             target_path = base_dir / rel_path
             target_path.parent.mkdir(parents=True, exist_ok=True)
+
             with tar_ref.extractfile(member) as src, open(target_path, "wb") as dst:
                 shutil.copyfileobj(src, dst)
 
@@ -98,7 +99,7 @@ def _is_conda_pack_filename(lower_name: str) -> bool:
 # =====================================================
 # 2. config.pbtxt 저장
 # =====================================================
-def save_model_config_file(model_name: str, config_file: UploadFile) -> Path:
+def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dict[str, str]]:
     """
     설정 파일 저장:
       - config.pbtxt(단일)  → 모델 루트에 저장 후 경로 반환
@@ -149,6 +150,8 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> Path:
         if p.is_file():
             saved_files.append({"fileName": p.name, "filePath": str(p)})
 
+    return saved_files
+
 
 # =====================================================
 # 3. 모델 파일 저장 (ZIP, TAR 포함 가능)
@@ -163,6 +166,9 @@ def store_model_file(model_name: str, version: int, model_file: UploadFile) -> L
     model_root = MODEL_REPO_ROOT / model_name
     version_dir = model_root / str(version)
     version_dir.mkdir(parents=True, exist_ok=True)
+
+    if not model_file:
+        return []
 
     # 일단 파일 등록
     fname = safe_name(model_file.filename)

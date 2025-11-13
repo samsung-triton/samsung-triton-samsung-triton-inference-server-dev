@@ -37,7 +37,9 @@ def register_model(
 @model_router.post("/register/ensemble", summary="앙상블 모델 등록")
 def register_ensemble_model(
     req: Annotated[ModelRegisterRequest, Depends(ModelRegisterRequest.as_form)],
-    setupFile: UploadFile = File(...,),
+    setupFile: UploadFile = File(
+        ...,
+    ),
     db: Session = Depends(get_db),
 ):
     return register_ensemble_service(req=req, config_file=setupFile, db=db)
@@ -48,8 +50,8 @@ def register_model_version(
     model_id: int = Path(..., description="모델 ID"),
     loginId: str = Form(..., description="등록자 LoginId"),
     description: str | None = Form(None, description="버전 변경 내용 (선택)"),
-    modelFile: UploadFile = File(...),
-    setupFile: UploadFile = File(...,),
+    modelFile: UploadFile | None = File(None, description="모델 파일 (선택)"),
+    setupFile: UploadFile | None = File(None, description="환경파일 (선택)"),
     db: Session = Depends(get_db),
 ):
     return register_model_assets_service(

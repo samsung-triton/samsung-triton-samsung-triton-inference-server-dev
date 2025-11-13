@@ -24,7 +24,7 @@ from app.models.model import (
 )
 from app.models.model_config import ModelConfig
 from app.models.user import User
-from app.core.file_utils import safe_name, save_model_config_file, store_model_files
+from app.core.file_utils import safe_name, save_model_config_file, store_model_file
 
 # =========================
 # 공통 설정
@@ -238,13 +238,14 @@ def register_model_service(
         )
 
     # 1) 파일 저장
-    saved_model_files = store_model_files(model_name, 1, model_files)
-    cfg_path = save_model_config_file(model_name, config_file)
+    saved_model_files = store_model_file(model_name, 1, model_file)
+    saved_config_files = save_model_config_file(model_name, config_file)
 
+    # 대표 파일 선택
     file_names = [f["fileName"] for f in saved_model_files]
     represent_file = _choose_represent_file(file_names)  # 대표 파일명 자동 선택
 
-    saved_files = [{"fileName": "config.pbtxt", "filePath": str(cfg_path)}] + saved_model_files
+    saved_files = saved_model_files + saved_config_files
 
     # 2) 트리톤 모델 로드
     try:
@@ -261,14 +262,24 @@ def register_model_service(
 
     # 3) DB 기록
     user = _get_user_or_404(db, req.LoginId)
-    config_text = cfg_path.read_text(encoding="utf-8", errors="ignore")
+
+    cfg_dict = next((f for f in saved_config_files if f["fileName"].endswith("config.pbtxt")), None)
+    cfg_entry: Path | None = Path(cfg_dict["filePath"]) if cfg_dict else None
 
     try:
         model = _save_model(db, model_name, req.modelType.value, str(MODEL_REPO_ROOT / model_name))
         version = _save_model_version(db, model.model_id, user.user_id, 1, represent_file)
         for f in saved_files:
             _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
-        save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
+
+        # config.pbtxt가 존재할 때만 Config 테이블 버전 생성
+        if cfg_entry and cfg_entry.exists():
+            config_text = cfg_entry.read_text(encoding="utf-8", errors="ignore")
+            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True).update(
+                {"is_current": False}
+            )
+            save_model_config(db, model.model_id, 1, config_text, str(cfg_entry), user.user_id)
+
         save_model_release(
             db,
             actor_id=user.user_id,
@@ -291,19 +302,7 @@ def register_model_service(
             str(e),
         )
 
-    return create_response(
-        CustomCode.MODEL_002.value,
-        Messages.MODEL_REGISTER_SUCCESS.value,
-        {
-            "modelId": model.model_id,
-            "modelName": model.name,
-            "modelType": req.modelType.value,
-            "files": saved_files,
-            # "description": req.description,
-            # "createdBy": req.LoginId,
-            "createdAt": version.created_at.isoformat(),
-        },
-    )
+    return create_response(CustomCode.MODEL_002.value, Messages.MODEL_REGISTER_SUCCESS.value, None)
 
 
 # =====================================================
@@ -329,9 +328,13 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
         )
 
     # === 1. config 랑 폴더 저장 ===
-    cfg_path = save_model_config_file(model_name, config_file)
-    config_text = cfg_path.read_text(encoding="utf-8", errors="ignore")
-    store_model_files(model_name, 1, [])
+    saved_config_files = save_model_config_file(model_name, config_file)
+    store_model_file(model_name, 1, None)
+
+    cfg_file = next((f for f in saved_config_files if f["fileName"].endswith("config.pbtxt")), None)
+    config_text = ""
+    if cfg_file:
+        config_text = Path(cfg_file["filePath"]).read_text(encoding="utf-8", errors="ignore")
 
     # === 2. 트리톤 모델 로드
     try:
@@ -352,8 +355,9 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
     try:
         model = _save_model(db, model_name, "ENSEMBLE", str(MODEL_REPO_ROOT / model_name))
         version = _save_model_version(db, model.model_id, user.user_id, 1, None)
-        _save_version_file(db, version.model_version_id, "config.pbtxt", str(cfg_path))
-        save_model_config(db, model.model_id, 1, config_text, str(cfg_path), user.user_id)
+        for f in saved_config_files:
+            _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
+        save_model_config(db, model.model_id, 1, config_text, cfg_file["filePath"], user.user_id)
         save_model_release(
             db,
             actor_id=user.user_id,
@@ -376,26 +380,19 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
             str(e),
         )
 
-    return create_response(
-        CustomCode.MODEL_003.value,
-        Messages.ENSEMBLE_REGISTER_SUCCESS.value,
-        {
-            "modelId": model.model_id,
-            "modelName": model.name,
-            "modelType": req.modelType.value,
-            "filePath": str(cfg_path),
-            # "description": req.description,
-            # "createdBy": req.LoginId,
-            "createdAt": version.created_at.isoformat(),
-        },
-    )
+    return create_response(CustomCode.MODEL_003.value, Messages.ENSEMBLE_REGISTER_SUCCESS.value, None)
 
 
 # =====================================================
 # 4. 모델 관련 파일 추가
 # =====================================================
 def register_model_assets_service(
-    model_id: int, login_id: str, description: str, model_files: UploadFile, config_file: UploadFile, db: Session
+    model_id: int,
+    login_id: str,
+    description: str,
+    model_file: UploadFile | None,
+    config_file: UploadFile | None,
+    db: Session,
 ):
     # === 1. 모델, 유저 검증 & 버전 계산 ===
     model = db.query(Model).filter(Model.model_id == model_id).first()
@@ -408,23 +405,54 @@ def register_model_assets_service(
 
     user = _get_user_or_404(db, login_id)
 
-    next_version = (model.last_version_num or 1) + 1
+    # === 2. 최소 하나는 필수 ===
+    if not model_file and not config_file:
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message="모델 파일 또는 설정 파일 중 하나는 반드시 포함되어야 합니다.",
+        )
 
-    # === 2. 모델 파일 저장 ===
-    saved_files = store_model_files(model.name, next_version, model_files)
+    saved_model_files: List[Dict[str, str]] = []
+    saved_config_files: List[Dict[str, str]] = []
+    cfg_entry: Path | None = None
 
-    file_names = [f["fileName"] for f in saved_files]
-    represent_file = _choose_represent_file(file_names)  # 대표 파일명 자동 선택
+    # === 3. 모델 파일 저장 ===
+    next_model_version = (model.last_version_num or 0) + 1
+    if model_file:
+        saved_model_files = store_model_file(model.name, next_model_version, model_file)
+
+    # === 4. 설정 파일 저장 ===
+    if config_file:
+        saved_config_files = save_model_config_file(model.name, config_file)
+        cfg_dict = next((f for f in saved_config_files if f["fileName"].endswith("config.pbtxt")), None)
+        if cfg_dict:
+            cfg_entry = Path(cfg_dict["filePath"])
+
+    saved_files = saved_model_files + saved_config_files
 
     # === 3. Triton 재로드 ===
     try:
         triton_client.unload_model(model_name=model.name)
         triton_client.load_model(model_name=model.name)
     except Exception as e:
-        # 로드 실패 → 방금 생성된 버전 폴더 삭제
-        vdir = MODEL_REPO_ROOT / model.name / str(next_version)
-        if vdir.exists():
+        # (1) 모델 파일 관련 실패 → 새 버전 폴더 삭제
+        if model_file:
+            vdir = MODEL_REPO_ROOT / model.name / str(next_model_version)
             shutil.rmtree(vdir, ignore_errors=True)
+
+        # (2) config 관련 실패
+        if config_file and cfg_entry:
+            # DB에서 기존 최신 config 조회
+            prev_cfg = (
+                db.query(ModelConfig)
+                .filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True)
+                .first()
+            )
+            if prev_cfg:
+                cfg_entry.write_text(prev_cfg.content, encoding="utf-8")
+
+        # setup(환경파일)일 경우는 따로 롤백하지 않음
 
         raise CustomHTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -435,43 +463,80 @@ def register_model_assets_service(
 
     # === 3. DB 기록 ===
     try:
-        version = _save_model_version(db, model_id, user.user_id, next_version, represent_file)
-        for f in saved_files:
-            _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
-        save_model_release(
-            db, user.user_id, ReleaseType.VERSION, ReleaseAction.CREATE, model_id, description or "모델 버전 추가"
-        )
+        # --- (1) 모델 파일이 있을 경우: 새 버전 추가 ---
+        if model_file:
+            represent_file = _choose_represent_file([f["fileName"] for f in saved_model_files])
+            version = _save_model_version(db, model.model_id, user.user_id, next_model_version, represent_file)
+            for f in saved_files:
+                _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
 
-        model.last_version_num = next_version
+            save_model_release(
+                db,
+                actor_id=user.user_id,
+                type_=ReleaseType.VERSION,
+                action_=ReleaseAction.CREATE,
+                target_id=model.model_id,
+                reason=description or "모델 버전 추가",
+            )
+
+            model.last_version_num = next_model_version
+
+        # --- (2) 설정 파일이 있을 경우: Config 버전 추가 ---
+        if cfg_entry:
+            # 기존 Config 버전 조회 후 +1
+            last_cfg = (
+                db.query(ModelConfig)
+                .filter(ModelConfig.model_id == model.model_id)
+                .order_by(ModelConfig.version.desc())
+                .first()
+            )
+            next_cfg_version = (last_cfg.version if last_cfg else 0) + 1
+
+            config_text = cfg_entry.read_text(encoding="utf-8", errors="ignore")
+
+            # 기존 is_current 해제
+            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True).update(
+                {"is_current": False}
+            )
+
+            save_model_config(db, model.model_id, next_cfg_version, config_text, str(cfg_entry), user.user_id)
+            save_model_release(
+                db,
+                actor_id=user.user_id,
+                type_=ReleaseType.CONFIG,
+                action_=ReleaseAction.UPDATE,
+                target_id=model.model_id,
+                reason=description or "설정 변경",
+            )
 
         db.commit()
 
     except Exception as e:
         db.rollback()
-        triton_client.unload_model(model_name=model.name)
-        vdir = MODEL_REPO_ROOT / model.name / str(next_version)
-        if vdir.exists():
+        # (1) 모델 파일 관련 실패 → 새 버전 폴더 삭제
+        if model_file:
+            vdir = MODEL_REPO_ROOT / model.name / str(next_model_version)
             shutil.rmtree(vdir, ignore_errors=True)
 
+        # (2) config 관련 실패
+        if config_file and cfg_entry:
+            # DB에서 기존 최신 config 조회
+            prev_cfg = (
+                db.query(ModelConfig)
+                .filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True)
+                .first()
+            )
+            if prev_cfg:
+                cfg_entry.write_text(prev_cfg.content, encoding="utf-8")
+
         raise CustomHTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            CustomCode.ERR_500.value,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
             message=Messages.MODEL_REGISTER_DB_ERROR.value,
             data=str(e),
         )
 
-    return create_response(
-        CustomCode.MODEL_004.value,
-        Messages.MODEL_VERSION_ADD_SUCCESS.value,
-        {
-            "modelId": model_id,
-            "version": next_version,
-            "files": saved_files,
-            # "description": description,
-            # "createdBy": login_id,
-            "createdAt": version.created_at.isoformat(),
-        },
-    )
+    return create_response(CustomCode.MODEL_004.value, Messages.MODEL_VERSION_ADD_SUCCESS.value, None)
 
 
 # =====================================================
