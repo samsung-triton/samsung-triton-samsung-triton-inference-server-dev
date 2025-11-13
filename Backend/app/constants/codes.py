@@ -37,6 +37,8 @@ class CustomCode(str, Enum):
     UPLOAD_001 = "UPLOAD-001"
 
     RESULT_001 = "RESULT-001"
+    RESULT_002 = "RESULT-002"
+    RESULT_003 = "RESULT-003"
 
     INFER_001 = "INFER-001"
 
@@ -45,3 +47,7 @@ class CustomCode(str, Enum):
 
     LOG_001 = "LOG-001"
     LOG_002 = "LOG-002"
+
+    TIME_001 = "TIME_001"
+
+    STATIS_001 = "STATIS_001"

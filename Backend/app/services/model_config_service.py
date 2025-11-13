@@ -197,14 +197,15 @@ async def get_config_history_with_selected_service(db: Session, model_id: int, c
 def update_model_config_service(
     model_id: int,
     login_id: str,
-    config_content: str,  # FormData로 전달된 텍스트
+    config_content: str,
     description: str,
     db: Session,
 ):
-    """특정 모델의 config 내용을 수정하고 Triton에 반영"""
+    """모델 Config 수정 + Triton 반영 + 실패 시 완전 롤백"""
 
-    # 유저 및 모델 유효성 검증
+    # 1. 유효성 검증
     user = get_user_or_404(db, login_id)
+
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
         raise CustomHTTPException(
@@ -221,28 +222,50 @@ def update_model_config_service(
             f"모델 config 파일({cfg_path})이 존재하지 않습니다.",
         )
 
-    try:
-        # 파일 내용 덮어쓰기
-        cfg_path.write_text(config_content, encoding="utf-8")
-        time.sleep(0.5)
-        # Triton 모델 재시작 (unload → load)
-        try:
-            triton_client.unload_model(model_name=model.name)
-            triton_client.load_model(model_name=model.name)
-        except Exception as e:
-            raise CustomHTTPException(
-                status.HTTP_500_INTERNAL_SERVER_ERROR,
-                CustomCode.ERR_500.value,
-                f"Triton 모델 재시작 중 오류 발생: {e}",
-            )
+    # 2. 기존 config (DB 기준) 가져오기 → 파일 롤백용
+    previous_config = (
+        db.query(ModelConfig)
+        .filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True)
+        .first()
+    )
 
-        # 기존 최신 Config 비활성화
+    if not previous_config:
+        raise CustomHTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            CustomCode.ERR_500.value,
+            Messages.CONFIG_DELETE_NOT_FOUND.value
+        )
+
+    previous_content = previous_config.content
+
+    # STEP 1: 파일 수정 + Triton reload
+    try:
+        # 파일에 새 config 쓰기
+        cfg_path.write_text(config_content, encoding="utf-8")
+        time.sleep(0.2)
+
+        # Triton 모델 reload (여기서 오류 발생 가능)
+        triton_client.unload_model(model.name)
+        triton_client.load_model(model.name)
+
+    except Exception as e:
+        # 파일 롤백 (이전 정상 config 복구)
+        cfg_path.write_text(previous_content, encoding="utf-8")
+
+        raise CustomHTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            CustomCode.ERR_500.value,
+            f"Triton 재시작 중 오류 발생 → 파일 롤백 완료: {e}",
+        )
+
+    # STEP 2: DB 업데이트 (여기서 실패하면 파일 롤백 + DB rollback)
+    try:
+        # 기존 최신 버전 inactive
         db.query(ModelConfig).filter(
             ModelConfig.model_id == model_id,
-            ModelConfig.is_current == True,
+            ModelConfig.is_current == True
         ).update({"is_current": False})
 
-        # 새 버전 추가
         latest_version = (
             db.query(func.max(ModelConfig.version))
             .filter(ModelConfig.model_id == model_id)
@@ -250,6 +273,7 @@ def update_model_config_service(
             or 0
         )
 
+        # 새 버전 저장
         new_config = save_model_config(
             db=db,
             model_id=model_id,
@@ -258,17 +282,6 @@ def update_model_config_service(
             file_path=str(cfg_path),
             user_id=user.user_id,
         )
-
-        # 오래된 Config(6번째 이상)는 자동 삭제
-        old_configs = (
-            db.query(ModelConfig)
-            .filter(ModelConfig.model_id == model_id)
-            .order_by(ModelConfig.created_at.desc())
-            .offset(5)
-            .all()
-        )
-        for old in old_configs:
-            db.delete(old)
 
         # 릴리즈 로그 기록
         save_model_release(
@@ -280,26 +293,41 @@ def update_model_config_service(
             reason=description or "Config 수정 및 재적용",
         )
 
+        # 오래된 버전 자동 삭제
+        old_configs = (
+            db.query(ModelConfig)
+            .filter(ModelConfig.model_id == model_id)
+            .order_by(ModelConfig.created_at.desc())
+            .offset(5)
+            .all()
+        )
+        for old in old_configs:
+            db.delete(old)
+
         db.commit()
 
-        # 응답
-        return create_response(
-            code=CustomCode.CONFIG_004.value,
-            message=Messages.CONFIG_APPLY_SUCCESS.value,
-            data={
-                "configId": new_config.config_id,
-                "version": new_config.version,
-                "filePath": str(cfg_path),
-                "createdBy": user.name,
-                "createdAt": new_config.created_at,
-                "isCurrent": True,
-            },
-        )
-
     except Exception as e:
+        # DB 오류 발생 → 파일 rollback + DB rollback
         db.rollback()
+        cfg_path.write_text(previous_content, encoding="utf-8")
+
         raise CustomHTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             CustomCode.ERR_500.value,
-            f"Config 수정 중 오류 발생: {e}",
+            f"DB 업데이트 중 오류 발생 → 파일/DB 롤백 완료: {e}",
         )
+
+    
+    # SUCCESS RESPONSE
+    return create_response(
+        code=CustomCode.CONFIG_004.value,
+        message=Messages.CONFIG_APPLY_SUCCESS.value,
+        data={
+            "configId": new_config.config_id,
+            "version": new_config.version,
+            "filePath": str(cfg_path),
+            "createdBy": user.name,
+            "createdAt": new_config.created_at,
+            "isCurrent": True,
+        },
+    )
