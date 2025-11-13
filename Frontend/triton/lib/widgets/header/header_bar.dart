@@ -1,7 +1,9 @@
 // 전체 헤더 바
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:triton/router.dart';
 import 'package:triton/controller/auth/auth_controller.dart';
 import 'package:triton/controller/server/server_controller.dart';
@@ -25,13 +27,12 @@ class HeaderBar extends StatefulWidget {
 class _HeaderBarState extends State<HeaderBar> {
   late final ServerController serverController;
   final _auth = Get.find<AuthController>();
+  final _authStorage = GetStorage('auth');
 
   @override
   void initState() {
     super.initState();
     serverController = Get.put(ServerController(), permanent: false);
-    // TODO: 서버 최초 상태 조회
-    // serverController.refreshStatus();
   }
 
   @override
@@ -42,6 +43,8 @@ class _HeaderBarState extends State<HeaderBar> {
 
   @override
   Widget build(BuildContext context) {
+    final role = _authStorage.read<String>('role') ?? '';
+
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: widget.headerH, maxHeight: widget.headerH),
       child: Container(
@@ -54,7 +57,8 @@ class _HeaderBarState extends State<HeaderBar> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const HeaderNav(),
+            if (role == 'DEVEL') const HeaderNav() else const SizedBox(width: 300),
+
             Row(
               children: [
                 const ServerStatusContainer(),
@@ -68,7 +72,7 @@ class _HeaderBarState extends State<HeaderBar> {
                 ButtonMedium(
                   text: 'Log Out',
                   onPressed: () {
-                    _auth.logout();
+                    _auth.logout(); // 여기서 Storage도 같이 정리됨
                     if (mounted) {
                       context.go(Routes.login);
                     }
