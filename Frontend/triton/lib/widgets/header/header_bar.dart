@@ -1,7 +1,9 @@
-// lib/widgets/frame/header_bar.dart
+// 전체 헤더 바
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import 'package:go_router/go_router.dart';
+import 'package:triton/router.dart';
+import 'package:triton/controller/auth/auth_controller.dart';
 import 'package:triton/controller/server/server_controller.dart';
 
 import '../../theme/app_colors.dart';
@@ -22,19 +24,18 @@ class HeaderBar extends StatefulWidget {
 
 class _HeaderBarState extends State<HeaderBar> {
   late final ServerController serverController;
+  final _auth = Get.find<AuthController>();
 
   @override
   void initState() {
     super.initState();
-    // 헤더 전용 컨트롤러 주입
     serverController = Get.put(ServerController(), permanent: false);
-    // 필요 시 최초 상태 조회
-    // _hc.refreshStatus();
+    // TODO: 서버 최초 상태 조회
+    // serverController.refreshStatus();
   }
 
   @override
   void dispose() {
-    // 헤더 영역 벗어날 때 컨트롤러 정리
     Get.delete<ServerController>();
     super.dispose();
   }
@@ -60,12 +61,21 @@ class _HeaderBarState extends State<HeaderBar> {
                 const SizedBox(width: 16),
                 const ServerControl(),
                 const SizedBox(width: 16),
-                // 원래처럼 Container로 구분선
                 Container(width: 2, height: 24, color: black),
                 const SizedBox(width: 16),
                 const NameText(),
                 const SizedBox(width: 8),
-                const ButtonMedium(text: "Log Out", backgroundColor: black, textColor: white),
+                ButtonMedium(
+                  text: 'Log Out',
+                  onPressed: () {
+                    _auth.logout();
+                    if (mounted) {
+                      context.go(Routes.login);
+                    }
+                  },
+                  backgroundColor: black,
+                  textColor: white,
+                ),
               ],
             ),
           ],
