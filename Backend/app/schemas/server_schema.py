@@ -9,3 +9,4 @@ class ServerStatusResponse(BaseModel):
 
 class ServerActorRequest(BaseModel):
     user_login_id: str
+    description: str | None = None 

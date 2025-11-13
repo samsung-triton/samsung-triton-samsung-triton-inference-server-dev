@@ -21,9 +21,9 @@ def get_user_or_404(db: Session, login_id: str) -> User:
     return user
 
 
-def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus):
-    # 서버 상태 변경 로그 저장
-    db.add(Server(actor_id=user_id, status=status_enum))
+def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus, description: str | None = None):
+    server_log = Server(actor_id=user_id, status=status_enum, description=description)
+    db.add(server_log)
     db.commit()
 
 
@@ -50,34 +50,30 @@ async def get_server_status_service(db: Session):
         )
 
 
-# Triton 서버 제어 공통 함수
 async def _execute_server_action(
     db: Session,
     actor_login_id: str,
     action_func,
     success_status: ServerStatus,
     dual_log: bool = False,
+    description: str | None = None,  
 ):
-    # 서버 시작/중지/재시작 공통 로직
     user = get_user_or_404(db, actor_login_id)
 
     try:
         result = await action_func()
 
-        # BaseResponse 객체에서 속성으로 접근
         data = result.data if hasattr(result, "data") else {}
         code = result.code if hasattr(result, "code") else CustomCode.MASTER_001.value
         message = result.message if hasattr(result, "message") else ""
 
         if dual_log:
-            db.add_all(
-                [
-                    Server(actor_id=user.user_id, status=ServerStatus.STOP),
-                    Server(actor_id=user.user_id, status=ServerStatus.START),
-                ]
-            )
+            db.add_all([
+                Server(actor_id=user.user_id, status=ServerStatus.STOP, description=description),
+                Server(actor_id=user.user_id, status=ServerStatus.START, description=description),
+            ])
         else:
-            _log_server_action(db, user.user_id, success_status)
+            _log_server_action(db, user.user_id, success_status, description)
 
         db.commit()
 
@@ -93,6 +89,7 @@ async def _execute_server_action(
         )
 
 
+
 # Triton 서버 시작
 async def start_server_service(db: Session, actor_login_id: str):
     # Triton 서버 시작
@@ -100,12 +97,22 @@ async def start_server_service(db: Session, actor_login_id: str):
 
 
 # Triton 서버 중지
-async def stop_server_service(db: Session, actor_login_id: str):
-    # Triton 서버 중지
-    return await _execute_server_action(db, actor_login_id, stop_triton, ServerStatus.STOP)
-
+async def stop_server_service(db: Session, actor_login_id: str, description: str | None = None):
+    return await _execute_server_action(
+        db,
+        actor_login_id,
+        stop_triton,
+        ServerStatus.STOP,
+        description=description,
+    )
 
 # Triton 서버 재시작
-async def restart_server_service(db: Session, actor_login_id: str):
-    # Triton 서버 재시작
-    return await _execute_server_action(db, actor_login_id, restart_triton, ServerStatus.START, dual_log=True)
+async def restart_server_service(db: Session, actor_login_id: str, description: str | None = None):
+    return await _execute_server_action(
+        db,
+        actor_login_id,
+        restart_triton,
+        ServerStatus.START,
+        dual_log=True,
+        description=description,
+    )
