@@ -1,8 +1,7 @@
 import asyncio
 import httpx
 import math
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
 from fastapi import status
 from typing import List, Optional
 
@@ -12,6 +11,7 @@ from app.core.customException import CustomHTTPException
 from app.constants.codes import CustomCode
 from app.constants.messages import Messages
 from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, MetricData
+from app.core.config import TIMEZONE
 
 
 async def get_server_metrics_service():
@@ -53,7 +53,7 @@ async def get_server_metrics_service():
                 cpu_util = float(val[1])
 
         data = {
-            "timestamp": datetime.now(ZoneInfo("Asia/Seoul")).isoformat(),
+            "timestamp": datetime.now(TIMEZONE).isoformat(),
             "cpu_utilization": round(cpu_util, 2),
             "gpu": gpu_data,
         }
@@ -108,14 +108,13 @@ async def prom_query_range(promql: str, start: datetime, end: datetime, step: st
 
     ep = f"{settings.PROM_URL.rstrip('/')}/api/v1/query_range"
 
-    # timezone 서울로 변경하기
-    def to_rfc3339_utc(dt: datetime) -> str:
-        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    def to_rfc3339(dt: datetime) -> str:
+        return dt.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     params = {
         "query": promql,
-        "start": to_rfc3339_utc(start),
-        "end": to_rfc3339_utc(end),
+        "start": to_rfc3339(start),
+        "end": to_rfc3339(end),
         "step": step,
     }
 
@@ -157,13 +156,13 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
         # 1) end 시각 파싱
         if end_iso:
             if end_iso.isdigit():
-                end_dt = datetime.fromtimestamp(int(end_iso), tz=timezone.utc)
+                end_dt = datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
             else:
                 end_dt = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
                 if end_dt.tzinfo is None:
-                    end_dt = end_dt.replace(tzinfo=timezone.utc)
+                    end_dt = end_dt.replace(tzinfo=TIMEZONE)
         else:
-            end_dt = datetime.now(timezone.utc)
+            end_dt = datetime.now(TIMEZONE)
 
         start_dt = end_dt - timedelta(hours=1)
 
@@ -187,7 +186,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
             points: List[ValueItem] = []
             for ts, val in s.get("values", []):
                 try:
-                    ts_dt = datetime.fromtimestamp(float(ts), tz=timezone.utc)
+                    ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
                     v = float(val)
                     if math.isnan(v) or math.isinf(v):
                         continue
@@ -204,7 +203,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
             points: List[ValueItem] = []
             for ts, val in s.get("values", []):
                 try:
-                    ts_dt = datetime.fromtimestamp(float(ts), tz=timezone.utc)
+                    ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
                     v = float(val)
                     if math.isnan(v) or math.isinf(v):
                         continue

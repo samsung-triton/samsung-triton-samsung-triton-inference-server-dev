@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
 from fastapi import status
 from app.clients.gpu_router import get_triton_status, start_triton, stop_triton, restart_triton
 from app.core.response_utils import create_response
@@ -34,7 +33,7 @@ async def get_server_status_service(db: Session):
     try:
         result = await get_triton_status()
         # BaseResponse 객체에서 속성으로 접근
-        status_data = result.data if hasattr(result, 'data') else {}
+        status_data = result.data if hasattr(result, "data") else {}
         is_ready = status_data.get("status") == "ready" if isinstance(status_data, dict) else False
 
         return create_response(
@@ -64,17 +63,19 @@ async def _execute_server_action(
 
     try:
         result = await action_func()
-        
+
         # BaseResponse 객체에서 속성으로 접근
-        data = result.data if hasattr(result, 'data') else {}
-        code = result.code if hasattr(result, 'code') else CustomCode.MASTER_001.value
-        message = result.message if hasattr(result, 'message') else ""
+        data = result.data if hasattr(result, "data") else {}
+        code = result.code if hasattr(result, "code") else CustomCode.MASTER_001.value
+        message = result.message if hasattr(result, "message") else ""
 
         if dual_log:
-            db.add_all([
-                Server(actor_id=user.user_id, status=ServerStatus.STOP),
-                Server(actor_id=user.user_id, status=ServerStatus.START),
-            ])
+            db.add_all(
+                [
+                    Server(actor_id=user.user_id, status=ServerStatus.STOP),
+                    Server(actor_id=user.user_id, status=ServerStatus.START),
+                ]
+            )
         else:
             _log_server_action(db, user.user_id, success_status)
 
@@ -107,6 +108,4 @@ async def stop_server_service(db: Session, actor_login_id: str):
 # Triton 서버 재시작
 async def restart_server_service(db: Session, actor_login_id: str):
     # Triton 서버 재시작
-    return await _execute_server_action(
-        db, actor_login_id, restart_triton, ServerStatus.START, dual_log=True
-    )
+    return await _execute_server_action(db, actor_login_id, restart_triton, ServerStatus.START, dual_log=True)
