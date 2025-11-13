@@ -116,18 +116,40 @@ def list_models_service(db: Session) -> Dict[str, Any]:
         for m in triton_models:
             triton_grouped[m["name"]].append(m)
 
-        # DB 모델 데이터 조회
-        db_models = db.query(Model).all()
+        triton_alive = True
 
-        # response data 변환
-        result = []
-        for model in db_models:
-            model_id = model.model_id
-            name = model.name
-            type = model.type
-            total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
+    except Exception as e:
+        # Triton 연결 실패 → FALLBACK로 DB만 사용
+        msg = str(e).lower()
+        conn_err = (
+            "failed to connect" in msg or "connection refused" in msg or "unavailable" in msg or "timed out" in msg
+        )
 
-            # 상태 확인
+        if conn_err:
+            triton_alive = False
+        else:
+            # 나머지는 진짜 서버 내부 오류 → 그대로 500 던짐
+            raise CustomHTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                code=CustomCode.ERR_500.value,
+                message=Messages.MODEL_LIST_FETCH_ERROR.value,
+                data={"detail": str(e)},
+            )
+
+    # DB 모델 데이터 조회
+    db_models = db.query(Model).all()
+
+    # response data 변환
+    result = []
+    for model in db_models:
+        model_id = model.model_id
+        name = model.name
+        type = model.type
+        total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
+
+        # Triton 살아있으면 기존 방식 그대로
+        # 상태 확인
+        if triton_alive:
             versions = triton_grouped.get(name, [])
             ready_versions = [v for v in versions if v.get("state") == "READY"]
 
@@ -137,43 +159,27 @@ def list_models_service(db: Session) -> Dict[str, Any]:
             else:
                 status_bool = False
                 last_loaded = "N/A"
+        # Triton 꺼져있으면 FALLBACK: DB 정보만 사용
+        else:
+            status_bool = False
+            last_loaded = "N/A"
 
-            result.append(
-                {
-                    "modelId": model_id,
-                    "name": name,
-                    "type": type,
-                    "status": status_bool,  # True / False
-                    "lastLoadedVersion": last_loaded,  # "4" or "N/A"
-                    "totalVersions": total_versions,  # from DB
-                }
-            )
-
-        return create_response(
-            CustomCode.MODEL_001.value,
-            Messages.MODEL_LIST_FETCH_SUCCESS.value,
-            {"models": result},
+        result.append(
+            {
+                "modelId": model_id,
+                "name": name,
+                "type": type,
+                "status": status_bool,  # True / False
+                "lastLoadedVersion": last_loaded,  # "4" or "N/A"
+                "totalVersions": total_versions,  # from DB
+            }
         )
 
-    except Exception as e:
-        msg = str(e).lower()
-
-        # 연결 실패/타임아웃 계열 → Triton NOT READY
-        if "failed to connect" in msg or "connection refused" in msg or "unavailable" in msg or "timed out" in msg:
-            raise CustomHTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                code=CustomCode.ERR_503.value,
-                message=Messages.TRITON_NOT_READY.value,
-                data={"detail": str(e)},
-            )
-
-        # 나머지는 일반적인 목록 조회 에러
-        raise CustomHTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            code=CustomCode.ERR_500.value,
-            message=Messages.MODEL_LIST_FETCH_ERROR.value,
-            data={"detail": str(e)},
-        )
+    return create_response(
+        CustomCode.MODEL_001.value,
+        Messages.MODEL_LIST_FETCH_SUCCESS.value,
+        {"models": result},
+    )
 
 
 # =========================================================
