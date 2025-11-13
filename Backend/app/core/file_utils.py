@@ -138,11 +138,16 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dic
             dst.unlink(missing_ok=True)
         else:
             raise CustomHTTPException(
-                status_code=400, code=CustomCode.ERR_400.value, message=Messages.INVALID_ARCHIVE_FORMAT.value
+                status_code=status.HTTP_400_BAD_REQUEST,
+                code=CustomCode.ERR_400.value,
+                message=Messages.INVALID_ARCHIVE_FORMAT.value,
             )
     except Exception as e:
         raise CustomHTTPException(
-            status_code=400, code=CustomCode.ERR_400.value, message=Messages.ARCHIVE_EXTRACTION_ERROR.value, data=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.ARCHIVE_EXTRACTION_ERROR.value,
+            data=str(e),
         )
 
     # 4) 압축 해제 후 model_root 바로 아래 파일만 수집
