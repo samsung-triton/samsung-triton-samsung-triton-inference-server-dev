@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'router.dart';
-
+import 'package:triton/utils/api_client.dart';
 import './theme/app_colors.dart';
 
 void main() {
+  Get.put<ApiClient>(ApiClient(), permanent: true);
   runApp(const MyApp());
 }
 
