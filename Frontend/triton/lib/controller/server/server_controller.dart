@@ -1,6 +1,8 @@
 // 헤더 컨트롤러
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:triton/utils/api_client.dart';
+import 'package:get_storage/get_storage.dart';
 
 // 서버 상태
 class ServerStatus {
@@ -15,6 +17,8 @@ class ServerController extends GetxController {
   final RxBool isBusy = false.obs;
   final RxString lastError = ''.obs;
   final RxString uptimeHms = '00:00:00'.obs;
+
+  final ApiClient api = Get.put(ApiClient());
 
   Timer? _tick;
 
@@ -80,13 +84,27 @@ class ServerController extends GetxController {
       isBusy.value = true;
       lastError.value = '';
 
-      // TODO:
-      // await api.startServer();
-      // await refreshStatus();
+      // 로그인 사용자 ID 불러오기
+      final authStorage = GetStorage('auth');
+      final userLoginId = authStorage.read('loginedId');
+      if (userLoginId == null || userLoginId.isEmpty) {
+        throw Exception('로그인 정보가 없습니다.');
+      }
 
-      serverStatus.value = ServerStatus(status: "running", startedAt: DateTime.now());
+      final response = await api.startServer(userLoginId: userLoginId);
+      //print('📬 응답 코드: ${response.statusCode}');
+      //print('📦 응답 본문: ${response.body}');
+      if (response.statusCode == 200) {
+        final data = response.body;
+        final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
+        serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
+        //print('✅ 서버 시작 성공, startedAt = ${serverStatus.value?.startedAt}');
+      } else {
+        throw Exception('서버 시작 실패 (${response.statusCode})');
+      }
     } catch (e) {
       lastError.value = '서버 시작 실패: $e';
+      print('❌ [startServer] 예외 발생: $e'); //에러 로그 출력
     } finally {
       isBusy.value = false;
     }
