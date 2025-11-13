@@ -39,7 +39,10 @@ class ApiClient extends GetConnect {
 
   // 서버 시작
   Future<Response> startServer({required String userLoginId}) {
-    return post('/api/v1/server/start', {'user_login_id': userLoginId}, contentType: 'application/json');
+    return post('/api/v1/server/start', {
+      'user_login_id': userLoginId,
+      'description': null,
+    }, contentType: 'application/json');
   }
 
   // 서버 중지
