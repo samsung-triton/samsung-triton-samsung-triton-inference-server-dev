@@ -1,6 +1,6 @@
+from app.core.database import Base
 from sqlalchemy import Column, BigInteger, Integer, Text, Boolean, TIMESTAMP, ForeignKey, text
 from sqlalchemy.orm import relationship
-from app.core.database import Base
 
 
 class ModelConfig(Base):

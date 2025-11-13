@@ -1,18 +1,19 @@
+import re
+import shutil
+from fastapi import UploadFile, status
+from sqlalchemy.orm import Session
 from collections import defaultdict
 from typing import Dict, Any, List
-from fastapi import UploadFile, status
 from pathlib import Path
-import shutil
-import re
-from sqlalchemy.orm import Session
 
 from app.clients.triton_client import triton_client
 from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 from app.core.config import settings
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
+from app.common.utils import get_user_or_404
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 from app.models.model import (
     Model,
     ModelVersion,
@@ -48,20 +49,6 @@ def _save_stream(dst: Path, up: UploadFile) -> int:
     with dst.open("wb") as f:
         shutil.copyfileobj(up.file, f)
     return dst.stat().st_size
-
-
-# =====================================================
-# DB 관련 함수
-# =====================================================
-def _get_user_or_404(db: Session, login_id: str) -> User:
-    user = db.query(User).filter(User.login_id == login_id).first()
-    if not user:
-        raise CustomHTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code=CustomCode.ERR_404.value,
-            message=Messages.USER_NOT_FOUND.value,
-        )
-    return user
 
 
 def _save_model(db: Session, name: str, model_type: str, storage_dir: str) -> Model:
@@ -176,7 +163,7 @@ def list_models_service(db: Session) -> Dict[str, Any]:
         if "failed to connect" in msg or "connection refused" in msg or "unavailable" in msg or "timed out" in msg:
             raise CustomHTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                code=CustomCode.ERR_503.value,
+                code=CustomCode.ERR_500.value,
                 message=Messages.TRITON_NOT_READY.value,
                 data={"detail": str(e)},
             )
@@ -283,7 +270,7 @@ def register_model_service(
         )
 
     # 3) DB 기록
-    user = _get_user_or_404(db, req.LoginId)
+    user = get_user_or_404(db, req.LoginId)
     config_text = cfg_path.read_text(encoding="utf-8", errors="ignore")
 
     try:
@@ -372,7 +359,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
         )
 
     # === 3. DB 기록 ===
-    user = _get_user_or_404(db, req.LoginId)
+    user = get_user_or_404(db, req.LoginId)
 
     try:
         model = _save_model(db, model_name, "ENSEMBLE", str(MODEL_REPO_ROOT / model_name))
@@ -431,7 +418,7 @@ def register_model_version_service(
             Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    user = _get_user_or_404(db, login_id)
+    user = get_user_or_404(db, login_id)
 
     next_version = (model.last_version_num or 1) + 1
 
@@ -541,7 +528,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
             Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    user = _get_user_or_404(db, req.loginId)
+    user = get_user_or_404(db, req.loginId)
 
     version_obj = (
         db.query(ModelVersion).filter(ModelVersion.model_id == model_id, ModelVersion.version == version).first()
@@ -583,8 +570,8 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
 
     except Exception as e:
         raise CustomHTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            code=CustomCode.ERR_503.value,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
             message=Messages.TRITON_CONNECTION_ERROR.value,
             data={"detail": str(e)},
         )
@@ -620,7 +607,7 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
             Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    user = _get_user_or_404(db, req.loginId)
+    user = get_user_or_404(db, req.loginId)
 
     # === 2. Triton 언로드 ===
     try:

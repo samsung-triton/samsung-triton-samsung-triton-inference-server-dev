@@ -1,7 +1,7 @@
-from sqlalchemy import Column, BigInteger, TIMESTAMP, ForeignKey, text
-from sqlalchemy.dialects.postgresql import ENUM
 from app.core.database import Base
 from enum import Enum as PyEnum
+from sqlalchemy import Column, BigInteger, TIMESTAMP, ForeignKey, text
+from sqlalchemy.dialects.postgresql import ENUM
 
 
 class ServerStatus(PyEnum):

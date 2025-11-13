@@ -1,12 +1,14 @@
-from app.core.response_utils import create_response
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
+import json
+from fastapi import status
 from datetime import datetime
 from pathlib import Path
+
+from app.core.response_utils import create_response
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 from app.core.customException import CustomHTTPException
 from app.core.config import TIMEZONE
-from fastapi import status
-import json
+
 
 AGGREGATION_FILE = Path("app/state/standard_state.json")
 
@@ -39,7 +41,7 @@ def update_standard_time(new_time: str):
         hour, minute = map(int, new_time.split(":"))
         assert 0 <= hour < 24 and 0 <= minute < 60
     except Exception:
-        raise CustomHTTPException(  # 샤갈 이것도.. main에서 잡을 것 같은데
+        raise CustomHTTPException(  # 이것도.. main에서 잡을 것 같은데
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
             message="example : 15:00",

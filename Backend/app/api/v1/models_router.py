@@ -1,9 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, Depends, status, Path, Form, Body
 from typing import List, Annotated
-
 from sqlalchemy.orm import Session
-from app.core.database import get_db
 
+from app.core.database import get_db
 from app.schemas.base_schema import BaseResponse
 from app.services.model_service import (
     list_models_service,

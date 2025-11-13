@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from fastapi import Form
-from typing import List, Optional
+from typing import Optional
 from app.models.model import ModelType
 
 # ========== Request (요청) ==========

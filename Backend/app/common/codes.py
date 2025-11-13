@@ -6,12 +6,12 @@ class CustomCode(str, Enum):
     AUTH_001 = "AUTH-001"  # 로그인 성공
 
     # 에러 처리
-    ERR_400 = "ERR-400"
-    ERR_401 = "ERR-401"
-    ERR_404 = "ERR-404"
+    ERR_400 = "ERR-400"  # 잘못된 요청
+    ERR_401 = "ERR-401"  # 저장된 정보와 불일치
+    ERR_404 = "ERR-404"  # 정보를 찾을 수 없음
     ERR_409 = "ERR-409"  # 중복
-    ERR_500 = "ERR-500"
-    ERR_503 = "ERR-503"
+    ERR_500 = "ERR-500"  # 내부오류
+    ERR_503 = "ERR-503"  #
 
     # 마스터키
     MASTER_001 = "MASTER-001"  # 마스터키 일치 여부 확인
@@ -21,8 +21,8 @@ class CustomCode(str, Enum):
     DOCKER_001 = "DOCKER-001"  # 트리톤 도커 실행 상태
     DOCKER_002 = "DOCKER-002"  # 트리톤 도커 중지 성공
     DOCKER_003 = "DOCKER-003"  # 트리톤 도커 재시작 성공
-    DOCKER_004 = "DOCKER-004"  # 트리톤 read 상태
-    DOCKER_005 = "DOCKER-005"  # 트리톤 not read 상태
+    DOCKER_004 = "DOCKER-004"  # 트리톤 ready 상태
+    DOCKER_005 = "DOCKER-005"  # 트리톤 not ready 상태
     DOCKER_006 = "DOCKER-006"  # 트리톤 러닝 상태
 
     # triton 모델 관리

@@ -1,16 +1,16 @@
 from sqlalchemy.orm import Session
-from app.models.user import User
-from app.schemas.base_schema import BaseResponse
-from app.core.response_utils import create_response
-from app.core.customException import CustomHTTPException
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
 from fastapi import status
+
+from app.schemas.base_schema import BaseResponse
+from app.core.customException import CustomHTTPException
+from app.core.response_utils import create_response
+from app.common.utils import get_user_or_404
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 
 
 def login_user_service(login_id: str, password: str, db: Session) -> BaseResponse:
-
-    user = db.query(User).filter(User.login_id == login_id).first()
+    user = get_user_or_404(db, login_id)
     if not user:
         raise CustomHTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
