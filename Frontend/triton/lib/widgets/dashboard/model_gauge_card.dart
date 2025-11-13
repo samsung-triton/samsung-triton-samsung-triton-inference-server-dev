@@ -22,62 +22,62 @@ class ModelGaugeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: lightGray),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // ✅ 왼쪽 텍스트 영역
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(title, style: T.t16(bold: true)),
-              Text("Total : $total", style: T.t12(color: gray)),
-              const SizedBox(height: 8),
-              // 회색 실선
-              Container(height: 1, width: 450, color: lightGray),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: statusGreen.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center, // Requests, Total 가운데 정렬
+              children: [
+                Text(title, style: T.t16(bold: true)),
+                const SizedBox(height: 4),
+                Text("Total : $total", style: T.t12(color: gray)),
+                const SizedBox(height: 8),
+                // 회색 실선
+                Container(height: 1, width: 500, color: lightGray),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center, // success, fail 가운데 정렬
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text("Success: $success", style: T.t12(color: statusGreen)),
                     ),
-                    child: Text("Success: $success", style: T.t12(color: statusGreen)),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: statusRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusRed.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text("Fail: $fail", style: T.t12(color: statusRed)),
                     ),
-                    child: Text("Fail: $fail", style: T.t12(color: statusRed)),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
 
           // ✅ 오른쪽 반원 게이지 (CustomPaint)
           SizedBox(
             width: 160,
-            height: 70,
+            height: 80,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                CustomPaint(size: const Size(160, 70), painter: _HalfGaugePainter(percent)),
+                CustomPaint(size: const Size(160, 80), painter: _HalfGaugePainter(percent)),
                 Positioned(bottom: 6, child: Text("${percent.toStringAsFixed(0)}%", style: T.t20(bold: true))),
               ],
             ),
