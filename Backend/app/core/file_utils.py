@@ -2,7 +2,7 @@ from fastapi import UploadFile, status
 from pathlib import Path
 from typing import List, Dict, Union
 import shutil, zipfile, tarfile, os
-import re
+import re, secrets
 
 from app.core.customException import CustomHTTPException
 from app.constants.codes import CustomCode
@@ -46,6 +46,19 @@ def save_stream(dst: Path, up: UploadFile) -> int:
 # =====================================================
 def _extract_zip(zip_path: Path, base_dir: Path):
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        # 디렉토리 제외한 "실제 파일" 목록
+        file_members = [m for m in zip_ref.infolist() if not m.is_dir()]
+
+        # 파일이 1개일 때는 그냥 그 파일 이름 그대로 쓰기 (common_prefix X)
+        if len(file_members) == 1:
+            member = file_members[0]
+            rel_path = member.filename  # 'config.pbtxt' 같은 것
+            target_path = base_dir / rel_path
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with zip_ref.open(member, "r") as src, open(target_path, "wb") as dst:
+                dst.write(src.read())
+            return
+
         # 공통 경로 추출
         try:
             common_prefix = os.path.commonpath(zip_ref.namelist())
@@ -72,13 +85,23 @@ def _extract_zip(zip_path: Path, base_dir: Path):
 
 def _extract_tar(tar_path: Path, base_dir: Path):
     with tarfile.open(tar_path, "r:*") as tar_ref:
-        members = [m for m in tar_ref.getmembers() if m.isfile()]
+        file_members = [m for m in tar_ref.getmembers() if m.isfile()]
+
+        if len(file_members) == 1:
+            member = file_members[0]
+            rel_path = member.name
+            target_path = base_dir / rel_path
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with tar_ref.extractfile(member) as src, open(target_path, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+            return
+
         try:
-            common_prefix = os.path.commonpath([m.name for m in members])
+            common_prefix = os.path.commonpath([m.name for m in file_members])
         except ValueError:
             common_prefix = ""
 
-        for member in members:
+        for member in file_members:
             try:
                 rel_path = os.path.relpath(member.name, common_prefix)
             except ValueError:
@@ -142,6 +165,7 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dic
                 code=CustomCode.ERR_400.value,
                 message=Messages.INVALID_ARCHIVE_FORMAT.value,
             )
+
     except Exception as e:
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -150,7 +174,7 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dic
             data=str(e),
         )
 
-    # 4) 압축 해제 후 model_root 바로 아래 파일만 수집
+    # # 4) 압축 해제 후 model_root 바로 아래 파일만 수집
     for p in model_root.iterdir():
         if p.is_file():
             saved_files.append({"fileName": p.name, "filePath": str(p)})
