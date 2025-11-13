@@ -1,84 +1,79 @@
+import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:triton/utils/api_client.dart';
 
 class AuthController extends GetxController {
-  // 상태 변수들
-  final isLoading = false.obs;
-  final isLoggedIn = false.obs;
+  // 로컬 스토리지
+  final authStorage = GetStorage('auth');
+  static const _kLoginedId = 'loginedId';
+  static const _kRole = 'role';
 
-  // 로그인 입력값
-  final loginId = ''.obs;
-  final password = ''.obs;
+  // 공통 API 클라이언트 사용
+  late final ApiClient _api;
 
-  // 사용자 정보
-  final userId = RxnInt();
-  final userName = ''.obs;
+  @override
+  void onInit() {
+    super.onInit();
 
-  // 더미 로그인 계정 리스트 (테스트용)
-  final dummyUsers = [
-    {'loginId': 'jieun', 'password': '1234', 'name': 'Jieunnnnnnny'},
-    {'loginId': 'minju', 'password': '1234', 'name': 'minju'},
-  ];
+    _api = Get.find<ApiClient>();
+  }
 
-  /// 로그인 로직
-  Future<bool> login() async {
-    if (loginId.isEmpty || password.isEmpty) {
-      print('[AuthController] ❌ 아이디 또는 비밀번호가 비어있습니다.');
+  Future<bool> login(String id, String pw) async {
+    if (id.trim().isEmpty || pw.trim().isEmpty) {
+      print('[Auth] ❌ 아이디/비밀번호 비어있음');
       return false;
     }
 
-    isLoading.value = true;
-
     try {
-      final inputId = loginId.value.trim();
-      final inputPw = password.value.trim();
+      // ✅ 공통 API 사용
+      final resp = await _api.login(loginId: id, password: pw);
 
-      // 더미 계정에서 로그인 검증
-      final user = dummyUsers.firstWhereOrNull((u) => u['loginId'] == inputId && u['password'] == inputPw);
-
-      await Future.delayed(const Duration(milliseconds: 400)); // 가짜 대기
-
-      if (user == null) {
-        print('[AuthController] ❌ 로그인 실패: 아이디 또는 비밀번호 불일치');
+      if (!resp.isOk || resp.body == null) {
+        print('[Auth] ❌ HTTP ${resp.statusCode} : ${resp.statusText}');
         return false;
       }
 
-      // 로그인 성공 → 사용자 정보 세팅
-      userId.value = 100 + dummyUsers.indexOf(user);
-      userName.value = user['name']!;
-      isLoggedIn.value = true;
+      // resp.body 타입 안전하게 처리 (Map이거나 String일 수 있어서)
+      final Map<String, dynamic> body = switch (resp.body) {
+        Map<String, dynamic> m => m,
+        _ => jsonDecode(resp.bodyString!) as Map<String, dynamic>,
+      };
 
-      print('[AuthController] ✅ 로그인 성공 (${userName.value})');
-      return true;
+      // ← 응답은 항상 { code, message, data:{ role } } 라고 가정
+      final String code = body['code'] as String;
+      final Map<String, dynamic> data = body['data'] as Map<String, dynamic>;
+      final String serverRole = data['role']?.toString() ?? '';
+
+      if (code == 'AUTH-001' && serverRole.isNotEmpty) {
+        _persistSession(id, serverRole); // loginId & role 저장
+        print('[Auth] ✅ 로그인 성공 (`id=$id), role=${serverRole}');
+        return true;
+      } else {
+        final msg = body['message'];
+        print('[Auth] ❌ 실패 코드: $code / $msg');
+        return false;
+      }
     } catch (e) {
-      print('[AuthController] ❌ 로그인 중 오류 발생: $e');
+      print('[Auth] ❌ 예외: $e');
       return false;
-    } finally {
-      isLoading.value = false;
     }
   }
 
-  /// 사용자 정보 조회 (로그인된 상태일 때)
-  void printUserInfo() {
-    if (!isLoggedIn.value) {
-      print('[AuthController] ⚠️ 로그인되지 않았습니다.');
-      return;
-    }
-
-    print('''
-[AuthController] 사용자 정보
-- ID: ${userId.value}
-- 로그인ID: ${loginId.value}
-- 이름: ${userName.value}
-''');
-  }
-
-  /// 로그아웃
   void logout() {
-    userId.value = null;
-    loginId.value = '';
-    password.value = '';
-    userName.value = '';
-    isLoggedIn.value = false;
-    print('[AuthController] 🧹 로그아웃 완료');
+    _clearSession();
+    print('[Auth] 🧹 로그아웃 완료');
+  }
+
+  // 세션 저장
+  void _persistSession(String loginedId, String role) {
+    authStorage.write(_kLoginedId, loginedId);
+    authStorage.write(_kRole, role);
+  }
+
+  // 세션 삭제
+  void _clearSession() {
+    authStorage.remove(_kLoginedId);
+    authStorage.remove(_kRole);
   }
 }
