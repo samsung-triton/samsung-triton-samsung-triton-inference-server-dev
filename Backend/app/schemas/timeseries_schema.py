@@ -12,6 +12,10 @@ class SeriesItem(BaseModel):
     values: List[ValueItem]
 
 
+class NoneGPUSeriesItem(BaseModel):
+    values: List[ValueItem]
+
+
 class TimeWindow(BaseModel):
     start: str
     end: str

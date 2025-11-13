@@ -4,7 +4,10 @@ from typing import Optional
 from app.core.database import get_db
 from app.schemas.base_schema import BaseResponse
 from app.services.metrics_service import get_server_metrics_service, get_timeseries_service
-from app.services.inferdata_service import get_model_per_inference_stats_service
+from app.services.inferdata_service import (
+    get_model_per_inference_stats_service,
+    get_model_per_inference_latency_service,
+)
 
 metrics_router = APIRouter(prefix="/api/v1/dashboard", tags=["Metircs"])
 
@@ -24,3 +27,8 @@ def get_model_per_inference_stats(
     model_name: str = Query(..., description="조회할 모델 이름 (예: densenet_onnx)"), db: Session = Depends(get_db)
 ):
     return get_model_per_inference_stats_service(model_name, db)
+
+
+@metrics_router.get("/model/latency", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+async def get_model_per_inference_latency(model_name: str = Query(...), end: Optional[str] = Query(None)):
+    return await get_model_per_inference_latency_service(model_name, end_iso=end)
