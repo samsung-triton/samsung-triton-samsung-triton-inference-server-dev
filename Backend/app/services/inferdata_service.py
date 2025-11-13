@@ -3,7 +3,7 @@ import shutil
 import logging
 from fastapi import status, UploadFile
 from pathlib import Path
-from typing import List Optional
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
@@ -17,7 +17,6 @@ from app.core.standard_time_manager import current_standard_time
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.services.metrics_service import prom_query_range
-from fastapi import status, UploadFile
 from app.core.config import settings
 from app.schemas.timeseries_schema import ValueItem, NoneGPUSeriesItem, TimeWindow
 from app.core.config import TIMEZONE
