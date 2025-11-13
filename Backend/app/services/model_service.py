@@ -235,7 +235,9 @@ def register_model_service(
 ) -> Dict[str, Any]:
     """단일 모델 등록 서비스"""
     # 필수값 검증
-    if not req.modelName or not req.modelType or not req.LoginId or not model_files or not config_file:
+    if (
+        not req.modelName or not req.modelType or not req.LoginId or not model_files or not config_file
+    ):  # 메인에 공통 그거 잇음 필요없을 듯
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
@@ -257,7 +259,7 @@ def register_model_service(
     if exists:
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            code=CustomCode.MODEL_003.value,  # 중복 에러
+            code=CustomCode.ERR_409.value,  # 중복 에러
             message=Messages.MODEL_REGISTER_DUPLICATE_NAME.value,
             data=None,
         )
@@ -332,7 +334,9 @@ def register_model_service(
 # =====================================================
 def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile, db: Session):
     # 필수값 검증
-    if not req.modelName or not req.modelType or not req.LoginId or not config_file:
+    if (
+        not req.modelName or not req.modelType or not req.LoginId or not config_file
+    ):  # 이거 main에서 검증함 필요 없을 듯
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
@@ -622,7 +626,7 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
     try:
         # 모델이 READY이든 아니든, 삭제 전엔 무조건 언로드 시도
         triton_client.unload_model(model_name=model.name)
-    except Exception as e:
+    except Exception:
         pass  # 삭제 로직이 중단되지 않아야 하므로 무시 가능 (추후 로그 남길 수 있음)
 
     # === 3. DB 삭제 ===
@@ -719,7 +723,7 @@ def get_model_detail_service(model_id: int, db: Session):
     }
 
     return create_response(
-        CustomCode.MODEL_009.value,
+        CustomCode.MODEL_007.value,
         Messages.MODEL_LIST_FETCH_SUCCESS.value,
         data,
     )

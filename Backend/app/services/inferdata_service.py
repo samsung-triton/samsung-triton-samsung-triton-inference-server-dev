@@ -6,7 +6,7 @@ from app.models.model import Model
 from app.schemas.base_schema import BaseResponse
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
-from app.core.aggregation_time_manager import current_aggregation_time
+from app.core.standard_time_manager import current_standard_time
 from app.constants.codes import CustomCode
 from app.constants.messages import Messages
 from fastapi import status, UploadFile
@@ -69,7 +69,7 @@ def save_input_before_infer_service(
         db.refresh(new_log)
 
         return create_response(
-            CustomCode.UPLOAD_001,
+            CustomCode.INFERENCE_001,
             Messages.INPUT_DATA_SAVE_SUCCESS.value,
             {
                 "uid": uid,
@@ -121,7 +121,7 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
         db.refresh(inferenceData)
 
         return create_response(
-            CustomCode.RESULT_001,
+            CustomCode.INFERENCE_002,
             Messages.OUTPUT_DATA_SAVE_SUCCESS.value,
             {"uid": uid, "output_path": str(file_path)},
         )
@@ -129,6 +129,57 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
     except Exception as e:
         db.rollback()
         logger.error(f"데이터 저장 중 오류 발생: {e}")
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.OUTPUT_DATA_SAVE_FAIL.value,
+            data=None,
+        )
+
+
+def save_binary_output_after_infer_service(
+    uid: str, is_ok: bool, extension: str, binary_data: bytes, db: Session
+) -> BaseResponse:
+
+    inferenceData = db.query(InferenceLogs).filter(InferenceLogs.uid == uid).first()
+
+    if not inferenceData:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=Messages.UID_NOT_FOUND.value,
+            data=None,
+        )
+
+    try:
+        save_dir = Path(settings.INFER_DATA_SAVE_PATH) / "Output"
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+        filename = f"{uid}_output.{extension}"
+        file_path = save_dir / filename
+
+        with open(file_path, "wb") as f:
+            f.write(binary_data)
+
+        inferenceData.output_path = str(file_path)
+        inferenceData.completed_at = datetime.now(TIMEZONE)
+
+        inferenceData.request_status = "SUCCESS"
+        inferenceData.inference_status = "OK" if is_ok else "NG"
+
+        db.commit()
+        db.refresh(inferenceData)
+
+        return create_response(
+            code=CustomCode.INFERENCE_002,
+            message=Messages.OUTPUT_DATA_SAVE_SUCCESS.value,
+            data={"uid": uid, "output_path": str(file_path)},
+        )
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"바이너리 데이터 저장 중 오류 발생: {e}")
+
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
@@ -156,7 +207,7 @@ def get_model_per_inference_stats_service(model_name: str, db: Session) -> BaseR
             f"모델 '{model_name}'을(를) 찾을 수 없습니다.",
         )
 
-    base_time_str = current_aggregation_time()  # "HH:MM"
+    base_time_str = current_standard_time()  # "HH:MM"
     start_time, end_time = get_aggregation_window_from_str(base_time_str)
 
     q = (
@@ -186,7 +237,7 @@ def get_model_per_inference_stats_service(model_name: str, db: Session) -> BaseR
     avg_ms = round(inferenceData.avg_latency or 0, 2)
 
     return create_response(
-        code=CustomCode.STATIS_001.value,
+        code=CustomCode.DASH_003.value,
         message=f"{model_name} 통계 조회 성공",
         data={
             "model_name": model_name,

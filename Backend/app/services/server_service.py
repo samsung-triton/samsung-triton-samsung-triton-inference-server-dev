@@ -37,7 +37,7 @@ async def get_server_status_service(db: Session):
         is_ready = status_data.get("status") == "ready" if isinstance(status_data, dict) else False
 
         return create_response(
-            CustomCode.DOCKER_004.value if is_ready else CustomCode.ERR_503.value,
+            CustomCode.DOCKER_004.value if is_ready else CustomCode.DOCKER_005.value,
             Messages.SERVER_READY.value if is_ready else Messages.SERVER_NOT_READY.value,
             status_data,
         )
@@ -45,7 +45,7 @@ async def get_server_status_service(db: Session):
         raise CustomHTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code=CustomCode.ERR_503.value,
-            message=f"서버 상태 조회 실패: {str(e)}",
+            message=f"서버 상태 조회 실패: {str(e)}",  # 고치삼
             data={"status": "not_ready", "started_at": None},
         )
 
@@ -66,7 +66,7 @@ async def _execute_server_action(
 
         # BaseResponse 객체에서 속성으로 접근
         data = result.data if hasattr(result, "data") else {}
-        code = result.code if hasattr(result, "code") else CustomCode.MASTER_001.value
+        code = result.code if hasattr(result, "code") else CustomCode.DOCKER_ERROR.value  # 물어보기
         message = result.message if hasattr(result, "message") else ""
 
         if dual_log:

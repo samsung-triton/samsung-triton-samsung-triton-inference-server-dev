@@ -59,7 +59,7 @@ async def get_server_metrics_service():
         }
 
         return create_response(
-            code="DASH-200",
+            code=CustomCode.DASH_001.value,
             message=Messages.SERVER_METRICS_FETCH_SUCCESS.value,
             data=data,
         )
@@ -221,7 +221,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
         data = MetricData(window=time_window, vram=vram_series_list, ram=ram_series_list)
 
         return create_response(
-            code="DASH-200", message=Messages.RESOURCE_TIMESERIES_FETCH_SUCCESS.value, data=data.dict()
+            code=CustomCode.DASH_002.value, message=Messages.RESOURCE_TIMESERIES_FETCH_SUCCESS.value, data=data.dict()
         )
 
     except CustomHTTPException:

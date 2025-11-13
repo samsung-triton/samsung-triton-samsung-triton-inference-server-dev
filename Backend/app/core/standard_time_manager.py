@@ -3,13 +3,15 @@ from app.constants.codes import CustomCode
 from app.constants.messages import Messages
 from datetime import datetime
 from pathlib import Path
+from app.core.customException import CustomHTTPException
 from app.core.config import TIMEZONE
+from fastapi import status
 import json
 
-AGGREGATION_FILE = Path("app/state/aggregation_state.json")
+AGGREGATION_FILE = Path("app/state/standard_state.json")
 
 
-def current_aggregation_time() -> str:
+def current_standard_time() -> str:
     """
     집계 기준 시각 조회 (파일 없으면 현재 시각 기준)
     날짜는 무시하고 HH:MM 형식만 사용
@@ -28,7 +30,7 @@ def current_aggregation_time() -> str:
         return "00:00"
 
 
-def update_aggregation_time(new_time: str):
+def update_standard_time(new_time: str):
     """
     집계 기준 시각 갱신 (HH:MM 형식)
     """
@@ -37,10 +39,11 @@ def update_aggregation_time(new_time: str):
         hour, minute = map(int, new_time.split(":"))
         assert 0 <= hour < 24 and 0 <= minute < 60
     except Exception:
-        return create_response(
-            code=CustomCode.ERR_400,
-            message="잘못된 시간 형식입니다. HH:MM 형태여야 합니다.",
-            data={"example": "15:00"},
+        raise CustomHTTPException(  # 샤갈 이것도.. main에서 잡을 것 같은데
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message="example : 15:00",
+            data=None,
         )
 
     AGGREGATION_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -48,7 +51,7 @@ def update_aggregation_time(new_time: str):
         json.dump({"base_time": new_time}, f, ensure_ascii=False, indent=2)
 
     return create_response(
-        code=CustomCode.RESULT_003,
+        code=CustomCode.STANDARD_TIME_002,
         message=Messages.AGGREGATION_TIME_UPDATE_SUCCESS,
         data={"base_time": new_time},
     )
