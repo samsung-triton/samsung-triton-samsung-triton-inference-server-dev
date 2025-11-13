@@ -18,7 +18,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _idCtrl = TextEditingController();
   final _pwCtrl = TextEditingController();
-  final AuthController _auth = Get.put(AuthController());
+  final _auth = Get.find<AuthController>();
 
   bool _isLoading = false;
   String? _error;
@@ -45,12 +45,8 @@ class _LoginScreenState extends State<LoginScreen> {
         return; // 로그인 로직 중단
       }
 
-      // 입력값을 컨트롤러에 전달
-      _auth.loginId.value = _idCtrl.text.trim();
-      _auth.password.value = _pwCtrl.text.trim();
-
       // AuthController 내부 login() 호출
-      final success = await _auth.login();
+      final success = await _auth.login(_idCtrl.text, _pwCtrl.text);
 
       if (!success) {
         setState(() => _error = 'Check your account again.');
