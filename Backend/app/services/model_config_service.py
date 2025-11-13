@@ -233,7 +233,7 @@ def update_model_config_service(
         raise CustomHTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             CustomCode.ERR_500.value,
-            "이전 config 버전을 DB에서 찾을 수 없습니다."
+            Messages.CONFIG_DELETE_NOT_FOUND.value
         )
 
     previous_content = previous_config.content
