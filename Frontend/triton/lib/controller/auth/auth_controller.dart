@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:triton/utils/api_client.dart';
@@ -15,7 +14,6 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
     _api = Get.find<ApiClient>();
   }
 
@@ -26,34 +24,19 @@ class AuthController extends GetxController {
     }
 
     try {
-      // ✅ 공통 API 사용
-      final resp = await _api.login(loginId: id, password: pw);
+      final dynamic data = await _api.login(loginId: id, password: pw);
 
-      if (!resp.isOk || resp.body == null) {
-        print('[Auth] ❌ HTTP ${resp.statusCode} : ${resp.statusText}');
+      // 데이터가 String이면 에러메세지
+      if (data is String) {
+        print(data);
         return false;
       }
 
-      // resp.body 타입 안전하게 처리 (Map이거나 String일 수 있어서)
-      final Map<String, dynamic> body = switch (resp.body) {
-        Map<String, dynamic> m => m,
-        _ => jsonDecode(resp.bodyString!) as Map<String, dynamic>,
-      };
-
-      // ← 응답은 항상 { code, message, data:{ role } } 라고 가정
-      final String code = body['code'] as String;
-      final Map<String, dynamic> data = body['data'] as Map<String, dynamic>;
       final String serverRole = data['role']?.toString() ?? '';
+      print('[Auth] ✅ 로그인 성공 (id=$id, role=$serverRole)');
 
-      if (code == 'AUTH-001' && serverRole.isNotEmpty) {
-        _persistSession(id, serverRole); // loginId & role 저장
-        print('[Auth] ✅ 로그인 성공 (`id=$id), role=${serverRole}');
-        return true;
-      } else {
-        final msg = body['message'];
-        print('[Auth] ❌ 실패 코드: $code / $msg');
-        return false;
-      }
+      _persistSession(id, serverRole); // loginId & role 저장
+      return true;
     } catch (e) {
       print('[Auth] ❌ 예외: $e');
       return false;
@@ -62,7 +45,7 @@ class AuthController extends GetxController {
 
   void logout() {
     _clearSession();
-    print('[Auth] 🧹 로그아웃 완료');
+    print('[Auth] ✅ 로그아웃 완료');
   }
 
   // 세션 저장
