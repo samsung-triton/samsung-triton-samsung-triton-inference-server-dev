@@ -87,6 +87,7 @@ class ServerController extends GetxController {
       // 로그인 사용자 ID 불러오기
       final authStorage = GetStorage('auth');
       final userLoginId = authStorage.read('loginedId');
+
       if (userLoginId == null || userLoginId.isEmpty) {
         throw Exception('로그인 정보가 없습니다.');
       }
@@ -111,10 +112,13 @@ class ServerController extends GetxController {
   }
 
   // 제어: 중지
-  Future<void> stopServer() async {
+  Future<void> stopServer(String description) async {
     try {
       isBusy.value = true;
       lastError.value = '';
+
+      final authStorage = GetStorage('auth');
+      final userLoginId = authStorage.read('loginedId');
 
       // TODO:
       // final ok = await api.verifyMasterKey(masterKey);
