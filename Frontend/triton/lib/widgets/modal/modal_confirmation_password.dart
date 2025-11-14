@@ -89,7 +89,7 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
                   await serverController.stopServer(descCtrl.text);
                 }
                 if (widget.kind == ControlKind.restart) {
-                  await serverController.restartServer();
+                  await serverController.restartServer(descCtrl.text);
                 }
               },
             ),

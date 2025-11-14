@@ -153,20 +153,35 @@ class ServerController extends GetxController {
   }
 
   // 제어: 재시작
-  Future<void> restartServer() async {
+  Future<bool> restartServer(String description) async {
     try {
       isBusy.value = true;
       lastError.value = '';
 
-      // TODO:
-      // final ok = await api.verifyMasterKey(masterKey);
-      // if (!ok) throw Exception('Invalid master key');
-      // await api.restartServer(key);
-      // await refreshStatus();
+      final authStorage = GetStorage('auth');
+      final userLoginId = authStorage.read('loginedId');
 
-      serverStatus.value = ServerStatus(status: "running", startedAt: DateTime.now());
+      if (userLoginId == null || userLoginId.isEmpty) {
+        throw Exception('로그인 정보가 없습니다.');
+      }
+
+      final dynamic data = await _api.restartServer(userLoginId: userLoginId, description: description);
+
+      if (data is String) {
+        // Alert 테스트 해야함
+        final ctx = Get.overlayContext ?? Get.context;
+        if (ctx != null) {
+          await showAlert(ctx, title: "Notification", message: data);
+        }
+        return false;
+      }
+
+      final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
+      serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
+      return true;
     } catch (e) {
       lastError.value = '서버 재시작 실패: $e';
+      return false;
     } finally {
       isBusy.value = false;
     }
