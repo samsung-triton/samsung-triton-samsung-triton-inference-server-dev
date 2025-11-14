@@ -4,21 +4,21 @@ import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import 'package:triton/controller/dashboard/server_gpu_controller.dart';
+import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
 
 class ServerGpuResourceChart extends StatelessWidget {
   const ServerGpuResourceChart({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ServerGpuController>();
+    final controller = Get.find<ServerDashboardController>();
 
     return Obx(() {
       if (controller.loading.value) {
         return const Center(child: CircularProgressIndicator());
       }
 
-      final data = controller.vramSeries;
+      final data = controller.gpuVramSeries;
 
       return Padding(
         padding: const EdgeInsets.all(8),

@@ -1,113 +1,97 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:triton/controller/dashboard/server_cpu_controller.dart';
-import 'package:triton/controller/dashboard/server_gpu_controller.dart';
-import 'package:triton/controller/dashboard/server_cuda_controller.dart';
-import 'package:triton/controller/dashboard/server_ram_controller.dart';
 
-/// 대시보드 타입 (서버 / 모델)
+// 통합 서버/모델 컨트롤러
+import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
+import 'package:triton/controller/dashboard/model_dashboard_controller.dart';
+
+/// 대시보드 타입 (서버 / 모델 / 앙상블)
 enum DashboardType { server, model, ensemble }
 
-/// 중앙 통합 컨트롤러
-/// - 하위 서버/모델 컨트롤러를 통합 관리
-/// - 60초마다 자동 fetch
-/// - 상단 헤더에서 Last Updated 시간 표시
 class DashboardController extends GetxController {
-  /// 현재 선택된 대시보드 유형
+  /// 현재 활성화된 대시보드 영역
   final selectedType = DashboardType.server.obs;
-  final selectedItem = ''.obs; // ← 추가됨
+
+  /// 현재 선택된 모델명 (model-dashboard 전용)
+  final selectedItem = ''.obs;
 
   /// 마지막 갱신 시각
   final lastUpdated = Rxn<DateTime>();
 
-  /// 60초 주기 타이머
   Timer? _timer;
 
-  /// 하위 컨트롤러 참조
-  late final ServerCudaController cudaController;
-  late final ServerCpuController cpuController;
-  late final ServerGpuController gpuController;
-  late final ServerRamController ramController;
+  // ---- 통합 컨트롤러 ----
+  late final ServerDashboardController serverCtrl;
+  late final ModelDashboardController modelCtrl;
 
   @override
   void onInit() {
     super.onInit();
 
-    // ✅ 등록 안 되어 있으면 직접 등록 (중복 방지)
-    if (!Get.isRegistered<ServerCudaController>()) {
-      Get.lazyPut(() => ServerCudaController(), fenix: true);
+    // ===== Lazy 등록 =====
+    if (!Get.isRegistered<ServerDashboardController>()) {
+      Get.lazyPut(() => ServerDashboardController(), fenix: true);
     }
-    if (!Get.isRegistered<ServerCpuController>()) {
-      Get.lazyPut(() => ServerCpuController(), fenix: true);
-    }
-    if (!Get.isRegistered<ServerGpuController>()) {
-      Get.lazyPut(() => ServerGpuController(), fenix: true);
-    }
-    if (!Get.isRegistered<ServerRamController>()) {
-      Get.lazyPut(() => ServerRamController(), fenix: true);
+    if (!Get.isRegistered<ModelDashboardController>()) {
+      Get.lazyPut(() => ModelDashboardController(), fenix: true);
     }
 
-    // ✅ 안전하게 컨트롤러 가져오기
-    cudaController = Get.find<ServerCudaController>();
-    cpuController = Get.find<ServerCpuController>();
-    gpuController = Get.find<ServerGpuController>();
-    ramController = Get.find<ServerRamController>();
+    // ===== 인스턴스 로드 =====
+    serverCtrl = Get.find<ServerDashboardController>();
+    modelCtrl = Get.find<ModelDashboardController>();
 
-    // ✅ 초기 1회 fetch
+    // ===== 최초 1회 fetch =====
     _fetchCurrentGroup();
 
-    // ✅ 60초 주기 자동 갱신
+    // ===== 60초 자동 갱신 =====
     _timer = Timer.periodic(const Duration(seconds: 60), (_) {
       _fetchCurrentGroup();
     });
   }
 
-  /// 서버/모델 전환
+  /// ----------------------------------------
+  /// Dashboard Type 변경 (서버 ↔ 모델)
+  /// ----------------------------------------
   void changeType(DashboardType type, {String? item}) {
     selectedType.value = type;
-    if (item != null) {
-      selectedItem.value = item;
-    } else {
-      selectedItem.value = '';
-    }
+    selectedItem.value = item ?? '';
     _fetchCurrentGroup();
   }
 
-  /// 현재 선택된 타입의 하위 컨트롤러들 fetch
+  /// ----------------------------------------
+  /// 현재 선택된 그룹(Server/Model)에 따라 API 호출
+  /// ----------------------------------------
   Future<void> _fetchCurrentGroup() async {
     switch (selectedType.value) {
       case DashboardType.server:
-        await Future.wait([
-          cudaController.fetch(),
-          cpuController.fetch(),
-          gpuController.fetch(),
-          ramController.fetch(),
-        ]);
+        await serverCtrl.fetchAll();
         break;
 
       case DashboardType.model:
-        // TODO: Model 관련 컨트롤러 fetch 추가 예정
+        final modelName = selectedItem.value;
+        if (modelName.isNotEmpty) {
+          await modelCtrl.fetchAll(modelName);
+        }
         break;
+
       case DashboardType.ensemble:
-        // TODO: Ensemble 관련 컨트롤러 fetch 추가 예정
+        // TODO: ensemble 추가 예정
         break;
     }
 
-    // ✅ 공통 갱신 시간 업데이트
     lastUpdated.value = DateTime.now();
   }
 
-  /// UI 표시에 사용할 포맷 문자열
+  /// 수동 갱신 버튼
+  Future<void> manualUpdate() async {
+    await _fetchCurrentGroup();
+  }
+
   String get formattedLastUpdated {
     final t = lastUpdated.value;
     if (t == null) return '-';
     return DateFormat('MMM d, yyyy • hh:mm a').format(t);
-  }
-
-  /// ✅ 즉시 수동 업데이트 (Update 버튼 클릭 시)
-  Future<void> manualUpdate() async {
-    await _fetchCurrentGroup();
   }
 
   @override
