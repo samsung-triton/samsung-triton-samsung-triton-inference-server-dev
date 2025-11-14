@@ -2,11 +2,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi import FastAPI, Request, status, HTTPException
 from sqlalchemy import text
 from fastapi.responses import JSONResponse
-from app.core.database import SessionLocal
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
-from app.core.customException import CustomHTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.database import SessionLocal
+from app.common.codes import CustomCode
+from app.common.messages import Messages
+from app.core.customException import CustomHTTPException
+
 
 import logging
 from app.api.v1.router import api_router
@@ -19,7 +21,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],          
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

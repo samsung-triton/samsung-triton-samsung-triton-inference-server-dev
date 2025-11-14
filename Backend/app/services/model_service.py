@@ -1,19 +1,20 @@
+import re
+import shutil
+import os
+from fastapi import UploadFile, status
+from sqlalchemy.orm import Session
 from collections import defaultdict
 from typing import Dict, Any, List
-from fastapi import UploadFile, status
 from pathlib import Path
-import shutil
-import re
-from sqlalchemy.orm import Session
-import os
 
 from app.clients.triton_client import triton_client
 from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 from app.core.config import settings
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
+from app.common.utils import get_user_or_404
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 from app.models.model import (
     Model,
     ModelVersion,
@@ -30,21 +31,6 @@ from app.core.file_utils import safe_name, save_model_config_file, store_model_f
 # 공통 설정
 # =========================
 MODEL_REPO_ROOT = Path(settings.TRITON_MODEL_REPO)
-
-
-# =====================================================
-# DB 관련 함수
-# =====================================================
-def _get_user_or_404(db: Session, login_id: str) -> User:
-    user = db.query(User).filter(User.login_id == login_id).first()
-    if not user:
-        raise CustomHTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code=CustomCode.ERR_404.value,
-            message=Messages.USER_NOT_FOUND.value,
-        )
-    return user
-
 
 def _save_model(db: Session, name: str, model_type: str, storage_dir: str) -> Model:
     model = Model(name=name, type=model_type, storage_dir=storage_dir)
@@ -162,7 +148,7 @@ def list_models_service(db: Session) -> Dict[str, Any]:
         if "failed to connect" in msg or "connection refused" in msg or "unavailable" in msg or "timed out" in msg:
             raise CustomHTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                code=CustomCode.ERR_503.value,
+                code=CustomCode.ERR_500.value,
                 message=Messages.TRITON_NOT_READY.value,
                 data={"detail": str(e)},
             )
@@ -233,7 +219,7 @@ def register_model_service(
     if exists:
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            code=CustomCode.MODEL_003.value,  # 중복 에러
+            code=CustomCode.ERR_409.value,  # 중복 에러
             message=Messages.MODEL_REGISTER_DUPLICATE_NAME.value,
         )
 
@@ -261,8 +247,7 @@ def register_model_service(
         )
 
     # 3) DB 기록
-    user = _get_user_or_404(db, req.LoginId)
-
+    user = get_user_or_404(db, req.LoginId)
     cfg_dict = next((f for f in saved_config_files if f["fileName"].endswith("config.pbtxt")), None)
     cfg_entry: Path | None = Path(cfg_dict["filePath"]) if cfg_dict else None
 
@@ -310,7 +295,9 @@ def register_model_service(
 # =====================================================
 def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile, db: Session):
     # 필수값 검증
-    if not req.modelName or not req.modelType or not req.LoginId or not config_file:
+    if (
+        not req.modelName or not req.modelType or not req.LoginId or not config_file
+    ):  # 이거 main에서 검증함 필요 없을 듯
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
@@ -350,7 +337,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
         )
 
     # === 3. DB 기록 ===
-    user = _get_user_or_404(db, req.LoginId)
+    user = get_user_or_404(db, req.LoginId)
 
     try:
         model = _save_model(db, model_name, "ENSEMBLE", str(MODEL_REPO_ROOT / model_name))
@@ -403,7 +390,7 @@ def register_model_assets_service(
             Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    user = _get_user_or_404(db, login_id)
+    user = get_user_or_404(db, login_id)
 
     # === 2. 최소 하나는 필수 ===
     if not model_file and not config_file:
@@ -587,7 +574,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
             Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    user = _get_user_or_404(db, req.loginId)
+    user = get_user_or_404(db, req.loginId)
 
     version_obj = (
         db.query(ModelVersion).filter(ModelVersion.model_id == model_id, ModelVersion.version == version).first()
@@ -629,8 +616,8 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
 
     except Exception as e:
         raise CustomHTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            code=CustomCode.ERR_503.value,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
             message=Messages.TRITON_CONNECTION_ERROR.value,
             data={"detail": str(e)},
         )
@@ -666,13 +653,13 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
             Messages.MODEL_NOT_FOUND_FOUND.value,
         )
 
-    user = _get_user_or_404(db, req.loginId)
+    user = get_user_or_404(db, req.loginId)
 
     # === 2. Triton 언로드 ===
     try:
         # 모델이 READY이든 아니든, 삭제 전엔 무조건 언로드 시도
         triton_client.unload_model(model_name=model.name)
-    except Exception as e:
+    except Exception:
         pass  # 삭제 로직이 중단되지 않아야 하므로 무시 가능 (추후 로그 남길 수 있음)
 
     # === 3. DB 삭제 ===
@@ -777,7 +764,7 @@ def get_model_detail_service(model_id: int, db: Session):
         }
 
     return create_response(
-        CustomCode.MODEL_009.value,
+        CustomCode.MODEL_007.value,
         Messages.MODEL_LIST_FETCH_SUCCESS.value,
         data,
     )

@@ -1,9 +1,7 @@
-from sqlalchemy import Column, Integer, String, BigInteger, Text, ForeignKey, DateTime, Boolean, Enum, func
-
-from sqlalchemy.orm import relationship
-from app.core.database import Base
-
 import enum
+from app.core.database import Base
+from sqlalchemy import Column, Integer, String, BigInteger, Text, ForeignKey, DateTime, Enum, func
+from sqlalchemy.orm import relationship
 
 
 class ModelType(str, enum.Enum):

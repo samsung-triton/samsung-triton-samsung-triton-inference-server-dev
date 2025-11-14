@@ -1,11 +1,12 @@
+from fastapi import status
 from sqlalchemy.orm import Session
+
 from app.models.masterkey import MasterKey
 from app.schemas.base_schema import BaseResponse
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
-from fastapi import status
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 
 
 def varify_mastekey_service(masterKey: int, db: Session) -> BaseResponse:

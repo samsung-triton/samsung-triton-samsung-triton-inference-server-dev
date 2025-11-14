@@ -1,24 +1,13 @@
 from sqlalchemy.orm import Session
 from fastapi import status
+
 from app.clients.gpu_router import get_triton_status, start_triton, stop_triton, restart_triton
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.models.server import Server, ServerStatus
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
-from app.models.user import User
-
-
-def get_user_or_404(db: Session, login_id: str) -> User:
-    # 사용자 조회 (없으면 404 예외 발생)
-    user = db.query(User).filter(User.login_id == login_id).first()
-    if not user:
-        raise CustomHTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code=CustomCode.ERR_404.value,
-            message=Messages.USER_NOT_FOUND.value,
-        )
-    return user
+from app.common.utils import get_user_or_404
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 
 
 def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus, description: str | None = None):
@@ -37,15 +26,15 @@ async def get_server_status_service(db: Session):
         is_ready = status_data.get("status") == "ready" if isinstance(status_data, dict) else False
 
         return create_response(
-            CustomCode.DOCKER_004.value if is_ready else CustomCode.ERR_503.value,
+            CustomCode.DOCKER_004.value if is_ready else CustomCode.DOCKER_005.value,
             Messages.SERVER_READY.value if is_ready else Messages.SERVER_NOT_READY.value,
             status_data,
         )
     except Exception as e:
         raise CustomHTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            code=CustomCode.ERR_503.value,
-            message=f"서버 상태 조회 실패: {str(e)}",
+            code=CustomCode.ERR_500.value,
+            message=f"서버 상태 조회 실패: {str(e)}",  # 고치삼
             data={"status": "not_ready", "started_at": None},
         )
 
@@ -64,7 +53,7 @@ async def _execute_server_action(
         result = await action_func()
 
         data = result.data if hasattr(result, "data") else {}
-        code = result.code if hasattr(result, "code") else CustomCode.MASTER_001.value
+        code = result.code if hasattr(result, "code") else CustomCode.DOCKER_ERROR.value  # 물어보기
         message = result.message if hasattr(result, "message") else ""
 
         if dual_log:

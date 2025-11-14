@@ -1,5 +1,5 @@
-from sqlalchemy import Column, BigInteger, Integer
 from app.core.database import Base
+from sqlalchemy import Column, BigInteger, Integer
 
 
 class MasterKey(Base):

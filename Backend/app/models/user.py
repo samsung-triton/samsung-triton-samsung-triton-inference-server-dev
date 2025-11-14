@@ -1,8 +1,7 @@
-from sqlalchemy import Column, BigInteger, String, TIMESTAMP, text
-from sqlalchemy.dialects.postgresql import ENUM
-from sqlalchemy.orm import relationship
 from app.core.database import Base
 from enum import Enum as PyEnum
+from sqlalchemy import Column, BigInteger, String, TIMESTAMP, text
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 
 

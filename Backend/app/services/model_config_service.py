@@ -1,23 +1,24 @@
+import time
+from fastapi import status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from pathlib import Path
+
 from app.clients.triton_client import triton_client
+from app.core.customException import CustomHTTPException
 from app.models.model import Model, ReleaseAction, ReleaseType
 from app.services.model_service import save_model_config, save_model_release
 from app.services.server_service import get_user_or_404
+from app.core.response_utils import create_response
 from app.models.model_config import ModelConfig
 from app.models.user import User
-from app.core.customException import CustomHTTPException
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
-from fastapi import status
-import time
-from app.core.response_utils import create_response
-from pathlib import Path
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 
 
 async def get_current_config_service(db: Session, model_id: int):
     """특정 모델의 현재 사용 중인 Config 조회"""
-    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
+    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).first()
 
     if not config:
         raise CustomHTTPException(
@@ -44,7 +45,7 @@ async def get_rollback_config_list_service(db: Session, model_id: int):
     results = (
         db.query(ModelConfig, User)
         .join(User, User.user_id == ModelConfig.created_by, isouter=True)
-        .filter(ModelConfig.model_id == model_id, ModelConfig.is_current == False)
+        .filter(ModelConfig.model_id == model_id, not ModelConfig.is_current)
         .order_by(ModelConfig.version.asc())
         .all()
     )
@@ -72,7 +73,9 @@ async def get_rollback_config_list_service(db: Session, model_id: int):
         "history": history,
     }
 
-    return create_response(code=CustomCode.CONFIG_002.value,message=Messages.CONFIG_HISTORY_FETCH_SUCCESS.value,data=data)
+    return create_response(
+        code=CustomCode.CONFIG_002.value, message=Messages.CONFIG_HISTORY_FETCH_SUCCESS.value, data=data
+    )
 
 
 async def get_selected_config_service(db: Session, model_id: int, config_id: int):
@@ -82,10 +85,7 @@ async def get_selected_config_service(db: Session, model_id: int, config_id: int
     result = (
         db.query(ModelConfig, User)
         .join(User, User.user_id == ModelConfig.created_by, isouter=True)
-        .filter(
-            ModelConfig.model_id == model_id,
-            ModelConfig.config_id == config_id
-        )
+        .filter(ModelConfig.model_id == model_id, ModelConfig.config_id == config_id)
         .first()
     )
 
@@ -114,18 +114,12 @@ async def get_selected_config_service(db: Session, model_id: int, config_id: int
         data=data,
     )
 
+
 async def delete_selected_config_service(db: Session, model_id: int, config_id: int):
     """특정 모델의 선택된 Config를 삭제"""
 
     # 해당 모델의 Config 존재 여부 확인
-    config = (
-        db.query(ModelConfig)
-        .filter(
-            ModelConfig.model_id == model_id,
-            ModelConfig.config_id == config_id
-        )
-        .first()
-    )
+    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.config_id == config_id).first()
 
     if not config:
         raise CustomHTTPException(
@@ -150,6 +144,7 @@ async def delete_selected_config_service(db: Session, model_id: int, config_id: 
         message=Messages.CONFIG_DELETE_SUCCESS.value,
         data={"configId": config_id},
     )
+
 
 async def get_config_history_with_selected_service(db: Session, model_id: int, config_id: int | None = None):
     """특정 모델의 전체 Config 상세 내용 + 이력 조회"""
@@ -176,22 +171,18 @@ async def get_config_history_with_selected_service(db: Session, model_id: int, c
             "createdAt": cfg.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "userName": user.name if user else None,
             "isCurrent": cfg.is_current,
-            "content": cfg.content,   
+            "content": cfg.content,
         }
         for cfg, user in results
     ]
 
-    data = {
-        "modelId": model_id,
-        "configs": history   
-    }
+    data = {"modelId": model_id, "configs": history}
 
     return create_response(
         code=CustomCode.CONFIG_005.value,
         message=Messages.CONFIG_HISTORY_WITH_SELECTED_FETCH_SUCCESS.value,
         data=data,
     )
-
 
 
 def update_model_config_service(
@@ -223,17 +214,11 @@ def update_model_config_service(
         )
 
     # 2. 기존 config (DB 기준) 가져오기 → 파일 롤백용
-    previous_config = (
-        db.query(ModelConfig)
-        .filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True)
-        .first()
-    )
+    previous_config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).first()
 
     if not previous_config:
         raise CustomHTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            CustomCode.ERR_500.value,
-            Messages.CONFIG_DELETE_NOT_FOUND.value
+            status.HTTP_500_INTERNAL_SERVER_ERROR, CustomCode.ERR_500.value, Messages.CONFIG_DELETE_NOT_FOUND.value
         )
 
     previous_content = previous_config.content
@@ -261,17 +246,11 @@ def update_model_config_service(
     # STEP 2: DB 업데이트 (여기서 실패하면 파일 롤백 + DB rollback)
     try:
         # 기존 최신 버전 inactive
-        db.query(ModelConfig).filter(
-            ModelConfig.model_id == model_id,
-            ModelConfig.is_current == True
-        ).update({"is_current": False})
-
-        latest_version = (
-            db.query(func.max(ModelConfig.version))
-            .filter(ModelConfig.model_id == model_id)
-            .scalar()
-            or 0
+        db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).update(
+            {"is_current": False}
         )
+
+        latest_version = db.query(func.max(ModelConfig.version)).filter(ModelConfig.model_id == model_id).scalar() or 0
 
         # 새 버전 저장
         new_config = save_model_config(
@@ -317,7 +296,6 @@ def update_model_config_service(
             f"DB 업데이트 중 오류 발생 → 파일/DB 롤백 완료: {e}",
         )
 
-    
     # SUCCESS RESPONSE
     return create_response(
         code=CustomCode.CONFIG_004.value,

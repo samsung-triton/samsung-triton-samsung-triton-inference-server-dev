@@ -1,15 +1,16 @@
 import subprocess
-from datetime import datetime
-from app.core.response_utils import create_response
 from fastapi import status
+from datetime import datetime
+
+from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 from app.core.config import settings
 from app.core.config import TIMEZONE
 
 
-def _run_compose(cmd: str, success_code, success_msg, error_code, error_msg):
+def _run_compose(cmd: str, error_code, error_msg):
     # Docker Compose 명령 실행 공통 함수
     try:
         result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
@@ -40,7 +41,7 @@ async def get_triton_status():
     }
 
     return create_response(
-        CustomCode.MASTER_001.value,
+        CustomCode.DOCKER_006.value,
         Messages.SERVER_READY.value if is_running else Messages.SERVER_NOT_READY.value,
         data,
     )
@@ -62,15 +63,13 @@ async def start_triton():
         )
 
     cmd = f"docker compose {_compose_path()} up -d"
-    _run_compose(
+    _run_compose(  # 질문
         cmd,
-        CustomCode.MASTER_001.value,
-        Messages.SERVER_START_SUCCESS.value,
-        CustomCode.DOCKER_002.value,
+        CustomCode.DOCKER_ERROR.value,
         Messages.SERVER_START_ERROR.value,
     )
     return create_response(
-        CustomCode.MASTER_001.value,
+        CustomCode.DOCKER_001.value,
         Messages.SERVER_START_SUCCESS.value,
         {
             "status": "running",
@@ -85,13 +84,11 @@ async def stop_triton():
     cmd = f"docker compose {_compose_path()} down"
     _run_compose(
         cmd,
-        CustomCode.MASTER_001.value,
-        Messages.SERVER_STOP_SUCCESS.value,
-        CustomCode.DOCKER_001.value,
+        CustomCode.DOCKER_ERROR.value,
         Messages.SERVER_STOP_ERROR.value,
     )
     return create_response(
-        CustomCode.MASTER_001.value,
+        CustomCode.DOCKER_002.value,
         Messages.SERVER_STOP_SUCCESS.value,
         {"status": "stopped"},
     )
@@ -103,14 +100,12 @@ async def restart_triton():
     cmd = f"docker compose {_compose_path()} restart"
     _run_compose(
         cmd,
-        CustomCode.MASTER_001.value,
-        Messages.SERVER_RESTART_SUCCESS.value,
-        CustomCode.DOCKER_004.value,
+        CustomCode.DOCKER_ERROR.value,
         Messages.SERVER_RESTART_ERROR.value,
     )
 
     return create_response(
-        CustomCode.MASTER_001.value,
+        CustomCode.DOCKER_003.value,
         Messages.SERVER_RESTART_SUCCESS.value,
         {
             "status": "restart",
