@@ -80,7 +80,10 @@ class ApiClient extends GetConnect {
 
   // 서버 시작
   Future<dynamic> startServer({required String userLoginId}) {
-    return _postJson('/api/v1/server/start', {'user_login_id': userLoginId}, apiName: 'startServer');
+    return _postJson('/api/v1/server/start', {
+      'user_login_id': userLoginId,
+      'description': null,
+    }, apiName: 'startServer');
   }
 
   // 서버 중지
