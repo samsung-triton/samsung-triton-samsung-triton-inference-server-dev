@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:triton/utils/show_alert.dart';
 
 // 서버 상태
 class ServerStatus {
@@ -18,13 +19,14 @@ class ServerController extends GetxController {
   final RxString lastError = ''.obs;
   final RxString uptimeHms = '00:00:00'.obs;
 
-  final ApiClient api = Get.put(ApiClient());
+  late final ApiClient _api;
 
   Timer? _tick;
 
   @override
   void onInit() {
     super.onInit();
+    _api = Get.find<ApiClient>();
     _startUptimeTicker();
     refreshStatus();
   }
@@ -79,7 +81,7 @@ class ServerController extends GetxController {
   }
 
   // 제어: 시작
-  Future<void> startServer() async {
+  Future<bool> startServer() async {
     try {
       isBusy.value = true;
       lastError.value = '';
@@ -92,27 +94,32 @@ class ServerController extends GetxController {
         throw Exception('로그인 정보가 없습니다.');
       }
 
-      final response = await api.startServer(userLoginId: userLoginId);
-      //print('📬 응답 코드: ${response.statusCode}');
-      //print('📦 응답 본문: ${response.body}');
-      if (response.statusCode == 200) {
-        final data = response.body;
-        final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
-        serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
-        //print('✅ 서버 시작 성공, startedAt = ${serverStatus.value?.startedAt}');
-      } else {
-        throw Exception('서버 시작 실패 (${response.statusCode})');
+      final dynamic data = await _api.startServer(userLoginId: userLoginId);
+
+      if (data is String) {
+        // Alert 테스트 해야함
+        final ctx = Get.overlayContext ?? Get.context;
+        if (ctx != null) {
+          await showAlert(ctx, title: "Notification", message: data);
+        }
+        return false;
       }
+
+      final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
+      serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
+      return true;
     } catch (e) {
       lastError.value = '서버 시작 실패: $e';
       print('❌ [startServer] 예외 발생: $e'); //에러 로그 출력
+
+      return false;
     } finally {
       isBusy.value = false;
     }
   }
 
   // 제어: 중지
-  Future<void> stopServer(String description) async {
+  Future<bool> stopServer(String description) async {
     try {
       isBusy.value = true;
       lastError.value = '';
@@ -120,15 +127,26 @@ class ServerController extends GetxController {
       final authStorage = GetStorage('auth');
       final userLoginId = authStorage.read('loginedId');
 
-      // TODO:
-      // final ok = await api.verifyMasterKey(masterKey);
-      // if (!ok) throw Exception('Invalid master key');
-      // await api.stopServer(key);
-      // await refreshStatus();
+      if (userLoginId == null || userLoginId.isEmpty) {
+        throw Exception('로그인 정보가 없습니다.');
+      }
 
-      serverStatus.value = const ServerStatus(status: "stopped", startedAt: null);
+      final dynamic data = await _api.stopServer(userLoginId: userLoginId, description: description);
+
+      if (data is String) {
+        // Alert 테스트 해야함
+        final ctx = Get.overlayContext ?? Get.context;
+        if (ctx != null) {
+          await showAlert(ctx, title: "Notification", message: data);
+        }
+        return false;
+      }
+
+      serverStatus.value = ServerStatus(status: 'stopped', startedAt: null);
+      return true;
     } catch (e) {
       lastError.value = '서버 중지 실패: $e';
+      return false;
     } finally {
       isBusy.value = false;
     }
@@ -156,11 +174,30 @@ class ServerController extends GetxController {
 
   Future<bool> verifyMasterKey(String masterKey) async {
     try {
-      // TODO: return await api.verifyMasterKey(key);
-      if (masterKey.isEmpty || masterKey != "test") return false;
+      if (masterKey.isEmpty) {
+        return false;
+      }
+
+      // 서버는 int를 받으니까 변환 필요
+      final keyInt = int.tryParse(masterKey);
+      if (keyInt == null) {
+        return false;
+      }
+
+      final data = await _api.verifyMasterKey(masterKey: keyInt);
+
+      // 서버가 오류 메시지를 String으로 보냈을 때
+      if (data is String) {
+        // Alert 테스트 해야함
+        final ctx = Get.overlayContext ?? Get.context;
+        if (ctx != null) {
+          await showAlert(ctx, title: "Notification", message: data);
+        }
+        return false;
+      }
       return true;
     } catch (e) {
-      lastError.value = '마스터키 검증 실패: $e';
+      lastError.value = "마스터키 검증 실패: $e"; // 이것도 alert로 띄울까
       return false;
     }
   }
