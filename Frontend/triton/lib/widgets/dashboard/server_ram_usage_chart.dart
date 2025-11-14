@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:get/get.dart';
-import 'package:triton/controller/dashboard/server_ram_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
+import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
 
 class ServerRamUsageChart extends StatelessWidget {
   const ServerRamUsageChart({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ServerRamController>();
+    final controller = Get.find<ServerDashboardController>();
 
     return Obx(() {
       final data = controller.ramSeries;

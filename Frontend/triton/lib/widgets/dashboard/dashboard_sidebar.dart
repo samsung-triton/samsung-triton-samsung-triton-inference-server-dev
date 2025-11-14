@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:triton/widgets/sidebar/sidebar_base.dart';
 import 'package:triton/widgets/dashboard/common_sidebar_card.dart';
 import 'package:triton/controller/dashboard/dashboard_controller.dart';
+import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
 
 class DashboardSidebar extends StatelessWidget {
   const DashboardSidebar({super.key});
@@ -11,13 +12,14 @@ class DashboardSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     // ✅ 이제 DashboardController만 사용
     final controller = Get.find<DashboardController>();
+    final serverCtrl = Get.find<ServerDashboardController>();
 
     return Obx(() {
-      final selectedType = controller.selectedType.value;
+      final serverCtrl = Get.find<ServerDashboardController>();
 
       return SidebarBase(
         children: [
-          // ✅ Triton Server (서버 대시보드)
+          // Server Header
           CommonSidebarCard(
             type: SidebarCardType.header,
             title: 'Triton Server',
@@ -25,35 +27,18 @@ class DashboardSidebar extends StatelessWidget {
             onTap: () => controller.changeType(DashboardType.server, item: 'server'),
           ),
 
-          CommonSidebarCard(
-            type: SidebarCardType.normal,
-            title: 'Model 1',
-            status: true,
-            active: controller.selectedItem.value == 'model1',
-            current: 2720,
-            total: 2894,
-            onTap: () => controller.changeType(DashboardType.model, item: 'model1'),
-          ),
-
-          CommonSidebarCard(
-            type: SidebarCardType.normal,
-            title: 'Model 2',
-            status: true,
-            active: controller.selectedItem.value == 'model2',
-            current: 2650,
-            total: 2894,
-            onTap: () => controller.changeType(DashboardType.model, item: 'model2'),
-          ),
-
-          CommonSidebarCard(
-            type: SidebarCardType.normal,
-            title: 'Ensemble 1',
-            status: false,
-            active: controller.selectedItem.value == 'ensemble1',
-            current: 2500,
-            total: 2894,
-            onTap: () => controller.changeType(DashboardType.ensemble, item: 'ensemble1'),
-          ),
+          // 🔥 Model cards (dynamic)
+          ...serverCtrl.metrics.value.models.map((m) {
+            return CommonSidebarCard(
+              type: SidebarCardType.normal,
+              title: m.name,
+              status: m.percent > 90, // 예시: 90% 이상이면 green
+              active: controller.selectedItem.value == m.key,
+              current: m.success,
+              total: m.total,
+              onTap: () => controller.changeType(DashboardType.model, item: m.key),
+            );
+          }).toList(),
         ],
       );
     });
