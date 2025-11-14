@@ -36,23 +36,20 @@ class CommonSidebarCard extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          onTap: onTap, // ✅ 클릭 가능
+          onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
-              color: active ? primaryDarkest : white, // ✅ 선택 시 색상 반전
+              color: active ? primaryDarkest : white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: const [BoxShadow(color: Colors.black12, offset: Offset(2, 2), blurRadius: 4)],
             ),
             alignment: Alignment.center,
             child: Text(
               title,
-              style: T.t20(
-                color: active ? white : primaryDarkest, // ✅ 선택 시 글자색 반전
-                bold: true,
-              ),
+              style: T.t20(color: active ? white : primaryDarkest, bold: true),
               textAlign: TextAlign.center,
             ),
           ),
@@ -61,15 +58,21 @@ class CommonSidebarCard extends StatelessWidget {
     }
 
     // ───────────────────────────────
-    // 일반 Model / Ensemble 카드
+    // 안전한 계산 추가 (NULL SAFE)
     // ───────────────────────────────
+    final safeCurrent = current ?? 0;
+    final safeTotal = total ?? 1; // 0 나누기 방지
+    final percent = (safeCurrent / safeTotal).clamp(0.0, 1.0);
+    final percentText = "${(percent * 100).toStringAsFixed(0)}%";
+
+    // UI 렌더링
     return SidebarCardBase(
       isActive: active,
       onTap: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ✅ 상태 원
+          // 상태 동그라미
           Container(
             width: 20,
             height: 20,
@@ -77,13 +80,11 @@ class CommonSidebarCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
 
-          // ✅ 오른쪽 전체 영역
+          // 오른쪽 영역
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 상단: 모델 이름 (크게)
                 Text(
                   title,
                   style: T.t20(color: active ? white : primaryDarkest, bold: true),
@@ -92,28 +93,24 @@ class CommonSidebarCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
 
-                // 하단: 진행 정보 + 바
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 진행 수치 + 퍼센트
+                    // current / total + percent
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("$current/$total", style: T.t12(color: gray)),
-                        Text(
-                          "${((current! / total!) * 100).toStringAsFixed(0)}%",
-                          style: T.t12(color: active ? white : black, bold: true),
-                        ),
+                        Text("$safeCurrent/$safeTotal", style: T.t12(color: gray)),
+                        Text(percentText, style: T.t12(color: active ? white : black, bold: true)),
                       ],
                     ),
                     const SizedBox(height: 4),
 
-                    // 진행률 바
+                    // Progress bar
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: (current! / total!).clamp(0.0, 1.0),
+                        value: percent,
                         backgroundColor: lightGray.withOpacity(0.5),
                         color: primaryNormal,
                         minHeight: 3,
