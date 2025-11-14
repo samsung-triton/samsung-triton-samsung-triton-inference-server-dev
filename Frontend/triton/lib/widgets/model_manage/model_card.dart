@@ -43,7 +43,7 @@ class ModelCard extends StatelessWidget {
         onOK: () async {
           final modelManageController = Get.find<ModelManageController>();
           // TODO: 추후 descCtrl 글자 추가
-          await modelManageController.deleteModel(modelId!);
+          await modelManageController.deleteModel(modelId!, descCtrl.text);
           descCtrl.dispose();
         },
       ),

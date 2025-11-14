@@ -194,21 +194,25 @@ class ModelManageController extends GetxController {
   }
 
   // 모델 삭제
-  Future<void> deleteModel(int modelId) async {
-    // TODO: 삭제 API 연동 (성공 시 목록/선택 업데이트)
-    models.removeWhere((e) => e.modelId == modelId);
+  Future<void> deleteModel(int modeld, String description) async {
+    final context = Get.context;
 
-    // 현재 선택된 모델일 경우
-    if (selectedModelId.value == modelId) {
-      if (models.isNotEmpty) {
-        await selectModel(models.first.modelId);
-      } else {
-        selectedModelId.value = null;
-        selectedModelName.value = '';
-        // 버전 컨트롤러 초기화
-        final versions = Get.find<VersionManageController>();
-        versions.reset();
+    final modelId = selectedModelId.value;
+    if (modelId == null) {
+      if (context != null) {
+        showAlert(context, message: "Select Model");
       }
+      return;
+    }
+
+    final deleteId = _authStorage.read<String>('loginedId') ?? '';
+
+    final dynamic data = await _api.deleteModel(modelId: modelId, loginId: deleteId, description: description);
+    if (data is String) {
+      showAlert(context!, message: "Failed to Delete model.\nPlease retry or restart the server.");
+      return;
+    } else {
+      await loadModels();
     }
   }
 }
