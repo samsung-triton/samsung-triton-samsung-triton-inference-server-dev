@@ -1,15 +1,15 @@
 import asyncio
 import httpx
 import math
-from datetime import datetime, timedelta
 from fastapi import status
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from app.core.config import settings
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
-from app.constants.codes import CustomCode
-from app.constants.messages import Messages
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, MetricData, NoneGPUSeriesItem
 from app.core.config import TIMEZONE
 
@@ -59,7 +59,7 @@ async def get_server_metrics_service():
         }
 
         return create_response(
-            code="DASH-200",
+            code=CustomCode.DASH_001.value,
             message=Messages.SERVER_METRICS_FETCH_SUCCESS.value,
             data=data,
         )
@@ -201,7 +201,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
         data = MetricData(window=time_window, vram=vram_series_list, ram=ram_series_list)
 
         return create_response(
-            code="DASH-200", message=Messages.RESOURCE_TIMESERIES_FETCH_SUCCESS.value, data=data.dict()
+            code=CustomCode.DASH_002.value, message=Messages.RESOURCE_TIMESERIES_FETCH_SUCCESS.value, data=data.dict()
         )
 
     except CustomHTTPException:

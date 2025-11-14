@@ -1,10 +1,12 @@
 from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, UploadFile, File, Form, status, Query, Request
+
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.services.inferdata_service import (
     save_input_before_infer_service,
     save_output_after_infer_service,
+    save_binary_output_after_infer_service,
 )
 from app.schemas.base_schema import BaseResponse
 from app.schemas.inferoutput_schema import SaveInferenceResultRequest
@@ -26,3 +28,16 @@ def save_input_before_infer(
 @inferdata_router.post("/save/after", response_model=BaseResponse, status_code=status.HTTP_200_OK)
 def save_output_after_infer(request: SaveInferenceResultRequest, db: Session = Depends(get_db)):
     return save_output_after_infer_service(request.uid, request.is_ok, request.result, db)
+
+
+@inferdata_router.post("/save-binay/after")
+async def save_binay_output_after_infer(
+    request: Request,
+    uid: str = Query(...),
+    is_ok: bool = Query(...),
+    extension: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    binary_data = await request.body()
+
+    return save_binary_output_after_infer_service(uid, is_ok, extension, binary_data, db)

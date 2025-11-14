@@ -1,5 +1,6 @@
-from typing import Any, List, Dict
 import tritonclient.grpc as grpcclient
+from typing import List, Dict
+
 from app.core.config import settings
 
 

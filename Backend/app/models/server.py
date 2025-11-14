@@ -4,6 +4,7 @@ from app.core.database import Base
 from enum import Enum as PyEnum
 
 
+
 class ServerStatus(PyEnum):
     START = "START"
     STOP = "STOP"
