@@ -10,8 +10,49 @@ class ApiClient extends GetConnect {
   void onInit() {
     httpClient.baseUrl = _baseUrl;
     httpClient.timeout = const Duration(seconds: 10);
-
     super.onInit();
+  }
+
+  // ---------------------------------------------------------------------------
+  // 내부 공통 처리
+  // ---------------------------------------------------------------------------
+
+  /// Get 요청 공통 래퍼
+  Future<dynamic> _get(String path, {String? apiName}) async {
+    final res = await get(path);
+    return _unwrapResponse(res, apiName ?? path);
+  }
+
+  /// Post 요청 공통 래퍼
+  Future<dynamic> _postJson(String path, dynamic body, {String? apiName}) async {
+    final res = await post(path, body, contentType: 'application/json');
+    return _unwrapResponse(res, apiName ?? path);
+  }
+
+  /// Patch 요청 공통 래퍼
+  Future<dynamic> _patchJson(String path, dynamic body, {String? apiName}) async {
+    final res = await patch(path, body, contentType: 'application/json');
+    return _unwrapResponse(res, apiName ?? path);
+  }
+
+  /// 임의 메서드용 공통 래퍼 (현재는 delete 용도)
+  Future<dynamic> _requestRaw(String path, String method, {dynamic body, String? apiName}) async {
+    final res = await httpClient.request(path, method, body: body);
+    return _unwrapResponse(res, apiName ?? '$method $path');
+  }
+
+  /// 공통 응답 언래핑
+  dynamic _unwrapResponse(Response res, String apiName) {
+    // 1) 요청 실패: message 반환
+    if (!res.isOk) {
+      print('[ApiClient] $apiName Api Error: ${res.statusCode} ${res.statusText}');
+      return res.body['message'];
+    }
+
+    // 2) 요청 성공: data 반환
+    dynamic body = res.body;
+    final data = body['data'];
+    return data;
   }
 
   // ---------------------------------------------------------------------------
@@ -19,13 +60,13 @@ class ApiClient extends GetConnect {
   // ---------------------------------------------------------------------------
 
   // 로그인
-  Future<Response> login({required String loginId, required String password}) {
-    return post('/api/v1/auth/login', {'loginId': loginId, 'password': password}, contentType: 'application/json');
+  Future<dynamic> login({required String loginId, required String password}) {
+    return _postJson('/api/v1/auth/login', {'loginId': loginId, 'password': password}, apiName: 'login');
   }
 
   // 마스터키 확인
-  Future<Response> verifyMasterKey({required int masterKey}) {
-    return post('/api/v1/masterkey/verify', {'masterKey': masterKey}, contentType: 'application/json');
+  Future<dynamic> verifyMasterKey({required int masterKey}) {
+    return _postJson('/api/v1/masterkey/verify', {'masterKey': masterKey}, apiName: 'verifyMasterKey');
   }
 
   // ---------------------------------------------------------------------------
@@ -33,29 +74,29 @@ class ApiClient extends GetConnect {
   // ---------------------------------------------------------------------------
 
   // 서버 상태
-  Future<Response> getServerStatus() {
-    return get('/api/v1/server/status');
+  Future<dynamic> getServerStatus() {
+    return _get('/api/v1/server/status', apiName: 'getServerStatus');
   }
 
   // 서버 시작
-  Future<Response> startServer({required String userLoginId}) {
-    return post('/api/v1/server/start', {'user_login_id': userLoginId}, contentType: 'application/json');
+  Future<dynamic> startServer({required String userLoginId}) {
+    return _postJson('/api/v1/server/start', {'user_login_id': userLoginId}, apiName: 'startServer');
   }
 
   // 서버 중지
-  Future<Response> stopServer({required String userLoginId, required String description}) {
-    return post('/api/v1/server/stop', {
+  Future<dynamic> stopServer({required String userLoginId, required String description}) {
+    return _postJson('/api/v1/server/stop', {
       'user_login_id': userLoginId,
       'description': description,
-    }, contentType: 'application/json');
+    }, apiName: 'stopServer');
   }
 
   // 서버 재시작
-  Future<Response> restartServer({required String userLoginId, required String description}) {
-    return post('/api/v1/server/restart', {
+  Future<dynamic> restartServer({required String userLoginId, required String description}) {
+    return _postJson('/api/v1/server/restart', {
       'user_login_id': userLoginId,
       'description': description,
-    }, contentType: 'application/json');
+    }, apiName: 'restartServer');
   }
 
   // ---------------------------------------------------------------------------
@@ -63,15 +104,13 @@ class ApiClient extends GetConnect {
   // ---------------------------------------------------------------------------
 
   // 서버 메트릭스 정보
-  // GET /api/v1/dashboard/server/metrics
-  Future<Response> getServerMetrics() {
-    return get('/api/v1/dashboard/server/metrics');
+  Future<dynamic> getServerMetrics() {
+    return _get('/api/v1/dashboard/server/metrics', apiName: 'getServerMetrics');
   }
 
   // GPU / 리소스 시계열 정보
-  // GET /api/v1/dashboard/server/timeseries
-  Future<Response> getServerTimeSeries() {
-    return get('/api/v1/dashboard/server/timeseries');
+  Future<dynamic> getServerTimeSeries() {
+    return _get('/api/v1/dashboard/server/timeseries', apiName: 'getServerTimeSeries');
   }
 
   // ---------------------------------------------------------------------------
@@ -79,77 +118,52 @@ class ApiClient extends GetConnect {
   // ---------------------------------------------------------------------------
 
   // 모델 목록 조회
-  // (관례대로 GET /api/v1/models 로 가정)
-  Future<Response> getModelList() {
-    return get('/api/v1/models');
+  Future<dynamic> getModelList() {
+    return _get('/api/v1/models', apiName: 'getModelList');
   }
 
-  // 단일 모델 최초 등록
-  /// body 예시:
-  /// {
-  ///   "modelName": "string",
-  ///   "modelType": "string",
-  ///   "LoginId": "string",
-  ///   "description": "string",
-  ///   "setupFile": ...,
-  ///   "modelFile": ...
-  /// }
-  ///
-  Future<Response> createModel(dynamic body) {
-    return post('/api/v1/models', body);
+  // 단일 모델 최초 등록 (파일 업로드 등이라 contentType 고정 안 함)
+  Future<dynamic> createModel(dynamic body) {
+    return post('/api/v1/models', body).then((res) => _unwrapResponse(res, 'createModel'));
   }
 
   // 앙상블 모델 등록
-  /// body 예시:
-  /// {
-  ///   "modelName": "string",
-  ///   "modelType": "string",
-  ///   "LoginId": "string",
-  ///   "description": "string",
-  ///   "setupFile": ...
-  /// }
-  ///
-  Future<Response> createEnsembleModel(dynamic body) {
-    return post('/api/v1/models/register/ensemble', body);
+  Future<dynamic> createEnsembleModel(dynamic body) {
+    return post('/api/v1/models/register/ensemble', body).then((res) => _unwrapResponse(res, 'createEnsembleModel'));
   }
 
   // 모델 삭제
-  Future<Response> deleteModel({required int modelId, required String loginId, required String description}) {
-    return httpClient.request(
+  Future<dynamic> deleteModel({required int modelId, required String loginId, required String description}) {
+    return _requestRaw(
       '/api/v1/models/$modelId',
       'DELETE',
       body: jsonEncode({'LoginId': loginId, 'description': description}),
+      apiName: 'deleteModel',
     );
   }
 
   // 모델 버전 목록 + Config 조회
-  Future<Response> getModelVersionsAndConfig({required int modelId}) {
-    return get('/api/v1/models/$modelId');
+  Future<dynamic> getModelVersionsAndConfig({required int modelId}) {
+    return _get('/api/v1/models/$modelId', apiName: 'getModelVersionsAndConfig');
   }
 
-  /// 모델 버전 or 설정 추가
-  /// body 예시:
-  /// {
-  ///   "LoginId": "string",
-  ///   "description": "string",
-  ///   "modelFile": ...,
-  ///   "setupFile": ...
-  /// }
-  Future<Response> addModelVersion({required int modelId, required dynamic body}) {
-    return post('/api/v1/models/$modelId/versions', body);
+  // 모델 버전 or 설정 추가
+  Future<dynamic> addModelVersion({required int modelId, required dynamic body}) {
+    return post('/api/v1/models/$modelId/versions', body).then((res) => _unwrapResponse(res, 'addModelVersion'));
   }
 
-  /// 모델 버전 삭제
-  Future<Response> deleteModelVersion({
+  // 모델 버전 삭제
+  Future<dynamic> deleteModelVersion({
     required int modelId,
     required int version,
     required String loginId,
     required String description,
   }) {
-    return httpClient.request(
+    return _requestRaw(
       '/api/v1/models/$modelId/versions/$version',
       'DELETE',
       body: jsonEncode({'loginId': loginId, 'description': description}),
+      apiName: 'deleteModelVersion',
     );
   }
 
@@ -157,36 +171,37 @@ class ApiClient extends GetConnect {
   // Config 관리
   // ---------------------------------------------------------------------------
 
-  /// config 롤백 목록
-  Future<Response> getConfigHistory({required int modelId}) {
-    return get('/api/v1/models/$modelId/config');
+  // config 롤백 목록
+  Future<dynamic> getConfigHistory({required int modelId}) {
+    return _get('/api/v1/models/$modelId/config', apiName: 'getConfigHistory');
   }
 
-  /// config 저장 및 Triton 적용
-  Future<Response> applyConfig({
+  // config 저장 및 Triton 적용
+  Future<dynamic> applyConfig({
     required int modelId,
     required String loginId,
     required String description,
     required String configContent,
   }) {
-    return patch(
+    return _patchJson(
       '/api/v1/models/$modelId/config/apply',
       jsonEncode({'loginId': loginId, 'description': description, 'configContent': configContent}),
-      contentType: 'application/json',
+      apiName: 'applyConfig',
     );
   }
 
-  /// config 삭제
-  Future<Response> deleteConfig({
+  // config 삭제
+  Future<dynamic> deleteConfig({
     required int modelId,
     required int configId,
     required String loginId,
     required String description,
   }) {
-    return httpClient.request(
+    return _requestRaw(
       '/api/v1/models/$modelId/config/$configId',
       'DELETE',
       body: jsonEncode({'loginId': loginId, 'description': description}),
+      apiName: 'deleteConfig',
     );
   }
 }
