@@ -159,9 +159,9 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ButtonMedium(
-              text: _loading ? '' : 'ok',
+              text: 'ok',
               onPressed: _loading ? null : _handleOk, // 로딩 중 비활성화
-              backgroundColor: white,
+              backgroundColor: _loading ? lightGray : white,
               textColor: black,
             ),
             const SizedBox(width: 12),
