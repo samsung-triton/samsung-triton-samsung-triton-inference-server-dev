@@ -66,11 +66,6 @@ class ServerController extends GetxController {
       isBusy.value = true;
       lastError.value = '';
 
-      // TODO: 실제 API로 교체
-      // final newStatus = await api.fetchStatus(); // ServerStatus 반환
-      // serverStatus.value = newStatus;
-      // _updateUptime();
-
       serverStatus.value = const ServerStatus(status: "stopped", startedAt: null);
     } catch (e) {
       lastError.value = '상태 조회 실패: $e';
@@ -109,8 +104,8 @@ class ServerController extends GetxController {
       serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
       return true;
     } catch (e) {
-      lastError.value = '서버 시작 실패: $e';
-      print('❌ [startServer] 예외 발생: $e'); //에러 로그 출력
+      lastError.value = '서버 시작 실패: $e'; //alert로 띄울지, 메세지 커스텀 할지
+      print('[startServer] 예외 발생: $e'); //에러 로그 출력, 테스트 후 삭제 예정
 
       return false;
     } finally {
@@ -145,7 +140,7 @@ class ServerController extends GetxController {
       serverStatus.value = ServerStatus(status: 'stopped', startedAt: null);
       return true;
     } catch (e) {
-      lastError.value = '서버 중지 실패: $e';
+      lastError.value = '서버 중지 실패: $e'; //alert로 띄울지, 메세지 커스텀 할지
       return false;
     } finally {
       isBusy.value = false;
@@ -180,7 +175,7 @@ class ServerController extends GetxController {
       serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
       return true;
     } catch (e) {
-      lastError.value = '서버 재시작 실패: $e';
+      lastError.value = '서버 재시작 실패: $e'; //alert로 띄울지, 메세지 커스텀 할지
       return false;
     } finally {
       isBusy.value = false;
@@ -212,7 +207,7 @@ class ServerController extends GetxController {
       }
       return true;
     } catch (e) {
-      lastError.value = "마스터키 검증 실패: $e"; // 이것도 alert로 띄울까
+      lastError.value = "마스터키 검증 실패: $e"; // //alert로 띄울지, 메세지 커스텀 할지
       return false;
     }
   }
