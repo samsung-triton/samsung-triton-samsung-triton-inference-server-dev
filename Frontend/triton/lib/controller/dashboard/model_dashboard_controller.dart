@@ -1,11 +1,6 @@
 import 'package:get/get.dart';
 import 'package:triton/widgets/dashboard/model_metrics.dart';
 
-/// ===================================================================
-///  ModelDashboardController
-///  - 기존 3개 컨트롤러(Inference / Latency / Notifications) 통합 버전
-///  - DashboardController에서 model 변경 시 → fetchAll(modelName) 호출
-/// ===================================================================
 class ModelDashboardController extends GetxController {
   // ============================================================
   // 🔹 1) Inference Stats
@@ -52,11 +47,10 @@ class ModelDashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // 자동 fetch 없음 (DashboardController에서 modelName 전달해야 함)
   }
 
   // ============================================================
-  // 🔥 fetchAll(modelName) → inference/latency/notification 통합 로딩
+  // 🔥 fetchAll(modelName) → inference/latency/notifications 로딩
   // ============================================================
   Future<void> fetchAll(String modelName) async {
     loading.value = true;
@@ -67,69 +61,82 @@ class ModelDashboardController extends GetxController {
   }
 
   // ============================================================
-  // 🔹 fetch 부분: 기존 컨트롤러의 mock 데이터 그대로 사용
+  // 🔹 Inference Fetch
   // ============================================================
-
   Future<void> _fetchInference(String modelName) async {
     await Future.delayed(const Duration(milliseconds: 200));
 
-    late ModelMetrics mockMetrics;
+    final key = modelName.trim().toLowerCase();
 
-    if (modelName == "model1") {
-      mockMetrics = ModelMetrics(
-        inference: InferenceStats(total: 100, success: 95, fail: 5),
-        latency: LatencyStats(queue: [10, 15, 20], input: [30, 25, 20], infer: [80, 75, 70], output: [10, 12, 15]),
-        notifications: [],
-      );
-    } else if (modelName == "model2") {
-      mockMetrics = ModelMetrics(
-        inference: InferenceStats(total: 60, success: 45, fail: 15),
-        latency: LatencyStats(queue: [20, 25, 30], input: [40, 35, 30], infer: [120, 110, 105], output: [20, 18, 15]),
-        notifications: [],
-      );
+    late InferenceStats stats;
+
+    if (key == "model1") {
+      stats = InferenceStats(total: 100, success: 95, fail: 5);
+    } else if (key == "model2") {
+      stats = InferenceStats(total: 60, success: 45, fail: 15);
+    } else if (key == "ensemble1") {
+      stats = InferenceStats(total: 120, success: 102, fail: 18);
     } else {
-      mockMetrics = ModelMetrics(
-        inference: InferenceStats(total: 50, success: 45, fail: 5),
-        latency: LatencyStats(queue: [20, 25, 15], input: [40, 30, 20], infer: [120, 100, 110], output: [25, 20, 15]),
-        notifications: [],
-      );
+      stats = InferenceStats(total: 50, success: 45, fail: 5);
     }
 
-    _applyInference(mockMetrics.inference);
+    _applyInference(stats);
   }
 
+  // ============================================================
+  // 🔹 Latency Fetch
+  // ============================================================
   Future<void> _fetchLatency(String modelName) async {
     await Future.delayed(const Duration(milliseconds: 250));
 
+    final key = modelName.trim().toLowerCase();
+
     late LatencyStats latency;
 
-    if (modelName == "model1") {
+    if (key == "model1") {
       latency = LatencyStats(
-        queue: [10, 12, 14, 15],
-        input: [30, 28, 25, 20],
-        infer: [80, 76, 70, 75],
-        output: [12, 10, 9, 11],
+        queue: [10, 12, 14, 16, 18],
+        input: [30, 28, 25, 22, 20],
+        infer: [80, 76, 72, 70, 68],
+        output: [12, 11, 10, 9, 8],
       );
-    } else if (modelName == "model2") {
+    } else if (key == "model2") {
       latency = LatencyStats(
-        queue: [20, 25, 22, 27],
-        input: [40, 38, 36, 33],
-        infer: [120, 115, 110, 112],
-        output: [25, 22, 20, 18],
+        queue: [20, 22, 24, 26, 28],
+        input: [40, 38, 36, 34, 32],
+        infer: [120, 118, 115, 112, 110],
+        output: [20, 19, 18, 17, 16],
+      );
+    } else if (key == "ensemble1") {
+      latency = LatencyStats(
+        queue: [25, 27, 29, 30, 33],
+        input: [45, 43, 40, 38, 35],
+        infer: [130, 128, 124, 120, 118],
+        output: [22, 21, 20, 19, 18],
       );
     } else {
-      latency = LatencyStats(queue: [20, 25, 15], input: [40, 30, 20], infer: [120, 100, 110], output: [25, 20, 15]);
+      latency = LatencyStats(
+        queue: [15, 17, 20, 23, 25],
+        input: [35, 33, 30, 28, 25],
+        infer: [110, 108, 105, 102, 100],
+        output: [18, 17, 16, 15, 14],
+      );
     }
 
     _applyLatency(latency);
   }
 
+  // ============================================================
+  // 🔹 Notifications Fetch
+  // ============================================================
   Future<void> _fetchNotifications(String modelName) async {
     await Future.delayed(const Duration(milliseconds: 200));
 
+    final key = modelName.trim().toLowerCase();
+
     late List<NotificationLog> list;
 
-    if (modelName == "model1") {
+    if (key == "model1") {
       list = [
         NotificationLog(
           level: "INFO",
@@ -147,7 +154,7 @@ class ModelDashboardController extends GetxController {
           timestamp: DateTime.now().subtract(const Duration(minutes: 12)).toIso8601String(),
         ),
       ];
-    } else if (modelName == "model2") {
+    } else if (key == "model2") {
       list = [
         NotificationLog(
           level: "INFO",
@@ -163,6 +170,24 @@ class ModelDashboardController extends GetxController {
           level: "INFO",
           message: "Model2: Batch size tuned",
           timestamp: DateTime.now().subtract(const Duration(minutes: 20)).toIso8601String(),
+        ),
+      ];
+    } else if (key == "ensemble1") {
+      list = [
+        NotificationLog(
+          level: "INFO",
+          message: "Ensemble1: Loaded model group",
+          timestamp: DateTime.now().subtract(const Duration(minutes: 1)).toIso8601String(),
+        ),
+        NotificationLog(
+          level: "WARN",
+          message: "Ensemble1: Sync latency increased",
+          timestamp: DateTime.now().subtract(const Duration(minutes: 6)).toIso8601String(),
+        ),
+        NotificationLog(
+          level: "ERROR",
+          message: "Ensemble1: Sub-model timeout",
+          timestamp: DateTime.now().subtract(const Duration(minutes: 14)).toIso8601String(),
         ),
       ];
     } else {
@@ -189,7 +214,7 @@ class ModelDashboardController extends GetxController {
   }
 
   // ============================================================
-  // 🔹 내부 Apply 메서드
+  // Apply Methods
   // ============================================================
 
   void _applyInference(InferenceStats stats) {
