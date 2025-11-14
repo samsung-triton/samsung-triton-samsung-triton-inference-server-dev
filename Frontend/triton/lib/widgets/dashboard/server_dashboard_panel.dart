@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:triton/widgets/dashboard/common_metric_header_bar.dart';
-import 'package:triton/widgets/dashboard/server_cuda_info_card.dart';
+import 'package:triton/widgets/dashboard/server_gpu_utilization_card.dart';
 import 'package:triton/widgets/dashboard/server_gpu_vram_chart.dart';
 import 'package:triton/widgets/dashboard/server_cpu_usage_chart.dart';
 import 'package:triton/widgets/dashboard/server_ram_usage_chart.dart';
@@ -32,7 +32,13 @@ class ServerDashboardPanel extends StatelessWidget {
               children: [
                 // CUDA Info
                 Expanded(
-                  child: CommonInfoCardBase(title: 'CUDA Info.', child: const ServerCudaInfoCard()),
+                  child: Obx(
+                    () => CommonInfoCardBase(
+                      title: 'GPU Utilization',
+                      usageText: '${serverCtrl.latestGpuUtil.toStringAsFixed(0)}% Usage',
+                      child: const ServerGpuUtilizationChart(),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: gap),
 
