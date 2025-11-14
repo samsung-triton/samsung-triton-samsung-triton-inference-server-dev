@@ -1,5 +1,6 @@
 // 모델 목록 관리 컨트롤러
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:triton/controller/model_manage/config_controller.dart';
 import 'package:triton/controller/model_manage/version_manage_controller.dart';
 import 'package:triton/utils/api_client.dart';
@@ -10,7 +11,7 @@ class ModelItem {
   final String name;
   final String type;
   final bool status;
-  final int? lastLoadedVersion;
+  final dynamic lastLoadedVersion;
   final int totalVersions;
 
   const ModelItem({
@@ -33,6 +34,11 @@ class ModelManageController extends GetxController {
 
   // 공통 API 클라이언트 사용
   late final ApiClient _api;
+
+  // 게정 정보 확인을 위한 저장소 사용
+  GetStorage get _authStorage => GetStorage('auth');
+
+  bool _isFirstLoad = true;
 
   @override
   void onInit() {
@@ -63,7 +69,7 @@ class ModelManageController extends GetxController {
         name: rawModel['name'] as String,
         type: rawModel['type'] as String,
         status: rawModel['status'] as bool,
-        lastLoadedVersion: rawModel['lastLoadedVersion'] as int?,
+        lastLoadedVersion: rawModel['lastLoadedVersion'] as dynamic,
         totalVersions: rawModel['totalVersions'] as int,
       );
     }).toList();
@@ -71,8 +77,9 @@ class ModelManageController extends GetxController {
     // List에 반영
     models.assignAll(fetchedModels);
 
-    // 첫 번째 모델 자동 선택
-    if (models.isNotEmpty) {
+    // 첫 로드일 때만 첫 번째 모델 자동 선택
+    if (_isFirstLoad && models.isNotEmpty) {
+      _isFirstLoad = false;
       await selectModel(models.first.modelId);
     }
   }
@@ -84,6 +91,20 @@ class ModelManageController extends GetxController {
 
     final model = models.firstWhereOrNull((e) => e.modelId == modelId);
     selectedModelName.value = model?.name ?? '';
+
+    await loadModelInfo();
+  }
+
+  Future<void> loadModelInfo() async {
+    final context = Get.context;
+
+    final modelId = selectedModelId.value;
+    if (modelId == null) {
+      if (context != null) {
+        showAlert(context, message: "Select Model");
+      }
+      return;
+    }
 
     final dynamic data = await _api.getModelVersionsAndConfig(modelId: modelId);
     // 데이터가 String이면 에러 메시지로 간주
