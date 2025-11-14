@@ -10,7 +10,7 @@ from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, MetricData, NoneGPUSeriesItem
+from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, MetricData
 from app.core.config import TIMEZONE
 
 
@@ -191,7 +191,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
                 except Exception:
                     continue
 
-            ram_series_list.append(NoneGPUSeriesItem(values=points))
+            ram_series_list.append(SeriesItem(gpu_uuid=metric.get("gpu_uuid", "none"), values=points))
 
         # 4) TimeWindow 생성
         time_window = TimeWindow(
