@@ -4,11 +4,12 @@ from typing import Optional
 
 from app.core.database import get_db
 from app.schemas.base_schema import BaseResponse
-from app.services.metrics_service import get_server_metrics_service, get_timeseries_service
-from app.services.inferdata_service import (
+from app.services.metrics_service import (
+    get_server_metrics_service,
+    get_timeseries_service,
     get_model_per_inference_stats_service,
     get_model_per_inference_latency_service,
-    get_dashboard_models_service,
+    get_dashboard_models_list_service,
 )
 
 metrics_router = APIRouter(prefix="/api/v1/dashboard", tags=["Metircs"])
@@ -26,7 +27,7 @@ async def gpu_util(end: Optional[str] = Query(None, description="RFC3339(â€¦Z) ë
 
 @metrics_router.get("/models", response_model=BaseResponse, status_code=status.HTTP_200_OK)
 async def get_dashboard_models(db: Session = Depends(get_db)):
-    return await get_dashboard_models_service(db)
+    return await get_dashboard_models_list_service(db)
 
 
 @metrics_router.get("/model/{model_id}/stats", response_model=BaseResponse, status_code=status.HTTP_200_OK)
@@ -35,5 +36,7 @@ def get_model_per_inference_stats(model_id: int = Path(...), db: Session = Depen
 
 
 @metrics_router.get("/model/{model_id}/latency", response_model=BaseResponse, status_code=status.HTTP_200_OK)
-async def get_model_per_inference_latency(model_id: int = Path(...), end: Optional[str] = Query(None)):
-    return await get_model_per_inference_latency_service(model_id, end_iso=end)
+async def get_model_per_inference_latency(
+    model_id: int = Path(...), end: Optional[str] = Query(None), db: Session = Depends(get_db)
+):
+    return await get_model_per_inference_latency_service(model_id, end, db)

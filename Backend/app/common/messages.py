@@ -38,7 +38,7 @@ class Messages(str, Enum):
     ENSEMBLE_REGISTER_INTERNAL_ERROR = "모델 등록 중 내부 오류 발생"
 
     # ---- Model 공통 ----
-    MODEL_NOT_FOUND_FOUND = "해당 모델을 찾을 수 없습니다."
+    MODEL_NOT_FOUND = "해당 모델을 찾을 수 없습니다."
     MODEL_REGISTER_DB_ERROR = "DB 저장 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
     MODEL_DELETE_DB_ERROR = "DB 삭제 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
 

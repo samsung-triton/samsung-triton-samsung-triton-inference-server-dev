@@ -228,6 +228,83 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
 # ============================================================
 # 4. model_id 기반 모델 통계
 # ============================================================
+async def get_dashboard_models_list_service(db: Session):
+    # ---------------------------------------
+    # 1. 서버 상태 확인
+    # ---------------------------------------
+    server = await get_server_status_service(db)
+    status = server.data.get("status")
+
+    if status != "START":
+        return create_response(
+            code=CustomCode.DASH_002.value,
+            message=Messages.DASHBOARD_SERVER_STOPPED.value,
+            data={"models": []},
+        )
+
+    # ---------------------------------------
+    # 2. Triton 모델 READY 리스트 가져오기
+    # ---------------------------------------
+    try:
+        triton_models = triton_client.list_models()
+        ready_names = {m["name"] for m in triton_models if m.get("ready", False)}
+    except Exception:
+        # Triton 접속 실패 시 대시보드에 빈 리스트 반환
+        return create_response(
+            code=CustomCode.DASH_002.value, message="Triton 서버에 연결할 수 없습니다.", data={"models": []}
+        )
+
+    if not ready_names:
+        return create_response(
+            code=CustomCode.DASH_001.value,
+            message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+            data={"models": []},
+        )
+
+    # ---------------------------------------
+    # 3. DB 모델 매핑
+    # ---------------------------------------
+    db_models = db.query(Model).filter(Model.name.in_(ready_names)).all()
+
+    result = []
+
+    for m in db_models:
+        # inference_logs 테이블에서 OK/NG 카운트 집계
+        ok_count = (
+            db.query(func.count(InferenceLogs.inference_log_id))
+            .filter(InferenceLogs.model_id == m.model_id, InferenceLogs.inference_status == "OK")
+            .scalar()
+        )
+
+        ng_count = (
+            db.query(func.count(InferenceLogs.inference_log_id))
+            .filter(InferenceLogs.model_id == m.model_id, InferenceLogs.inference_status == "NG")
+            .scalar()
+        )
+
+        result.append(
+            {
+                "modelId": m.model_id,
+                "modelName": m.name,
+                "loaded": True,
+                "inferOK": ok_count,
+                "inferNG": ng_count,
+            }
+        )
+
+    # ---------------------------------------
+    # 4. 응답
+    # ---------------------------------------
+    return create_response(
+        code=CustomCode.DASH_001.value,
+        message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+        data={"models": result},
+    )
+
+
+# ============================================================
+# 4. model_id 기반 모델 통계
+# ============================================================
 def get_aggregation_window_from_str(base_time_str: str) -> tuple[datetime, datetime]:
     now = datetime.now(TIMEZONE)
     hh, mm = map(int, base_time_str.split(":"))
@@ -238,14 +315,10 @@ def get_aggregation_window_from_str(base_time_str: str) -> tuple[datetime, datet
         return today_base - timedelta(days=1), today_base
 
 
-def get_model_per_inference_stats_service(model_name: str, db: Session) -> BaseResponse:
-    model = db.query(Model).filter(Model.name == model_name).first()
+def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseResponse:
+    model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
-        raise CustomHTTPException(
-            status.HTTP_404_NOT_FOUND,
-            CustomCode.ERR_404.value,
-            f"모델 '{model_name}'을(를) 찾을 수 없습니다.",
-        )
+        raise CustomHTTPException(status.HTTP_404_NOT_FOUND, CustomCode.ERR_404.value, Messages.MODEL_NOT_FOUND.value)
 
     base_time_str = current_standard_time()  # "HH:MM"
     start_time, end_time = get_aggregation_window_from_str(base_time_str)
@@ -278,9 +351,9 @@ def get_model_per_inference_stats_service(model_name: str, db: Session) -> BaseR
 
     return create_response(
         code=CustomCode.DASH_003.value,
-        message=f"{model_name} 통계 조회 성공",
+        message=f"{model.name} 통계 조회 성공",
         data={
-            "model_name": model_name,
+            "model_name": model.name,
             "base_time": base_time_str,  # "HH:MM"
             "aggregation_start": start_time.isoformat(),
             "aggregation_end": end_time.isoformat(),
@@ -300,7 +373,15 @@ def get_model_per_inference_stats_service(model_name: str, db: Session) -> BaseR
 # ============================================================
 # 5. model_id 기반 모델 latency
 # ============================================================
-async def get_model_per_inference_latency_service(model_name: str, end_iso: Optional[str] = None) -> create_response:
+async def get_model_per_inference_latency_service(
+    model_id: int, end_iso: Optional[str], db: Session
+) -> create_response:
+    model = db.query(Model).filter(Model.model_id == model_id).first()
+    if not model:
+        raise CustomHTTPException(status.HTTP_404_NOT_FOUND, CustomCode.ERR_404.value, Messages.MODEL_NOT_FOUND.value)
+
+    model_name = model.name
+
     try:
         # 1) end 시각 파싱
         if end_iso:

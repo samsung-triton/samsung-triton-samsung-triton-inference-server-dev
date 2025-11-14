@@ -371,7 +371,7 @@ def register_model_assets_service(
         raise CustomHTTPException(
             status.HTTP_404_NOT_FOUND,
             CustomCode.ERR_404.value,
-            Messages.MODEL_NOT_FOUND_FOUND.value,
+            Messages.MODEL_NOT_FOUND.value,
         )
 
     user = get_user_or_404(db, login_id)
@@ -555,7 +555,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
         raise CustomHTTPException(
             status.HTTP_404_NOT_FOUND,
             CustomCode.ERR_404.value,
-            Messages.MODEL_NOT_FOUND_FOUND.value,
+            Messages.MODEL_NOT_FOUND.value,
         )
 
     user = get_user_or_404(db, req.loginId)
@@ -634,7 +634,7 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
         raise CustomHTTPException(
             status.HTTP_404_NOT_FOUND,
             CustomCode.ERR_404.value,
-            Messages.MODEL_NOT_FOUND_FOUND.value,
+            Messages.MODEL_NOT_FOUND.value,
         )
 
     user = get_user_or_404(db, req.loginId)
@@ -691,7 +691,7 @@ def get_model_detail_service(model_id: int, db: Session):
         raise CustomHTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
-            message=Messages.MODEL_NOT_FOUND_FOUND.value,
+            message=Messages.MODEL_NOT_FOUND.value,
         )
 
     # 현재 Config 조회
