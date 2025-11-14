@@ -22,3 +22,7 @@ class MetricData(BaseModel):
     window: TimeWindow
     vram: List[SeriesItem]
     ram: List[SeriesItem]
+
+
+class NoneGPUSeriesItem(BaseModel):
+    values: List[ValueItem]
