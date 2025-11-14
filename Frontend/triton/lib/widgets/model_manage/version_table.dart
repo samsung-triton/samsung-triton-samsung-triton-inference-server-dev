@@ -28,8 +28,7 @@ class VersionTable extends StatelessWidget {
         confirmMsg: "Are you sure you want to delete it?",
         onOK: () async {
           final versionManageController = Get.find<VersionManageController>();
-          // TODO: 추후 descCtrl 글자 추가
-          await versionManageController.deleteSelectedVersion();
+          await versionManageController.deleteSelectedVersion(descCtrl.text);
           descCtrl.dispose();
         },
       ),
