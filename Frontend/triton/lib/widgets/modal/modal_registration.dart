@@ -3,26 +3,23 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
-
-import '../../controller/model_manage/model_manage_controller.dart';
-import '../../controller/model_manage/version_manage_controller.dart';
-
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
-
-import '../../utils/modal_util.dart';
-
-import 'modal_base.dart';
-import '../input/input_medium.dart';
-import '../input/input_large.dart';
-import '../button/button_medium.dart';
-import '../button/button_small.dart';
-import '../modellog/dropdown.dart';
-
-import 'modal_confirmation.dart';
+import 'package:triton/controller/model_manage/model_manage_controller.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
+import 'package:triton/utils/modal_util.dart';
+import 'package:triton/widgets/button/button_medium.dart';
+import 'package:triton/widgets/button/button_small.dart';
+import 'package:triton/widgets/input/input_large.dart';
+import 'package:triton/widgets/input/input_medium.dart';
+import 'package:triton/widgets/modal/modal_base.dart';
+import 'package:triton/widgets/modal/modal_confirmation.dart';
+import 'package:triton/widgets/modellog/dropdown.dart';
 
 // 모달 등록 종류
 enum RegistrationKind { model, setup }
+
+// 모델 타입
+enum ModelType { normal, ensemble }
 
 class PickedFile {
   final String name;
@@ -48,12 +45,15 @@ class _ModalRegistrationState extends State<ModalRegistration> {
   PickedFile? pickedModelFile;
   PickedFile? pickedSetupFile;
 
-  String modelType = 'single';
+  ModelType modelType = ModelType.normal;
 
   String? errorText;
 
   bool get isModel => widget.kind == RegistrationKind.model;
   bool get isSetup => widget.kind == RegistrationKind.setup;
+
+  String get _modelTypeLabel => modelType == ModelType.normal ? 'single' : 'ensemble';
+  String get _modelTypeApiValue => modelType == ModelType.normal ? 'NORMAL' : 'ENSEMBLE';
 
   @override
   void initState() {
@@ -113,7 +113,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         _setError('model name is required');
         return false;
       }
-      if (modelType == 'single' && pickedModelFile == null) {
+      if (modelType == ModelType.normal && pickedModelFile == null) {
         _setError('model file is required');
         return false;
       }
@@ -147,7 +147,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
 
     if (isModel) {
       final hasName = nameCtrl.text.trim().isNotEmpty;
-      final needModelFile = modelType == 'single';
+      final needModelFile = modelType == ModelType.normal;
       final hasModelFile = pickedModelFile != null;
       final hasConfigFile = pickedSetupFile != null;
       return hasName && hasDesc && (!needModelFile || hasModelFile) && hasConfigFile;
@@ -159,14 +159,42 @@ class _ModalRegistrationState extends State<ModalRegistration> {
 
   // 등록 수행 함수
   Future<void> _performRegister() async {
-    if (isModel) {
-      final modelManageController = Get.find<ModelManageController>();
-      // TODO: nameCtrl, modelType, pickedModelFiles, pickedConfigFile, descCtrl 연결
-      await modelManageController.registerModel();
-    } else {
-      final versionManageController = Get.find<VersionManageController>();
-      // TODO: 선택 모델, pickedModelFiles, descCtrl 연결
-      await versionManageController.registerVersion();
+    final modelManageController = Get.find<ModelManageController>();
+
+    // 버전 or 셋업 등록
+    if (isSetup) {
+      final form = FormData({
+        if (pickedModelFile != null)
+          'modelFile': MultipartFile(pickedModelFile!.bytes, filename: pickedModelFile!.name),
+        if (pickedSetupFile != null)
+          'setupFile': MultipartFile(pickedSetupFile!.bytes, filename: pickedSetupFile!.name),
+        'description': descCtrl.text.trim(),
+      });
+      await modelManageController.registerAssets(form);
+    }
+    // 싱글 모델 등록
+    else if (modelType == ModelType.normal) {
+      final form = FormData({
+        if (pickedModelFile != null)
+          'modelFile': MultipartFile(pickedModelFile!.bytes, filename: pickedModelFile!.name),
+        if (pickedSetupFile != null)
+          'setupFile': MultipartFile(pickedSetupFile!.bytes, filename: pickedSetupFile!.name),
+        'modelName': nameCtrl.text.trim(),
+        'modelType': _modelTypeApiValue,
+        'description': descCtrl.text.trim(),
+      });
+      await modelManageController.registerModel(form);
+    }
+    // 앙상블 모델 등록
+    else {
+      final form = FormData({
+        if (pickedSetupFile != null)
+          'setupFile': MultipartFile(pickedSetupFile!.bytes, filename: pickedSetupFile!.name),
+        'modelName': nameCtrl.text.trim(),
+        'modelType': _modelTypeApiValue,
+        'description': descCtrl.text.trim(),
+      });
+      await modelManageController.registerEnsembleModel(form);
     }
   }
 
@@ -225,10 +253,14 @@ class _ModalRegistrationState extends State<ModalRegistration> {
               width: 200,
               items: const ['single', 'ensemble'],
               hintText: 'Select model type',
-              value: modelType,
+              value: _modelTypeLabel,
               onChanged: (newValue) {
                 setState(() {
-                  modelType = newValue ?? 'single';
+                  if (newValue == 'ensemble') {
+                    modelType = ModelType.ensemble;
+                  } else {
+                    modelType = ModelType.normal;
+                  }
                 });
               },
             ),
@@ -243,7 +275,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         ],
 
         // 모델 파일
-        if ((isModel && modelType == 'single') || isSetup) ...[
+        if ((isModel && modelType == ModelType.normal) || isSetup) ...[
           _LabelInputRow(
             label: 'model file',
             child: Row(

@@ -138,18 +138,59 @@ class ModelManageController extends GetxController {
   }
 
   // 모델 등록
-  Future<void> registerModel({String? name}) async {
-    // TODO: 등록 API 연동 (성공 시 목록/선택 업데이트)
-    final newId = (models.isEmpty ? 1 : models.map((e) => e.modelId).reduce((a, b) => a > b ? a : b) + 1);
-    final item = ModelItem(
-      modelId: newId,
-      name: (name?.trim().isNotEmpty ?? false) ? name!.trim() : 'new-model-$newId',
-      type: "NORMAL",
-      status: false,
-      lastLoadedVersion: null,
-      totalVersions: 1,
-    );
-    models.insert(0, item);
+  Future<void> registerModel(dynamic body) async {
+    final registerId = _authStorage.read<String>('loginedId') ?? '';
+    body.fields.add(MapEntry('LoginId', registerId));
+
+    print(body);
+
+    final dynamic data = await _api.createModel(body);
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to Register the model.\nPlease retry or restart the server.");
+      return;
+    } else {
+      await loadModels();
+    }
+  }
+
+  // 앙상블 모델 등록
+  Future<void> registerEnsembleModel(dynamic body) async {
+    final registerId = _authStorage.read<String>('loginedId') ?? '';
+    body.fields.add(MapEntry('LoginId', registerId));
+
+    final dynamic data = await _api.createEnsembleModel(body);
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to Register the model.\nPlease retry or restart the server.");
+      return;
+    } else {
+      await loadModels();
+    }
+  }
+
+  // 버전 or 셋업 등록
+  Future<void> registerAssets(dynamic body) async {
+    final context = Get.context;
+
+    final modelId = selectedModelId.value;
+    if (modelId == null) {
+      if (context != null) {
+        showAlert(context, message: "Select Model");
+      }
+      return;
+    }
+
+    final registerId = _authStorage.read<String>('loginedId') ?? '';
+    body.fields.add(MapEntry('loginId', registerId));
+
+    final dynamic data = await _api.addModelAssets(modelId: modelId, body: body);
+    if (data is String) {
+      showAlert(context!, message: "Failed to Register version or setup.\nPlease retry or restart the server.");
+      return;
+    } else {
+      await loadModelInfo();
+    }
   }
 
   // 모델 삭제
