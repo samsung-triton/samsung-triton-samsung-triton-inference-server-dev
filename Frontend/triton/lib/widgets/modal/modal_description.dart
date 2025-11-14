@@ -145,7 +145,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
             ButtonMedium(
               text: 'ok',
               onPressed: _canSubmit ? () => _handleOk(context) : null,
-              backgroundColor: _loading ? lightGray : primaryNormal,
+              backgroundColor: !_canSubmit || _loading ? gray : primaryNormal,
               textColor: white,
             ),
             const SizedBox(width: 12),
