@@ -154,7 +154,7 @@ class ApiClient extends GetConnect {
     return _requestRaw(
       '/api/v1/models/$modelId',
       'DELETE',
-      body: jsonEncode({'LoginId': loginId, 'description': description}),
+      body: jsonEncode({'loginId': loginId, 'description': description}),
       apiName: 'deleteModel',
     );
   }
@@ -165,8 +165,8 @@ class ApiClient extends GetConnect {
   }
 
   // 모델 버전 or 설정 추가
-  Future<dynamic> addModelVersion({required int modelId, required dynamic body}) {
-    return post('/api/v1/models/$modelId/versions', body).then((res) => _unwrapResponse(res, 'addModelVersion'));
+  Future<dynamic> addModelAssets({required int modelId, required dynamic body}) {
+    return post('/api/v1/models/$modelId/assets', body).then((res) => _unwrapResponse(res, 'addModelAssets'));
   }
 
   // 모델 버전 삭제
