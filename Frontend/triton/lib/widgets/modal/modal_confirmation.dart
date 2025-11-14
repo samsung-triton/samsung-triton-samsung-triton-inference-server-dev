@@ -1,13 +1,10 @@
 // 확인 모달
 import 'package:flutter/material.dart';
-
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
-
-import '../../utils/modal_util.dart';
-
-import 'modal_base.dart';
-import '../button/button_medium.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
+import 'package:triton/utils/modal_util.dart';
+import 'package:triton/widgets/button/button_medium.dart';
+import 'package:triton/widgets/modal/modal_base.dart';
 
 class ModalConfirmation extends StatefulWidget {
   final String message;
@@ -40,6 +37,7 @@ class _ModalConfirmationState extends State<ModalConfirmation> {
       }
     } catch (e) {
       // 실패 메시지 노출
+      print(e);
       setState(() {
         _error = 'request failed. please try again.';
       });
@@ -86,9 +84,9 @@ class _ModalConfirmationState extends State<ModalConfirmation> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ButtonMedium(
-              text: _loading ? 'processing...' : 'ok',
+              text: 'ok',
               onPressed: _loading ? null : _handleOk, // 로딩 중 비활성화
-              backgroundColor: white,
+              backgroundColor: _loading ? gray : white,
               textColor: black,
             ),
             const SizedBox(width: 12),
