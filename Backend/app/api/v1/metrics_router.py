@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, status, Depends
+from fastapi import APIRouter, Query, status, Depends, Path
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -8,6 +8,7 @@ from app.services.metrics_service import get_server_metrics_service, get_timeser
 from app.services.inferdata_service import (
     get_model_per_inference_stats_service,
     get_model_per_inference_latency_service,
+    get_dashboard_models_service,
 )
 
 metrics_router = APIRouter(prefix="/api/v1/dashboard", tags=["Metircs"])
@@ -23,13 +24,16 @@ async def gpu_util(end: Optional[str] = Query(None, description="RFC3339(…Z) �
     return await get_timeseries_service(end_iso=end)
 
 
-@metrics_router.get("/model/stats", response_model=BaseResponse, status_code=status.HTTP_200_OK)
-def get_model_per_inference_stats(
-    model_name: str = Query(..., description="조회할 모델 이름 (예: densenet_onnx)"), db: Session = Depends(get_db)
-):
-    return get_model_per_inference_stats_service(model_name, db)
+@metrics_router.get("/models", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+async def get_dashboard_models(db: Session = Depends(get_db)):
+    return await get_dashboard_models_service(db)
 
 
-@metrics_router.get("/model/latency", response_model=BaseResponse, status_code=status.HTTP_200_OK)
-async def get_model_per_inference_latency(model_name: str = Query(...), end: Optional[str] = Query(None)):
-    return await get_model_per_inference_latency_service(model_name, end_iso=end)
+@metrics_router.get("/model/{model_id}/stats", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+def get_model_per_inference_stats(model_id: int = Path(...), db: Session = Depends(get_db)):
+    return get_model_per_inference_stats_service(model_id, db)
+
+
+@metrics_router.get("/model/{model_id}/latency", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+async def get_model_per_inference_latency(model_id: int = Path(...), end: Optional[str] = Query(None)):
+    return await get_model_per_inference_latency_service(model_id, end_iso=end)

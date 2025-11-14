@@ -4,18 +4,25 @@ import math
 from fastapi import status
 from datetime import datetime, timedelta
 from typing import List, Optional
+from sqlalchemy.orm import Session
+from sqlalchemy import func
 
-from app.core.config import settings
+from app.core.config import settings, TIMEZONE
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
+from app.core.standard_time_manager import current_standard_time
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, MetricData, NoneGPUSeriesItem
-from app.core.config import TIMEZONE
+from app.schemas.base_schema import BaseResponse
+from app.models.model import Model
+from app.models.inference_logs import InferenceLogs
 
 
+# ============================================================
+# 1. 서버 실시간 메트릭
+# ============================================================
 async def get_server_metrics_service():
-    """서버 실시간 메트릭 조회"""
     try:
         queries = {
             "cpu_util": "avg(nv_cpu_utilization)",
@@ -125,6 +132,9 @@ async def prom_query_range(promql: str, start: datetime, end: datetime, step: st
         return data["data"]["result"]
 
 
+# ============================================================
+# 2. GPU 메모리 / CPU 메모리 시계열
+# ============================================================
 async def get_timeseries_service(end_iso: Optional[str] = None) -> create_response:
     """
     GPU 메모리 사용률(%) 시계열
@@ -211,5 +221,176 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=f"{Messages.SERVER_METRIC_FAIL.value}: {e}",
+            data=None,
+        )
+
+
+# ============================================================
+# 4. model_id 기반 모델 통계
+# ============================================================
+def get_aggregation_window_from_str(base_time_str: str) -> tuple[datetime, datetime]:
+    now = datetime.now(TIMEZONE)
+    hh, mm = map(int, base_time_str.split(":"))
+    today_base = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    if now >= today_base:
+        return today_base, now
+    else:
+        return today_base - timedelta(days=1), today_base
+
+
+def get_model_per_inference_stats_service(model_name: str, db: Session) -> BaseResponse:
+    model = db.query(Model).filter(Model.name == model_name).first()
+    if not model:
+        raise CustomHTTPException(
+            status.HTTP_404_NOT_FOUND,
+            CustomCode.ERR_404.value,
+            f"모델 '{model_name}'을(를) 찾을 수 없습니다.",
+        )
+
+    base_time_str = current_standard_time()  # "HH:MM"
+    start_time, end_time = get_aggregation_window_from_str(base_time_str)
+
+    q = (
+        db.query(
+            func.count(InferenceLogs.inference_log_id).label("request_total"),
+            func.count().filter(InferenceLogs.inference_status == "OK").label("inference_ok"),
+            func.count().filter(InferenceLogs.inference_status == "NG").label("inference_ng"),
+            func.count().filter(InferenceLogs.inference_status == "ERROR").label("inference_error"),
+            func.count().filter(InferenceLogs.request_status == "SUCCESS").label("request_success"),
+            func.count().filter(InferenceLogs.request_status == "FAIL").label("request_fail"),
+            func.avg(InferenceLogs.duration_ms).label("avg_latency"),
+        )
+        .filter(InferenceLogs.model_id == model.model_id)
+        .filter(InferenceLogs.completed_at >= start_time)
+        .filter(InferenceLogs.completed_at < end_time)
+    )
+
+    inferenceData = q.first()
+
+    request_total = inferenceData.request_total or 0
+    request_success = inferenceData.request_success or 0
+    request_fail = inferenceData.request_fail or 0
+    inference_total = inferenceData.request_success or 0
+    inference_ok = inferenceData.inference_ok or 0
+    inference_ng = inferenceData.inference_ng or 0
+    inference_error = inferenceData.inference_error or 0
+    avg_ms = round(inferenceData.avg_latency or 0, 2)
+
+    return create_response(
+        code=CustomCode.DASH_003.value,
+        message=f"{model_name} 통계 조회 성공",
+        data={
+            "model_name": model_name,
+            "base_time": base_time_str,  # "HH:MM"
+            "aggregation_start": start_time.isoformat(),
+            "aggregation_end": end_time.isoformat(),
+            "request_total": request_total,
+            "request_success": request_success,
+            "request_fail": request_fail,
+            "inference_total": inference_total,
+            "inference_ok": inference_ok,
+            "inference_ng": inference_ng,
+            "inference_error": inference_error,
+            "ok_ratio": round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0,
+            "avg_latency_ms": avg_ms,
+        },
+    )
+
+
+# ============================================================
+# 5. model_id 기반 모델 latency
+# ============================================================
+async def get_model_per_inference_latency_service(model_name: str, end_iso: Optional[str] = None) -> create_response:
+    try:
+        # 1) end 시각 파싱
+        if end_iso:
+            if end_iso.isdigit():
+                end_dt = datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
+            else:
+                end_dt = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
+                if end_dt.tzinfo is None:
+                    end_dt = end_dt.replace(tzinfo=TIMEZONE)
+        else:
+            end_dt = datetime.now(TIMEZONE)
+
+        start_dt = end_dt - timedelta(hours=1)
+
+        def to_epoch(dt: datetime) -> float:
+            return dt.timestamp()
+
+        # 2) PromQL 준비
+        metric_keys = {
+            "total": "nv_inference_request_duration_us",
+            "queue": "nv_inference_queue_duration_us",
+            "input": "nv_inference_compute_input_duration_us",
+            "infer": "nv_inference_compute_infer_duration_us",
+            "output": "nv_inference_compute_output_duration_us",
+        }
+
+        def build_query(metric_key: str) -> str:
+            return f'increase({metric_key}{{model="{model_name}"}}[10m])'
+
+        latency_results = {}
+
+        # 3) prom_query_range 호출 (async 정상)
+        for key, metric_key in metric_keys.items():
+            promql = build_query(metric_key)
+
+            result = await prom_query_range(promql=promql, start=start_dt, end=end_dt, step="600")  # 600초 (10분)
+
+            latency_results[key] = result
+
+        # 4) 데이터 변환
+        def convert_prometheus_series(result: List[dict]):
+            none_gpu_series_list = []
+
+            for s in result:
+                raw_values = s.get("values")
+                if raw_values is None:
+                    v = s.get("value")
+                    raw_values = [v] if v else []
+
+                points = []
+                for ts, val in raw_values:
+                    try:
+                        ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
+                        v = float(val)
+                        v_ms = round(v / 1000, 2)
+                        points.append(ValueItem(ts=ts_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), value=v_ms))
+                    except:  # noqa: E722
+                        continue
+
+                none_gpu_series_list.append(NoneGPUSeriesItem(values=points))
+
+            return none_gpu_series_list
+
+        total_series = convert_prometheus_series(latency_results["total"])
+        queue_series = convert_prometheus_series(latency_results["queue"])
+        input_series = convert_prometheus_series(latency_results["input"])
+        infer_series = convert_prometheus_series(latency_results["infer"])
+        output_series = convert_prometheus_series(latency_results["output"])
+
+        time_window = TimeWindow(
+            start=start_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), end=end_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), step="10m"
+        )
+
+        data = {
+            "window": time_window.dict(),
+            "latency": {
+                "total": [s.dict() for s in total_series],
+                "queue": [s.dict() for s in queue_series],
+                "input": [s.dict() for s in input_series],
+                "infer": [s.dict() for s in infer_series],
+                "output": [s.dict() for s in output_series],
+            },
+        }
+
+        return create_response(code="DASH-200", message="Inference latency timeseries fetched", data=data)
+
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=f"Failed: {e}",
             data=None,
         )
