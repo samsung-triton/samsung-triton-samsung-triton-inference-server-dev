@@ -81,13 +81,12 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
           ModalPortal.open(
             hostCtx,
             builder: (dialogCtx) => ModalDescription(
-              descCtrl: descCtrl,
+              descCtrl: descCtrl, //description
               isServer: true,
               onOK: () async {
                 final serverController = Get.find<ServerController>();
-                // TODO: 추후 descCtrl 글자 추가
                 if (widget.kind == ControlKind.stop) {
-                  await serverController.stopServer();
+                  await serverController.stopServer(descCtrl.text);
                 }
                 if (widget.kind == ControlKind.restart) {
                   await serverController.restartServer();
