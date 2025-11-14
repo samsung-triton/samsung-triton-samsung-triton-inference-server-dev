@@ -85,17 +85,35 @@ class ModelManageController extends GetxController {
     final model = models.firstWhereOrNull((e) => e.modelId == modelId);
     selectedModelName.value = model?.name ?? '';
 
-    // TODO: api 호출해서 넣기
-    final dummyVersions = _makeDummyVersionsFor(modelId, selectedModelName.value);
-    final dummyConfig = _makeDummyConfigFor(modelId, selectedModelName.value);
+    final dynamic data = await _api.getModelVersionsAndConfig(modelId: modelId);
+    // 데이터가 String이면 에러 메시지로 간주
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to load the model data.\nPlease retry or restart the server.");
+      return;
+    }
 
-    // 버전 목록 넣기
+    // versions 추출
+    final List<dynamic> rawVersions = (data['versions'] as List?) ?? [];
+
+    // rawVersion을 VersionItem 변환
+    final List<VersionItem> fetchedVersions = rawVersions.map((rawVersion) {
+      return VersionItem(
+        versionId: rawVersion['versionId'] as int,
+        version: rawVersion['version'] as int,
+        fileName: rawVersion['fileName'] as String,
+        userName: rawVersion['userName'] as String,
+        createdAt: rawVersion['createdAt'] as String,
+      );
+    }).toList();
+
+    // 버전 채워 넣기
     final versionManageController = Get.find<VersionManageController>();
-    versionManageController.setVersions(dummyVersions);
+    versionManageController.setVersions(fetchedVersions);
 
     // 컨피그 내용 넣기
     final codeEditorController = Get.find<ConfigController>();
-    codeEditorController.setEditorCtrlText(text: dummyConfig); // NEW (기존 "test" → 더미 생성값)
+    codeEditorController.setEditorCtrlText(text: data['config']["content"] as String);
   }
 
   // 모델 등록
@@ -130,46 +148,5 @@ class ModelManageController extends GetxController {
         versions.reset();
       }
     }
-  }
-
-  // TODO: 더미 추후 삭제
-  List<VersionItem> _makeDummyVersionsFor(int modelId, String modelName) {
-    final count = 3 + (modelId % 4);
-    final list = <VersionItem>[];
-    for (int i = 0; i < count; i++) {
-      final ver = count - i;
-      list.add(
-        VersionItem(
-          versionId: modelId * ver,
-          version: ver,
-          fileName: (modelId % 2 == 0) ? '${modelName}_v$ver.engine' : '${modelName}_v$ver.onnx',
-          userName: (ver % 2 == 0) ? 'admin' : 'builder',
-          createdAt: '2025-10-${(10 + ver).toString().padLeft(2, '0')}',
-        ),
-      );
-    }
-    return list; // NEW
-  }
-
-  // 모델별 더미 config 생성기
-  String _makeDummyConfigFor(int modelId, String modelName) {
-    final platform = (modelId % 2 == 0) ? 'tensorrt_plan' : 'onnxruntime_onnx';
-    final maxBatch = 4 + (modelId % 5) * 4;
-    return '''
-# config.pbtxt (model: $modelId / name: $modelName)
-platform: "$platform"
-max_batch_size: $maxBatch
-
-optimization {
-  execution_accelerators {
-    gpu_execution_accelerator: [ { name: "tensorrt" } ]
-  }
-}
-
-dynamic_batching {
-  preferred_batch_size: [4, 8, 16]
-  max_queue_delay_microseconds: ${1000 + (modelId % 5) * 500}
-}
-''';
   }
 }
