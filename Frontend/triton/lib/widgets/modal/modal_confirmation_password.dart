@@ -116,16 +116,6 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
       titleColor: white,
       dividerColor: white,
       children: [
-        // 에러 배너
-        if (_error != null) ...[
-          Container(
-            width: 400,
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-            decoration: BoxDecoration(color: statusRed.withAlpha(28), borderRadius: BorderRadius.circular(6)),
-            child: Text(_error!, style: T.t12(color: statusRed)),
-          ),
-        ],
-
         // 본문 문구
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -136,6 +126,24 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
             maxLines: 2, // 최대 2줄
           ),
         ),
+
+        if (_error != null) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 400,
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                decoration: BoxDecoration(color: statusRed.withAlpha(28), borderRadius: BorderRadius.circular(6)),
+                child: Text(
+                  _error!,
+                  style: T.t12(color: statusRed),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ],
 
         Center(
           child: SizedBox(
