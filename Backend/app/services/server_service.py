@@ -45,7 +45,7 @@ async def _execute_server_action(
     action_func,
     success_status: ServerStatus,
     dual_log: bool = False,
-    description: str | None = None,  
+    description: str | None = None,
 ):
     user = get_user_or_404(db, actor_login_id)
 
@@ -57,10 +57,12 @@ async def _execute_server_action(
         message = result.message if hasattr(result, "message") else ""
 
         if dual_log:
-            db.add_all([
-                Server(actor_id=user.user_id, status=ServerStatus.STOP, description=description),
-                Server(actor_id=user.user_id, status=ServerStatus.START, description=description),
-            ])
+            db.add_all(
+                [
+                    Server(actor_id=user.user_id, status=ServerStatus.STOP, description=description),
+                    Server(actor_id=user.user_id, status=ServerStatus.START, description=description),
+                ]
+            )
         else:
             _log_server_action(db, user.user_id, success_status, description)
 
@@ -78,7 +80,6 @@ async def _execute_server_action(
         )
 
 
-
 # Triton 서버 시작
 async def start_server_service(db: Session, actor_login_id: str):
     # Triton 서버 시작
@@ -94,6 +95,7 @@ async def stop_server_service(db: Session, actor_login_id: str, description: str
         ServerStatus.STOP,
         description=description,
     )
+
 
 # Triton 서버 재시작
 async def restart_server_service(db: Session, actor_login_id: str, description: str | None = None):
