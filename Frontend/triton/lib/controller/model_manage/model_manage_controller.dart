@@ -1,14 +1,16 @@
 // 모델 목록 관리 컨트롤러
 import 'package:get/get.dart';
-import 'version_manage_controller.dart';
-import 'config_controller.dart';
+import 'package:triton/controller/model_manage/config_controller.dart';
+import 'package:triton/controller/model_manage/version_manage_controller.dart';
+import 'package:triton/utils/api_client.dart';
+import 'package:triton/utils/show_alert.dart';
 
 class ModelItem {
   final int modelId;
   final String name;
   final String type;
   final bool status;
-  final String lastLoadedVersion;
+  final int? lastLoadedVersion;
   final int totalVersions;
 
   const ModelItem({
@@ -29,29 +31,45 @@ class ModelManageController extends GetxController {
   final selectedModelId = RxnInt();
   final selectedModelName = ''.obs;
 
-  // 최초 로드
-  Future<void> loadModels() async {
-    // TODO: 모델 목록 API 연동
-    // final result = await api.fetchModelList();
-    // models.assignAll(result);
+  // 공통 API 클라이언트 사용
+  late final ApiClient _api;
 
-    // 임시 더미 15개
-    final tmp = <ModelItem>[];
-    for (int i = 1; i <= 15; i++) {
-      tmp.add(
-        ModelItem(
-          modelId: i,
-          name: i == 1 ? 'yolov8-detector' : 'model-$i',
-          type: "NORMAL",
-          status: i % 2 == 0,
-          lastLoadedVersion: i % 3 == 0
-              ? '2025-10-${(i % 30 + 1).toString().padLeft(2, '0')} ${((8 + i) % 24).toString().padLeft(2, '0')}:12'
-              : 'N/A',
-          totalVersions: (i % 5) + 1,
-        ),
-      );
+  @override
+  void onInit() {
+    super.onInit();
+
+    _api = Get.find<ApiClient>();
+  }
+
+  // 모델 목록 로드
+  Future<void> loadModels() async {
+    // API 호출
+    final dynamic data = await _api.getModelList();
+
+    // 데이터가 String이면 에러 메시지로 간주
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to load the model list.\nPlease retry or restart the server.");
+      return;
     }
-    models.assignAll(tmp);
+
+    // models 추출
+    final List<dynamic> rawModels = (data['models'] as List?) ?? [];
+
+    // rawModel을 ModelItem 변환
+    final List<ModelItem> fetchedModels = rawModels.map((rawModel) {
+      return ModelItem(
+        modelId: rawModel['modelId'] as int,
+        name: rawModel['name'] as String,
+        type: rawModel['type'] as String,
+        status: rawModel['status'] as bool,
+        lastLoadedVersion: rawModel['lastLoadedVersion'] as int?,
+        totalVersions: rawModel['totalVersions'] as int,
+      );
+    }).toList();
+
+    // List에 반영
+    models.assignAll(fetchedModels);
 
     // 첫 번째 모델 자동 선택
     if (models.isNotEmpty) {
@@ -89,7 +107,7 @@ class ModelManageController extends GetxController {
       name: (name?.trim().isNotEmpty ?? false) ? name!.trim() : 'new-model-$newId',
       type: "NORMAL",
       status: false,
-      lastLoadedVersion: 'N/A',
+      lastLoadedVersion: null,
       totalVersions: 1,
     );
     models.insert(0, item);
