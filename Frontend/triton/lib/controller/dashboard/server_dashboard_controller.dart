@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:triton/widgets/dashboard/server_metrics.dart';
+import 'package:triton/utils/api_client.dart'; // ← 🔥 추가 필요
 
 /// ------------------------------------------------------------
 ///  ServerDashboardController (New GPU Utilization Structure)
@@ -16,6 +17,9 @@ class ServerDashboardController extends GetxController {
   /// 🔹 로딩 상태
   final loading = false.obs;
 
+  // API Client 인스턴스
+  late final ApiClient _api;
+
   // ============================================================
   // ⬇️ Computed Fields
   // ============================================================
@@ -30,8 +34,16 @@ class ServerDashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    /// 1) API client 주입
+    _api = Get.find<ApiClient>();
+
+    /// 2) 시계열 mock은 그대로 유지 (추후 timeseries API로 대체)
     gpuVramSeries.assignAll(ServerGpuMockData.vramUsage);
     ramSeries.assignAll(ServerRamMockData.ramUsage);
+
+    /// 옵션: 최초 1회 fetch
+    // fetchAll();
   }
 
   // ============================================================
@@ -40,56 +52,40 @@ class ServerDashboardController extends GetxController {
   Future<void> fetchAll() async {
     loading.value = true;
 
-    // API 연동 전이므로 Mock Delay
-    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      // mock delay 제거 가능하지만 임시 유지
+      await Future.delayed(const Duration(milliseconds: 300));
 
-    final prev = metrics.value;
+      // 기존 mock 업데이트 제거하고 API 기반으로 교체
+      final apiData = await _api.getServerMetrics();
+      print('🔥🔥🔥 server metrics apiData: $apiData');
 
-    // ---------------------------------------------------------
-    // 1) CPU usage mock update
-    // ---------------------------------------------------------
-    final updatedCpu = (prev.cpuUsage + 7) % 100;
+      // null-safe
+      if (apiData == null) {
+        loading.value = false;
+        return;
+      }
 
-    // ---------------------------------------------------------
-    // 2) GPU Utilization mock update
-    // ---------------------------------------------------------
-    final updatedGpuUtil = (prev.gpuUtilization + 9) % 100;
+      final cpu = (apiData['cpu_utilization'] ?? 0).toDouble();
 
-    // ---------------------------------------------------------
-    // 3) GPU VRAM 시계열 mock update
-    // ---------------------------------------------------------
-    final updatedGpuSeries = gpuVramSeries.map((spot) {
-      final delta = (spot.y + (spot.y % 8) - 4).clamp(0, 100).toDouble();
-      return FlSpot(spot.x, delta);
-    }).toList();
-    gpuVramSeries.assignAll(updatedGpuSeries);
+      final gpuList = apiData['gpu'] as List<dynamic>;
+      final gpu = gpuList.isNotEmpty ? (gpuList[0]['gpu_util'] ?? 0).toDouble() : 0.0;
 
-    // ---------------------------------------------------------
-    // 4) RAM Usage 시계열 mock update
-    // ---------------------------------------------------------
-    final updatedRamSeries = ramSeries.map((spot) {
-      final delta = (spot.y + (spot.y % 5) - 2).clamp(0, 100).toDouble();
-      return FlSpot(spot.x, delta);
-    }).toList();
-    ramSeries.assignAll(updatedRamSeries);
+      final prev = metrics.value;
 
-    // ---------------------------------------------------------
-    // 5) sidebar card mock update
-    // ---------------------------------------------------------
-    final updatedModels = prev.models.map((m) {
-      return m.copyWith(success: m.success + (m.success % 5), fail: m.fail + (m.fail % 3));
-    }).toList();
-
-    // ---------------------------------------------------------
-    // 🔥 최종 Snapshot 업데이트
-    // ---------------------------------------------------------
-    metrics.value = ServerMetrics(
-      cpuUsage: updatedCpu,
-      ramUsage: updatedRamSeries.last.y,
-      gpuUtilization: updatedGpuUtil,
-      gpuVram: updatedGpuSeries.last.y,
-      models: updatedModels,
-    );
+      // ======================================================
+      // [수정 #3] metrics 스냅샷 갱신 — CPU/GPU만 실제 값으로 교체
+      // ======================================================
+      metrics.value = ServerMetrics(
+        cpuUsage: cpu,
+        ramUsage: prev.ramUsage,
+        gpuUtilization: gpu,
+        gpuVram: prev.gpuVram,
+        models: prev.models,
+      );
+    } catch (e) {
+      print('[ServerDashboardController] fetchAll Error: $e');
+    }
 
     loading.value = false;
   }
