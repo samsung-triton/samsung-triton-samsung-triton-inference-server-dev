@@ -1,4 +1,3 @@
-import re
 import shutil
 import os
 from fastapi import UploadFile, status
@@ -12,7 +11,7 @@ from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 from app.core.config import settings
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
-from app.common.utils import get_user_or_404
+from app.common.utils import get_user_or_404, safe_name, save_model_config_file, store_model_file
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.models.model import (
@@ -25,12 +24,12 @@ from app.models.model import (
 )
 from app.models.model_config import ModelConfig
 from app.models.user import User
-from app.core.file_utils import safe_name, save_model_config_file, store_model_file
 
 # =========================
 # 공통 설정
 # =========================
 MODEL_REPO_ROOT = Path(settings.TRITON_MODEL_REPO)
+
 
 def _save_model(db: Session, name: str, model_type: str, storage_dir: str) -> Model:
     model = Model(name=name, type=model_type, storage_dir=storage_dir)
@@ -90,30 +89,50 @@ def save_model_release(
 # 1. 모델 목록 조회
 # =========================
 def list_models_service(db: Session) -> Dict[str, Any]:
+    # Triton 서버 Health Check
     try:
-        resp = triton_client.list_models()
+        if triton_client.client.is_server_ready():
+            triton_alive = True
+        else:
+            triton_alive = False
+    except Exception:
+        triton_alive = False
 
-        triton_models = resp.get("models", [])
-        if not isinstance(triton_models, list):
-            triton_models = []
+    if triton_alive:
+        try:
+            resp = triton_client.list_models()
 
-        # 모델 이름별로 버전 묶기
-        triton_grouped = defaultdict(list)
-        for m in triton_models:
-            triton_grouped[m["name"]].append(m)
+            triton_models = resp.get("models", [])
+            if not isinstance(triton_models, list):
+                triton_models = []
 
-        # DB 모델 데이터 조회
-        db_models = db.query(Model).all()
+            # 모델 이름별로 버전 묶기
+            triton_grouped = defaultdict(list)
+            for m in triton_models:
+                triton_grouped[m["name"]].append(m)
 
-        # response data 변환
-        result = []
-        for model in db_models:
-            model_id = model.model_id
-            name = model.name
-            type = model.type
-            total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
+        except Exception as e:
+            # 나머지는 진짜 서버 내부 오류 → 그대로 500 던짐
+            raise CustomHTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                code=CustomCode.ERR_500.value,
+                message=Messages.MODEL_LIST_FETCH_ERROR.value,
+                data={"detail": str(e)},
+            )
 
-            # 상태 확인
+    # DB 모델 데이터 조회
+    db_models = db.query(Model).all()
+
+    # response data 변환
+    result = []
+    for model in db_models:
+        model_id = model.model_id
+        name = model.name
+        type = model.type
+        total_versions = db.query(ModelVersion).filter(ModelVersion.model_id == model_id).count()
+
+        # Triton 살아있으면 기존 방식 그대로
+        if triton_alive:
             versions = triton_grouped.get(name, [])
             ready_versions = [v for v in versions if v.get("state") == "READY"]
 
@@ -122,44 +141,28 @@ def list_models_service(db: Session) -> Dict[str, Any]:
                 last_loaded = max(int(v["version"]) for v in ready_versions)
             else:
                 status_bool = False
-                last_loaded = "N/A"
+                last_loaded = None
+        # Triton 꺼져있으면 FALLBACK: DB 정보만 사용
+        else:
+            status_bool = False
+            last_loaded = None
 
-            result.append(
-                {
-                    "modelId": model_id,
-                    "name": name,
-                    "type": type,
-                    "status": status_bool,  # True / False
-                    "lastLoadedVersion": last_loaded,  # "4" or "N/A"
-                    "totalVersions": total_versions,  # from DB
-                }
-            )
-
-        return create_response(
-            CustomCode.MODEL_001.value,
-            Messages.MODEL_LIST_FETCH_SUCCESS.value,
-            {"models": result},
+        result.append(
+            {
+                "modelId": model_id,
+                "name": name,
+                "type": type,
+                "status": status_bool,  # True / False
+                "lastLoadedVersion": last_loaded,  # 4 or None
+                "totalVersions": total_versions,  # from DB
+            }
         )
 
-    except Exception as e:
-        msg = str(e).lower()
-
-        # 연결 실패/타임아웃 계열 → Triton NOT READY
-        if "failed to connect" in msg or "connection refused" in msg or "unavailable" in msg or "timed out" in msg:
-            raise CustomHTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                code=CustomCode.ERR_500.value,
-                message=Messages.TRITON_NOT_READY.value,
-                data={"detail": str(e)},
-            )
-
-        # 나머지는 일반적인 목록 조회 에러
-        raise CustomHTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            code=CustomCode.ERR_500.value,
-            message=Messages.MODEL_LIST_FETCH_ERROR.value,
-            data={"detail": str(e)},
-        )
+    return create_response(
+        CustomCode.MODEL_001.value,
+        Messages.MODEL_LIST_FETCH_SUCCESS.value,
+        {"models": result},
+    )
 
 
 # =========================================================
@@ -196,15 +199,6 @@ def register_model_service(
     db: Session,
 ) -> Dict[str, Any]:
     """단일 모델 등록 서비스"""
-    # 필수값 검증
-    # if not req.modelName or not req.modelType or not req.LoginId or not model_files or not config_file:
-    if not model_file or not config_file:
-        raise CustomHTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            code=CustomCode.ERR_400.value,
-            message=Messages.MODEL_REGISTER_MISSING_REQUIRED.value,
-        )
-
     # 모델명 확인
     model_name = safe_name(req.modelName)
     if not model_name:
@@ -294,16 +288,6 @@ def register_model_service(
 # 3. 앙상블 모델 등록
 # =====================================================
 def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile, db: Session):
-    # 필수값 검증
-    if (
-        not req.modelName or not req.modelType or not req.LoginId or not config_file
-    ):  # 이거 main에서 검증함 필요 없을 듯
-        raise CustomHTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            code=CustomCode.ERR_400.value,
-            message=Messages.ENSEMBLE_REGISTER_MISSING_REQUIRED.value,
-        )
-
     # 모델명 확인
     model_name = safe_name(req.modelName)
     exists = db.query(Model).filter(Model.name == model_name).first()
