@@ -8,7 +8,7 @@ from app.services.model_service import (
     list_models_service,
     register_model_service,
     register_ensemble_service,
-    register_model_version_service,
+    register_model_assets_service,
     delete_model_version_service,
     delete_model_service,
     get_model_detail_service,
@@ -26,35 +26,39 @@ def list_models(db: Session = Depends(get_db)):
 @model_router.post("", summary="단일 모델 최초 등록")
 def register_model(
     req: Annotated[ModelRegisterRequest, Depends(ModelRegisterRequest.as_form)],
-    modelFiles: List[UploadFile] = File(...),
-    configFile: UploadFile = File(...),
+    modelFile: UploadFile = File(...),
+    setupFile: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    return register_model_service(req=req, model_files=modelFiles, config_file=configFile, db=db)
+    return register_model_service(req=req, model_file=modelFile, config_file=setupFile, db=db)
 
 
 @model_router.post("/register/ensemble", summary="앙상블 모델 등록")
 def register_ensemble_model(
     req: Annotated[ModelRegisterRequest, Depends(ModelRegisterRequest.as_form)],
-    configFile: UploadFile = File(..., description="config.pbtxt 파일"),
+    setupFile: UploadFile = File(
+        ...,
+    ),
     db: Session = Depends(get_db),
 ):
-    return register_ensemble_service(req=req, config_file=configFile, db=db)
+    return register_ensemble_service(req=req, config_file=setupFile, db=db)
 
 
-@model_router.post("/{model_id}/versions", summary="모델 버전 추가")
+@model_router.post("/{model_id}/assets", summary="모델 관련 파일 추가 (버전·설정 통합)")
 def register_model_version(
     model_id: int = Path(..., description="모델 ID"),
     loginId: str = Form(..., description="등록자 LoginId"),
     description: str | None = Form(None, description="버전 변경 내용 (선택)"),
-    modelFiles: List[UploadFile] = File(...),
+    modelFile: UploadFile | None = File(None, description="모델 파일 (선택)"),
+    setupFile: UploadFile | None = File(None, description="환경파일 (선택)"),
     db: Session = Depends(get_db),
 ):
-    return register_model_version_service(
+    return register_model_assets_service(
         model_id=model_id,
         login_id=loginId,
         description=description,
-        model_files=modelFiles,
+        model_file=modelFile,
+        config_file=setupFile,
         db=db,
     )
 

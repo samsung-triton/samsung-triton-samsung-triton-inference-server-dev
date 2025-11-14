@@ -42,6 +42,7 @@ class ModelVersion(Base):
     model_version_id = Column(BigInteger, primary_key=True, autoincrement=True)
     model_id = Column(BigInteger, ForeignKey("models.model_id", ondelete="CASCADE"), nullable=False)
     version = Column(Integer, nullable=False)
+    represent_file_name = Column(String(128))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     created_by = Column(BigInteger, ForeignKey("users.user_id", ondelete="SET NULL"))
 

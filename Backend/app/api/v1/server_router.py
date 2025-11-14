@@ -29,10 +29,18 @@ async def start_server(request: ServerActorRequest, db: Session = Depends(get_db
 # 서버 중지
 @server_router.post("/stop", response_model=BaseResponse)
 async def stop_server(request: ServerActorRequest, db: Session = Depends(get_db)):
-    return await stop_server_service(db, actor_login_id=request.user_login_id)
+    return await stop_server_service(
+        db,
+        actor_login_id=request.user_login_id,
+        description=request.description
+    )
 
 
 # 서버 재시작
 @server_router.post("/restart", response_model=BaseResponse)
 async def restart_server(request: ServerActorRequest, db: Session = Depends(get_db)):
-    return await restart_server_service(db, actor_login_id=request.user_login_id)
+    return await restart_server_service(
+        db,
+        actor_login_id=request.user_login_id,
+        description=request.description
+    )

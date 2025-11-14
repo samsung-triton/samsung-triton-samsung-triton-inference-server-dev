@@ -3,10 +3,10 @@ import shutil
 import logging
 from fastapi import status, UploadFile
 from pathlib import Path
-from typing import List
+from typing import List Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-
+from datetime import datetime, timedelta
 
 from app.models.inference_logs import InferenceLogs
 from app.models.model import Model
@@ -16,8 +16,10 @@ from app.core.customException import CustomHTTPException
 from app.core.standard_time_manager import current_standard_time
 from app.common.codes import CustomCode
 from app.common.messages import Messages
+from app.services.metrics_service import prom_query_range
+from fastapi import status, UploadFile
 from app.core.config import settings
-from datetime import datetime, timedelta
+from app.schemas.timeseries_schema import ValueItem, NoneGPUSeriesItem, TimeWindow
 from app.core.config import TIMEZONE
 
 
@@ -257,3 +259,108 @@ def get_model_per_inference_stats_service(model_name: str, db: Session) -> BaseR
             "avg_latency_ms": avg_ms,
         },
     )
+
+
+async def get_model_per_inference_latency_service(model_name: str, end_iso: Optional[str] = None) -> create_response:
+    try:
+        # ---------------------------
+        # 1) end 시각 파싱
+        # ---------------------------
+        if end_iso:
+            if end_iso.isdigit():
+                end_dt = datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
+            else:
+                end_dt = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
+                if end_dt.tzinfo is None:
+                    end_dt = end_dt.replace(tzinfo=TIMEZONE)
+        else:
+            end_dt = datetime.now(TIMEZONE)
+
+        start_dt = end_dt - timedelta(hours=1)
+
+        def to_epoch(dt: datetime) -> float:
+            return dt.timestamp()
+
+        # ---------------------------
+        # 2) PromQL 준비
+        # ---------------------------
+        metric_keys = {
+            "total": "nv_inference_request_duration_us",
+            "queue": "nv_inference_queue_duration_us",
+            "input": "nv_inference_compute_input_duration_us",
+            "infer": "nv_inference_compute_infer_duration_us",
+            "output": "nv_inference_compute_output_duration_us",
+        }
+
+        def build_query(metric_key: str) -> str:
+            return f'increase({metric_key}{{model="{model_name}"}}[10m])'
+
+        latency_results = {}
+
+        # ---------------------------
+        # 3) prom_query_range 호출 (async 정상)
+        # ---------------------------
+        for key, metric_key in metric_keys.items():
+            promql = build_query(metric_key)
+
+            result = await prom_query_range(promql=promql, start=start_dt, end=end_dt, step="600")  # 600초 (10분)
+
+            latency_results[key] = result
+
+        # ---------------------------
+        # 4) 데이터 변환
+        # ---------------------------
+        def convert_prometheus_series(result: List[dict]):
+            none_gpu_series_list = []
+
+            for s in result:
+
+                raw_values = s.get("values")
+                if raw_values is None:
+                    v = s.get("value")
+                    raw_values = [v] if v else []
+
+                points = []
+                for ts, val in raw_values:
+                    try:
+                        ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
+                        v = float(val)
+                        v_ms = round(v / 1000, 2)
+                        points.append(ValueItem(ts=ts_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), value=v_ms))
+                    except:  # noqa: E722
+                        continue
+
+                none_gpu_series_list.append(NoneGPUSeriesItem(values=points))
+
+            return none_gpu_series_list
+
+        total_series = convert_prometheus_series(latency_results["total"])
+        queue_series = convert_prometheus_series(latency_results["queue"])
+        input_series = convert_prometheus_series(latency_results["input"])
+        infer_series = convert_prometheus_series(latency_results["infer"])
+        output_series = convert_prometheus_series(latency_results["output"])
+
+        time_window = TimeWindow(
+            start=start_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), end=end_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), step="10m"
+        )
+
+        data = {
+            "window": time_window.dict(),
+            "latency": {
+                "total": [s.dict() for s in total_series],
+                "queue": [s.dict() for s in queue_series],
+                "input": [s.dict() for s in input_series],
+                "infer": [s.dict() for s in infer_series],
+                "output": [s.dict() for s in output_series],
+            },
+        }
+
+        return create_response(code="DASH-200", message="Inference latency timeseries fetched", data=data)
+
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=f"Failed: {e}",
+            data=None,
+        )
