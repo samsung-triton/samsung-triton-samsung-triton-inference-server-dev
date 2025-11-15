@@ -8,6 +8,7 @@ from enum import Enum as PyEnum
 class ServerStatus(PyEnum):
     START = "START"
     STOP = "STOP"
+    RESTART = "RESTART"
 
 
 class Server(Base):

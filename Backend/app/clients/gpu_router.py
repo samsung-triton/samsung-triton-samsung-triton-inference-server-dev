@@ -1,4 +1,7 @@
 import subprocess
+import json
+from datetime import datetime
+from app.core.response_utils import create_response
 from fastapi import status
 from datetime import datetime
 
@@ -28,24 +31,52 @@ def _compose_path() -> str:
     return f"-f {settings.TRITON_COMPOSE_PATH}"
 
 
-# Triton 서버 상태 확인
 async def get_triton_status():
-    # 현재 Triton 컨테이너가 실행 중인지 확인
-    cmd = f"docker ps --filter 'name={settings.TRITON_CONTAINER_NAME}' --format '{{{{.Names}}}}'"
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    is_running = settings.TRITON_CONTAINER_NAME in result.stdout.strip()
+    """Triton 컨테이너의 실제 상태 및 시작 시각을 조회"""
+    try:
+        # 컨테이너 이름 기준으로 Docker inspect 실행
+        inspect_cmd = f"docker inspect {settings.TRITON_CONTAINER_NAME}"
+        result = subprocess.run(inspect_cmd, shell=True, capture_output=True, text=True)
 
-    data = {
-        "status": "ready" if is_running else "stopped",
-        "started_at": datetime.now(TIMEZONE).isoformat() if is_running else None,
-    }
+        if result.returncode != 0 or not result.stdout.strip():
+            # 컨테이너가 존재하지 않거나 중지된 상태
+            return create_response(
+                CustomCode.ERR_503.value,
+                Messages.SERVER_NOT_READY.value,
+                {"status": "stopped", "started_at": None},
+            )
 
-    return create_response(
-        CustomCode.DOCKER_006.value,
-        Messages.SERVER_READY.value if is_running else Messages.SERVER_NOT_READY.value,
-        data,
-    )
+        container_info = json.loads(result.stdout)[0]
+        state = container_info.get("State", {})
+        is_running = state.get("Running", False)
+        started_at_raw = state.get("StartedAt")
 
+        # UTC → 한국시간 변환
+        started_at = None
+        if started_at_raw and started_at_raw != "0001-01-01T00:00:00Z":
+            started_at = (
+                datetime.fromisoformat(started_at_raw.replace("Z", "+00:00"))
+                .astimezone(TIMEZONE)
+                .isoformat()
+            )
+
+        data = {
+            "status": "ready" if is_running else "stopped",
+            "started_at": started_at,
+        }
+
+        return create_response(
+            CustomCode.MASTER_001.value,
+            Messages.SERVER_READY.value if is_running else Messages.SERVER_NOT_READY.value,
+            data,
+        )
+
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=f"Triton 상태 조회 중 오류 발생: {str(e)}",
+        )
 
 # Triton 서버 시작
 async def start_triton():
