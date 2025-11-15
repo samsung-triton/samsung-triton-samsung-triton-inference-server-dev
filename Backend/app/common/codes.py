@@ -58,5 +58,5 @@ class CustomCode(str, Enum):
     DASH_005 = "DASH-005"  # 대시보드 모델 목록 조회 성공
 
     # 로그 관리 (업데이트 예정)
-    LOG_001 = "LOG-001"
+    LOG_001 = "LOG-001"  # api 로그 응답 완료
     LOG_002 = "LOG-002"
