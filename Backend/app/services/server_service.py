@@ -1,19 +1,25 @@
 from sqlalchemy.orm import Session
 from fastapi import status
-from app.clients.gpu_router import (
-    get_triton_status,
-    start_triton,
-    stop_triton,
-    restart_triton,
-)
+from app.clients.gpu_router import get_triton_status, start_triton, stop_triton, restart_triton
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.models.server import Server, ServerStatus
-from app.common.utils import get_user_or_404
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-from app.core.config import TIMEZONE
+from app.models.user import User
 from datetime import datetime
+from app.core.config import TIMEZONE
+
+
+def get_user_or_404(db: Session, login_id: str) -> User:
+    user = db.query(User).filter(User.login_id == login_id).first()
+    if not user:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=Messages.USER_NOT_FOUND.value,
+        )
+    return user
 
 
 def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus, description: str | None = None):
@@ -26,25 +32,24 @@ def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus, des
 async def get_server_status_service(db: Session):
     try:
         result = await get_triton_status()
-
         status_data = result.data if hasattr(result, "data") else {}
         is_ready = status_data.get("status") == "ready" if isinstance(status_data, dict) else False
 
         return create_response(
-            CustomCode.DOCKER_004.value if is_ready else CustomCode.DOCKER_005.value,
+            CustomCode.DOCKER_004.value if is_ready else CustomCode.ERR_503.value,
             Messages.SERVER_READY.value if is_ready else Messages.SERVER_NOT_READY.value,
             status_data,
         )
-
     except Exception as e:
         raise CustomHTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            code=CustomCode.ERR_500.value,
+            code=CustomCode.ERR_503.value,
             message=f"서버 상태 조회 실패: {str(e)}",
             data={"status": "not_ready", "started_at": None},
         )
 
 
+# Triton 서버 제어 공통 함수
 async def _execute_server_action(
     db: Session,
     actor_login_id: str,
@@ -58,7 +63,7 @@ async def _execute_server_action(
         result = await action_func()
 
         data = result.data if hasattr(result, "data") else {}
-        code = result.code if hasattr(result, "code") else CustomCode.DOCKER_ERROR.value
+        code = result.code if hasattr(result, "code") else CustomCode.MASTER_001.value
         message = result.message if hasattr(result, "message") else ""
 
         _log_server_action(db, user.user_id, success_status, description)
@@ -78,12 +83,12 @@ async def _execute_server_action(
         )
 
 
-# 서버 시작
+# Triton 서버 시작
 async def start_server_service(db: Session, actor_login_id: str):
     return await _execute_server_action(db, actor_login_id, start_triton, ServerStatus.START)
 
 
-# 서버 중지
+# Triton 서버 중지
 async def stop_server_service(db: Session, actor_login_id: str, description: str | None = None):
     return await _execute_server_action(
         db,
@@ -94,12 +99,12 @@ async def stop_server_service(db: Session, actor_login_id: str, description: str
     )
 
 
-# 서버 재시작
+# Triton 서버 재시작
 async def restart_server_service(db: Session, actor_login_id: str, description: str | None = None):
     return await _execute_server_action(
         db,
         actor_login_id,
         restart_triton,
-        ServerStatus.RESTART,
+        ServerStatus.RESTART,   
         description=description,
     )
