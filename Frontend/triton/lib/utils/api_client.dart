@@ -80,7 +80,10 @@ class ApiClient extends GetConnect {
 
   // 서버 시작
   Future<dynamic> startServer({required String userLoginId}) {
-    return _postJson('/api/v1/server/start', {'user_login_id': userLoginId}, apiName: 'startServer');
+    return _postJson('/api/v1/server/start', {
+      'user_login_id': userLoginId,
+      'description': null,
+    }, apiName: 'startServer');
   }
 
   // 서버 중지
@@ -161,7 +164,7 @@ class ApiClient extends GetConnect {
     return _requestRaw(
       '/api/v1/models/$modelId',
       'DELETE',
-      body: jsonEncode({'LoginId': loginId, 'description': description}),
+      body: jsonEncode({'loginId': loginId, 'description': description}),
       apiName: 'deleteModel',
     );
   }
@@ -172,8 +175,8 @@ class ApiClient extends GetConnect {
   }
 
   // 모델 버전 or 설정 추가
-  Future<dynamic> addModelVersion({required int modelId, required dynamic body}) {
-    return post('/api/v1/models/$modelId/versions', body).then((res) => _unwrapResponse(res, 'addModelVersion'));
+  Future<dynamic> addModelAssets({required int modelId, required dynamic body}) {
+    return post('/api/v1/models/$modelId/assets', body).then((res) => _unwrapResponse(res, 'addModelAssets'));
   }
 
   // 모델 버전 삭제
@@ -226,6 +229,28 @@ class ApiClient extends GetConnect {
       'DELETE',
       body: jsonEncode({'loginId': loginId, 'description': description}),
       apiName: 'deleteConfig',
+    );
+  }
+
+  //Serverlog - server 로그 조회 & 필터링
+  Future<dynamic> getApiLog({
+    required int startDate,
+    required String endDate,
+    String? username,
+    String? type,
+    String? description,
+  }) {
+    return _requestRaw(
+      '/api/v1/logs/api',
+      'POST',
+      body: jsonEncode({
+        'startDate': startDate,
+        'endDate': endDate,
+        'username': username,
+        'type': type,
+        'description': description,
+      }),
+      apiName: 'getApiLog',
     );
   }
 }

@@ -23,6 +23,7 @@ class ModalDescription extends StatefulWidget {
 }
 
 class _ModalDescriptionState extends State<ModalDescription> {
+  bool _loading = false;
   String? _error;
   bool _canSubmit = false;
 
@@ -47,9 +48,16 @@ class _ModalDescriptionState extends State<ModalDescription> {
 
   // OK 동작
   Future<void> _handleOk(BuildContext context) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     // 0) 입력 검증
     if (widget.descCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'description is required');
+      setState(() {
+        _error = 'description is required';
+        _loading = false;
+      });
       return;
     }
     setState(() => _error = null);
@@ -59,6 +67,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
       if (widget.onOK != null) {
         await widget.onOK!();
       }
+      setState(() => _loading = false);
       ModalPortal.close(context, true);
       return;
     }
@@ -71,6 +80,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
 
     // 다음 프레임에 확인 모달 열기
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() => _loading = false);
       ModalPortal.open(
         hostCtx,
         builder: (dialogCtx) => ModalConfirmation(
@@ -135,7 +145,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
             ButtonMedium(
               text: 'ok',
               onPressed: _canSubmit ? () => _handleOk(context) : null,
-              backgroundColor: _canSubmit ? primaryNormal : gray.withAlpha(128),
+              backgroundColor: !_canSubmit || _loading ? gray : primaryNormal,
               textColor: white,
             ),
             const SizedBox(width: 12),

@@ -5,15 +5,15 @@ import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
 
-class ServerCpuUsageChart extends StatelessWidget {
-  const ServerCpuUsageChart({super.key});
+class ServerGpuUtilizationChart extends StatelessWidget {
+  const ServerGpuUtilizationChart({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ServerDashboardController>();
 
     return Obx(() {
-      final usage = controller.metrics.value.cpuUsage;
+      final gpu = controller.metrics.value.gpuUtilization;
       final loading = controller.loading.value;
 
       return Center(
@@ -39,10 +39,10 @@ class ServerCpuUsageChart extends StatelessWidget {
                             centerSpaceRadius: centerSpaceRadius,
                             sectionsSpace: sectionGap,
                             sections: [
-                              PieChartSectionData(color: Colors.green, value: usage, title: '', radius: radius),
+                              PieChartSectionData(color: primaryNormal, value: gpu, title: '', radius: radius),
                               PieChartSectionData(
                                 color: lightGray,
-                                value: (100 - usage).clamp(0, 100).toDouble(),
+                                value: (100 - gpu).clamp(0, 100).toDouble(),
                                 title: '',
                                 radius: radius,
                               ),
@@ -53,8 +53,8 @@ class ServerCpuUsageChart extends StatelessWidget {
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('CPU Usage', style: T.t12(color: darkGray)),
-                          Text('${usage.toStringAsFixed(1)}%', style: T.t16(color: primaryDarker, bold: true)),
+                          Text('GPU Util', style: T.t12(color: darkGray)),
+                          Text('${gpu.toStringAsFixed(1)}%', style: T.t16(color: primaryDarker, bold: true)),
                         ],
                       ),
                     ],

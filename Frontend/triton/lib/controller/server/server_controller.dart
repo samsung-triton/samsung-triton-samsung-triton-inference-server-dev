@@ -1,6 +1,9 @@
 // 헤더 컨트롤러
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:triton/utils/api_client.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:triton/utils/show_alert.dart';
 
 // 서버 상태
 class ServerStatus {
@@ -16,11 +19,14 @@ class ServerController extends GetxController {
   final RxString lastError = ''.obs;
   final RxString uptimeHms = '00:00:00'.obs;
 
+  late final ApiClient _api;
+
   Timer? _tick;
 
   @override
   void onInit() {
     super.onInit();
+    _api = Get.find<ApiClient>();
     _startUptimeTicker();
     refreshStatus();
   }
@@ -60,11 +66,6 @@ class ServerController extends GetxController {
       isBusy.value = true;
       lastError.value = '';
 
-      // TODO: 실제 API로 교체
-      // final newStatus = await api.fetchStatus(); // ServerStatus 반환
-      // serverStatus.value = newStatus;
-      // _updateUptime();
-
       serverStatus.value = const ServerStatus(status: "stopped", startedAt: null);
     } catch (e) {
       lastError.value = '상태 조회 실패: $e';
@@ -75,58 +76,107 @@ class ServerController extends GetxController {
   }
 
   // 제어: 시작
-  Future<void> startServer() async {
+  Future<bool> startServer() async {
     try {
       isBusy.value = true;
       lastError.value = '';
 
-      // TODO:
-      // await api.startServer();
-      // await refreshStatus();
+      // 로그인 사용자 ID 불러오기
+      final authStorage = GetStorage('auth');
+      final userLoginId = authStorage.read('loginedId');
 
-      serverStatus.value = ServerStatus(status: "running", startedAt: DateTime.now());
+      if (userLoginId == null || userLoginId.isEmpty) {
+        throw Exception('로그인 정보가 없습니다.');
+      }
+
+      final dynamic data = await _api.startServer(userLoginId: userLoginId);
+
+      if (data is String) {
+        // Alert 테스트 해야함
+        final ctx = Get.overlayContext ?? Get.context;
+        if (ctx != null) {
+          await showAlert(ctx, title: "Notification", message: data);
+        }
+        return false;
+      }
+
+      final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
+      serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
+      return true;
     } catch (e) {
-      lastError.value = '서버 시작 실패: $e';
+      lastError.value = '서버 시작 실패: $e'; //alert로 띄울지, 메세지 커스텀 할지
+      print('[startServer] 예외 발생: $e'); //에러 로그 출력, 테스트 후 삭제 예정
+
+      return false;
     } finally {
       isBusy.value = false;
     }
   }
 
   // 제어: 중지
-  Future<void> stopServer() async {
+  Future<bool> stopServer(String description) async {
     try {
       isBusy.value = true;
       lastError.value = '';
 
-      // TODO:
-      // final ok = await api.verifyMasterKey(masterKey);
-      // if (!ok) throw Exception('Invalid master key');
-      // await api.stopServer(key);
-      // await refreshStatus();
+      final authStorage = GetStorage('auth');
+      final userLoginId = authStorage.read('loginedId');
 
-      serverStatus.value = const ServerStatus(status: "stopped", startedAt: null);
+      if (userLoginId == null || userLoginId.isEmpty) {
+        throw Exception('로그인 정보가 없습니다.');
+      }
+
+      final dynamic data = await _api.stopServer(userLoginId: userLoginId, description: description);
+
+      if (data is String) {
+        // Alert 테스트 해야함
+        final ctx = Get.overlayContext ?? Get.context;
+        if (ctx != null) {
+          await showAlert(ctx, title: "Notification", message: data);
+        }
+        return false;
+      }
+
+      serverStatus.value = ServerStatus(status: 'stopped', startedAt: null);
+      return true;
     } catch (e) {
-      lastError.value = '서버 중지 실패: $e';
+      lastError.value = '서버 중지 실패: $e'; //alert로 띄울지, 메세지 커스텀 할지
+      return false;
     } finally {
       isBusy.value = false;
     }
   }
 
   // 제어: 재시작
-  Future<void> restartServer() async {
+  Future<bool> restartServer(String description) async {
     try {
       isBusy.value = true;
       lastError.value = '';
 
-      // TODO:
-      // final ok = await api.verifyMasterKey(masterKey);
-      // if (!ok) throw Exception('Invalid master key');
-      // await api.restartServer(key);
-      // await refreshStatus();
+      final authStorage = GetStorage('auth');
+      final userLoginId = authStorage.read('loginedId');
 
-      serverStatus.value = ServerStatus(status: "running", startedAt: DateTime.now());
+      if (userLoginId == null || userLoginId.isEmpty) {
+        throw Exception('로그인 정보가 없습니다.');
+      }
+
+      final dynamic data = await _api.restartServer(userLoginId: userLoginId, description: description);
+
+      if (data is String) {
+        // Alert 테스트 해야함
+        final ctx = Get.overlayContext ?? Get.context;
+        if (ctx != null) {
+          await showAlert(ctx, title: "Notification", message: data);
+        }
+        return false;
+      }
+
+      final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
+      serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
+      return true;
     } catch (e) {
-      lastError.value = '서버 재시작 실패: $e';
+      lastError.value = '서버 재시작 실패: $e'; //alert로 띄울지, 메세지 커스텀 할지
+      return false;
     } finally {
       isBusy.value = false;
     }
@@ -134,11 +184,30 @@ class ServerController extends GetxController {
 
   Future<bool> verifyMasterKey(String masterKey) async {
     try {
-      // TODO: return await api.verifyMasterKey(key);
-      if (masterKey.isEmpty || masterKey != "test") return false;
+      if (masterKey.isEmpty) {
+        return false;
+      }
+
+      // 서버는 int를 받으니까 변환 필요
+      final keyInt = int.tryParse(masterKey);
+      if (keyInt == null) {
+        return false;
+      }
+
+      final data = await _api.verifyMasterKey(masterKey: keyInt);
+
+      // 서버가 오류 메시지를 String으로 보냈을 때
+      if (data is String) {
+        // Alert 테스트 해야함
+        final ctx = Get.overlayContext ?? Get.context;
+        if (ctx != null) {
+          await showAlert(ctx, title: "Notification", message: data);
+        }
+        return false;
+      }
       return true;
     } catch (e) {
-      lastError.value = '마스터키 검증 실패: $e';
+      lastError.value = "마스터키 검증 실패: $e"; // //alert로 띄울지, 메세지 커스텀 할지
       return false;
     }
   }
