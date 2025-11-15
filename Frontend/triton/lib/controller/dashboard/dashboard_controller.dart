@@ -43,11 +43,22 @@ class DashboardController extends GetxController {
 
     // ===== 최초 1회 fetch =====
     _fetchCurrentGroup();
+  }
 
-    // ===== 60초 자동 갱신 =====
+  // polling 함수로 타이머 추가
+  void startPolling() {
+    print("🔥 [DashboardController] startPolling() 호출됨");
+    stopPolling();
     _timer = Timer.periodic(const Duration(seconds: 60), (_) {
+      print("⏱️ [DashboardController] periodic tick → fetchAll()");
       _fetchCurrentGroup();
     });
+  }
+
+  void stopPolling() {
+    print("🛑 [DashboardController] stopPolling() 호출됨");
+    _timer?.cancel();
+    _timer = null;
   }
 
   /// ----------------------------------------
