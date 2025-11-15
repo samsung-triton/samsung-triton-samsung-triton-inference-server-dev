@@ -88,7 +88,7 @@ async def start_triton():
         CustomCode.DOCKER_006.value,
         Messages.SERVER_START_SUCCESS.value,
         {
-            "status": "running",
+            "status": "started",
             "started_at": datetime.now(TIMEZONE).isoformat(),
         },
     )
@@ -113,7 +113,7 @@ async def restart_triton():
         CustomCode.DOCKER_003.value,
         Messages.SERVER_RESTART_SUCCESS.value,
         {
-            "status": "running",
+            "status": "restarted",
             "started_at": datetime.now(TIMEZONE).isoformat(),
         },
     )
