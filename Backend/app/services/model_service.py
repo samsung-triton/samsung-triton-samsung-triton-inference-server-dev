@@ -91,7 +91,7 @@ def save_model_release(
 def list_models_service(db: Session) -> Dict[str, Any]:
     # Triton 서버 Health Check
     try:
-        if triton_client.client.is_server_ready():
+        if triton_client.is_server_ready():
             triton_alive = True
         else:
             triton_alive = False
@@ -371,7 +371,7 @@ def register_model_assets_service(
         raise CustomHTTPException(
             status.HTTP_404_NOT_FOUND,
             CustomCode.ERR_404.value,
-            Messages.MODEL_NOT_FOUND_FOUND.value,
+            Messages.MODEL_NOT_FOUND.value,
         )
 
     user = get_user_or_404(db, login_id)
@@ -555,7 +555,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
         raise CustomHTTPException(
             status.HTTP_404_NOT_FOUND,
             CustomCode.ERR_404.value,
-            Messages.MODEL_NOT_FOUND_FOUND.value,
+            Messages.MODEL_NOT_FOUND.value,
         )
 
     user = get_user_or_404(db, req.loginId)
@@ -580,11 +580,11 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
     # === 2. 삭제 진행 ===
     try:
         # 모델 전체 READY 상태 확인
-        model_ready = triton_client.client.is_model_ready(model_name=model.name)
+        model_ready = triton_client.is_model_ready(model_name=model.name)
 
         if model_ready:
             # 해당 버전 READY 상태 확인
-            version_ready = triton_client.client.is_model_ready(model_name=model.name, model_version=str(version))
+            version_ready = triton_client.is_model_ready(model_name=model.name, model_version=str(version))
 
             if version_ready:
                 # 현재 로드 중인 버전 삭제, 삭제 후 모델 다시 로드
@@ -634,7 +634,7 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
         raise CustomHTTPException(
             status.HTTP_404_NOT_FOUND,
             CustomCode.ERR_404.value,
-            Messages.MODEL_NOT_FOUND_FOUND.value,
+            Messages.MODEL_NOT_FOUND.value,
         )
 
     user = get_user_or_404(db, req.loginId)
@@ -691,7 +691,7 @@ def get_model_detail_service(model_id: int, db: Session):
         raise CustomHTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
-            message=Messages.MODEL_NOT_FOUND_FOUND.value,
+            message=Messages.MODEL_NOT_FOUND.value,
         )
 
     # 현재 Config 조회
