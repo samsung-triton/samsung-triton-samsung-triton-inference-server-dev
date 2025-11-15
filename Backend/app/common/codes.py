@@ -56,5 +56,5 @@ class CustomCode(str, Enum):
     DASH_003 = "DASH-003"  # 모델별 추론 및 요청 통계 조회 성공
 
     # 로그 관리 (업데이트 예정)
-    LOG_001 = "LOG-001"
+    LOG_001 = "LOG-001"  # api 로그 응답 완료
     LOG_002 = "LOG-002"

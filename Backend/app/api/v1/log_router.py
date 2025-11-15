@@ -1,15 +1,15 @@
-# from fastapi import APIRouter, Query, status, Depends
-# from sqlalchemy.orm import Session
-# from typing import Optional
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from fastapi import status
 
-# from app.core.database import get_db
-# from app.schemas.base_schema import BaseResponse
-# from app.services.metrics_service import get_server_metrics_service, get_timeseries_service
-# from app.services.inferdata_service import (
-#     get_model_per_inference_stats_service,
-#     get_model_per_inference_latency_service,
-# )
+from app.core.database import get_db
+from app.services.log_service import get_api_log_service
+from app.schemas.base_schema import BaseResponse
+from app.schemas.log_schema import LogRequest
 
-# metrics_router = APIRouter(prefix="/api/v1/dashboard", tags=["Metircs"])
+log_router = APIRouter(prefix="/api/v1/logs", tags=["Log"])
 
-# /api/v1/logs/api
+
+@log_router.post("/api", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+def get_api_log(request: LogRequest, db: Session = Depends(get_db)):
+    return get_api_log_service(request.start_date, request.end_date, db)
