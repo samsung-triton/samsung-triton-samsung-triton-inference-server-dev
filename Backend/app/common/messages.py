@@ -117,6 +117,5 @@ class Messages(str, Enum):
     SERVER_LOG_REQUIRED_PERIOD = "기간(start, end)은 필수입니다."
     LOKI_LOG_FETCH_ERROR = "Loki 로그 조회 중 오류가 발생했습니다."
 
-    AGGREGATION_TIME_INIT_BY_CURRENT = "집계 기준 시각 파일이 없어 현재 시간을 기준으로 초기화했습니다."
-    AGGREGATION_TIME_FETCH_SUCCESS = "집계 기준 시각 조회 성공"
-    AGGREGATION_TIME_UPDATE_SUCCESS = "집계 기준 시각이 업데이트되었습니다."
+    STANDARD_TIME_FETCH_SUCCESS = "집계 기준 시각 조회 성공"
+    STANDARD_TIME_UPDATE_SUCCESS = "집계 기준 시각이 업데이트되었습니다."

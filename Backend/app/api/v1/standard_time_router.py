@@ -13,7 +13,7 @@ def get_current_standard_time():
     base_time = current_standard_time()
     return create_response(
         CustomCode.STANDARD_TIME_001.value,
-        Messages.standard_time_FETCH_SUCCESS.value,
+        Messages.STANDARD_TIME_FETCH_SUCCESS.value,
         {"base_time": base_time},
     )
 
