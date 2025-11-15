@@ -8,6 +8,12 @@ class TritonClient:
     def __init__(self, url: str = None, verbose: bool = False):
         self.client = grpcclient.InferenceServerClient(url=url or settings.TRITON_GRPC_URL, verbose=verbose)
 
+    def is_server_ready(self) -> bool:
+        return self.client.is_server_ready()
+
+    def is_server_live(self) -> bool:
+        return self.client.is_server_live()
+
     def load_model(self, model_name: str):
         return self.client.load_model(model_name=model_name)
 

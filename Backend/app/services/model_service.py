@@ -91,7 +91,7 @@ def save_model_release(
 def list_models_service(db: Session) -> Dict[str, Any]:
     # Triton 서버 Health Check
     try:
-        if triton_client.client.is_server_ready():
+        if triton_client.is_server_ready():
             triton_alive = True
         else:
             triton_alive = False
@@ -580,11 +580,11 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
     # === 2. 삭제 진행 ===
     try:
         # 모델 전체 READY 상태 확인
-        model_ready = triton_client.client.is_model_ready(model_name=model.name)
+        model_ready = triton_client.is_model_ready(model_name=model.name)
 
         if model_ready:
             # 해당 버전 READY 상태 확인
-            version_ready = triton_client.client.is_model_ready(model_name=model.name, model_version=str(version))
+            version_ready = triton_client.is_model_ready(model_name=model.name, model_version=str(version))
 
             if version_ready:
                 # 현재 로드 중인 버전 삭제, 삭제 후 모델 다시 로드

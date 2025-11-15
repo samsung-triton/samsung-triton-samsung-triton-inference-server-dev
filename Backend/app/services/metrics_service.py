@@ -408,7 +408,7 @@ async def get_model_per_inference_latency_service(
 async def get_dashboard_models_list_service(db: Session):
     # 1. 서버 상태 확인
     try:
-        triton_alive = triton_client.client.is_server_ready()
+        triton_alive = triton_client.is_server_ready()
     except Exception:
         triton_alive = False
 
