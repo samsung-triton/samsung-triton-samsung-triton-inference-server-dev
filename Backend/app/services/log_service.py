@@ -1,27 +1,30 @@
+from fastapi import status
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from app.schemas.base_schema import BaseResponse
 from app.core.response_utils import create_response
 from app.common.codes import CustomCode
-
-from datetime import datetime
-
-
+from app.common.messages import Messages
 from app.models.server import Server
 from app.models.model import ModelRelease
 from app.models.user import User
+from app.core.customException import CustomHTTPException
 
 
 def get_api_log_service(start_date, end_date, db: Session) -> BaseResponse:
 
-    # 날짜를 datetime 범위로 변환
     start_dt = datetime.combine(start_date, datetime.min.time())
     end_dt = datetime.combine(end_date, datetime.max.time())
 
-    # ------------------------
-    # 1. server 로그 조회
-    # ------------------------
+    if end_date < start_date:
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            detail=Messages.ERR_END_DATE_BEFORE_START_DATE.value,
+        )
+
     server_logs = (
         db.query(Server, User)
         .join(User, Server.actor_id == User.user_id)
@@ -61,4 +64,6 @@ def get_api_log_service(start_date, end_date, db: Session) -> BaseResponse:
     final_list = server_result + release_result
     final_list.sort(key=lambda x: x["time"])
 
-    return create_response(code=CustomCode.LOG_001.value, message="조회 성공", data={"logs": final_list})
+    return create_response(
+        code=CustomCode.LOG_001.value, message=Messages.MODEL_API_LOG_FETCH_SUCCESS.value, data={"logs": final_list}
+    )

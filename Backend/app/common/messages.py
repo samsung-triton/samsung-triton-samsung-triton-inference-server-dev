@@ -110,6 +110,9 @@ class Messages(str, Enum):
     MODEL_LOG_REQUIRED_PARAMS = "model_name, start, end는 필수입니다."
     LOKI_MODEL_LOG_FETCH_ERROR = "Loki 모델 로그 조회 중 오류가 발생했습니다."
 
+    MODEL_API_LOG_FETCH_SUCCESS = "모델 API 로그 조회 성공"
+    ERR_END_DATE_BEFORE_START_DATE = "end_date는 start_date보다 이전일 수 없습니다."
+
     SERVER_LOG_FETCH_SUCCESS = "서버 로그 조회 성공"
     SERVER_LOG_REQUIRED_PERIOD = "기간(start, end)은 필수입니다."
     LOKI_LOG_FETCH_ERROR = "Loki 로그 조회 중 오류가 발생했습니다."
