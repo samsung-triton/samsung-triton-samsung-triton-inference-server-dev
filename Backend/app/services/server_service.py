@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import status
+
 from app.clients.gpu_router import get_triton_status, start_triton, stop_triton, restart_triton
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
@@ -33,13 +34,15 @@ async def get_server_status_service(db: Session):
     try:
         result = await get_triton_status()
         status_data = result.data if hasattr(result, "data") else {}
-        is_ready = status_data.get("status") == "ready" if isinstance(status_data, dict) else False
+
+        is_ready = status_data.get("status") == "ready"
 
         return create_response(
-            CustomCode.DOCKER_004.value if is_ready else CustomCode.ERR_503.value,
+            CustomCode.DOCKER_004.value if is_ready else CustomCode.DOCKER_005.value,
             Messages.SERVER_READY.value if is_ready else Messages.SERVER_NOT_READY.value,
             status_data,
         )
+
     except Exception as e:
         raise CustomHTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -60,14 +63,23 @@ async def _execute_server_action(
     user = get_user_or_404(db, actor_login_id)
 
     try:
+        # 실행
         result = await action_func()
+        data = result.data
+        message = result.message
 
-        data = result.data if hasattr(result, "data") else {}
-        code = result.code if hasattr(result, "code") else CustomCode.MASTER_001.value
-        message = result.message if hasattr(result, "message") else ""
+        # 성공 코드 매핑
+        if success_status == ServerStatus.START:
+            code = CustomCode.DOCKER_006.value
+        elif success_status == ServerStatus.STOP:
+            code = CustomCode.DOCKER_002.value
+        elif success_status == ServerStatus.RESTART:
+            code = CustomCode.DOCKER_003.value
 
+        # 로그 저장
         _log_server_action(db, user.user_id, success_status, description)
 
+        # restart → started_at 강제 최신화
         if success_status == ServerStatus.RESTART:
             data["started_at"] = datetime.now(TIMEZONE).isoformat()
 
@@ -78,33 +90,25 @@ async def _execute_server_action(
     except Exception as e:
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            code=CustomCode.ERR_500.value,
+            code=CustomCode.DOCKER_ERROR.value,
             message=f"{success_status.value} 중 오류 발생: {str(e)}",
         )
 
 
-# Triton 서버 시작
+# 서버 시작
 async def start_server_service(db: Session, actor_login_id: str):
     return await _execute_server_action(db, actor_login_id, start_triton, ServerStatus.START)
 
 
-# Triton 서버 중지
+# 서버 중지
 async def stop_server_service(db: Session, actor_login_id: str, description: str | None = None):
     return await _execute_server_action(
-        db,
-        actor_login_id,
-        stop_triton,
-        ServerStatus.STOP,
-        description=description,
+        db, actor_login_id, stop_triton, ServerStatus.STOP, description
     )
 
 
-# Triton 서버 재시작
+# 서버 재시작
 async def restart_server_service(db: Session, actor_login_id: str, description: str | None = None):
     return await _execute_server_action(
-        db,
-        actor_login_id,
-        restart_triton,
-        ServerStatus.RESTART,   
-        description=description,
+        db, actor_login_id, restart_triton, ServerStatus.RESTART, description
     )
