@@ -1,5 +1,4 @@
 from fastapi import status
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from datetime import datetime
 
@@ -13,7 +12,7 @@ from app.models.user import User
 from app.core.customException import CustomHTTPException
 
 
-def get_api_log_service(start_date, end_date, db: Session) -> BaseResponse:
+def get_api_log_service(start_date, end_date, username, type, description, db: Session) -> BaseResponse:
 
     start_dt = datetime.combine(start_date, datetime.min.time())
     end_dt = datetime.combine(end_date, datetime.max.time())
@@ -28,17 +27,18 @@ def get_api_log_service(start_date, end_date, db: Session) -> BaseResponse:
     server_logs = (
         db.query(Server, User)
         .join(User, Server.actor_id == User.user_id)
-        .filter(and_(Server.created_at >= start_dt, Server.created_at <= end_dt))
+        .filter(Server.created_at >= start_dt, Server.created_at <= end_dt)
         .all()
     )
 
     server_result = []
     for server, user in server_logs:
+        log_type = f"TRITON-{server.status.value}"
         server_result.append(
             {
-                "time": server.created_at,
-                "user": user.name,
-                "action": f"triton-{server.status.value}",
+                "date": server.created_at,
+                "username": user.name,
+                "type": log_type,
                 "description": server.description,
             }
         )
@@ -46,23 +46,32 @@ def get_api_log_service(start_date, end_date, db: Session) -> BaseResponse:
     release_logs = (
         db.query(ModelRelease, User)
         .join(User, ModelRelease.actor_id == User.user_id)
-        .filter(and_(ModelRelease.created_at >= start_dt, ModelRelease.created_at <= end_dt))
+        .filter(ModelRelease.created_at >= start_dt, ModelRelease.created_at <= end_dt)
         .all()
     )
 
     release_result = []
     for release, user in release_logs:
+        log_type = f"{release.type.value}-{release.action.value}"
         release_result.append(
             {
-                "time": release.created_at,
-                "user": user.name,
-                "action": f"{release.type.value}-{release.action.value}",
+                "date": release.created_at,
+                "username": user.name,
+                "type": log_type,
                 "description": release.reason,
             }
         )
 
     final_list = server_result + release_result
-    final_list.sort(key=lambda x: x["time"])
+
+    if username:
+        final_list = [log for log in final_list if log["username"] == username]
+    if description:
+        final_list = [log for log in final_list if log.get("description") and description in log["description"]]
+    if type:
+        final_list = [log for log in final_list if type in log["type"]]
+
+    final_list.sort(key=lambda x: x["date"])
 
     return create_response(
         code=CustomCode.LOG_001.value, message=Messages.MODEL_API_LOG_FETCH_SUCCESS.value, data={"logs": final_list}
