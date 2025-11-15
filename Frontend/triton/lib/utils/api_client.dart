@@ -116,6 +116,16 @@ class ApiClient extends GetConnect {
     return _get('/api/v1/dashboard/server/timeseries', apiName: 'getServerTimeSeries');
   }
 
+  // GET /api/v1/models/standard-time
+  Future<dynamic> getStandardTime() {
+    return _get('/api/v1/models/standard-time', apiName: 'getStandardTime');
+  }
+
+  // POST /api/v1/models/standard-time
+  Future<dynamic> updateStandardTime(String baseTime) {
+    return _postJson('/api/v1/models/standard-time', {'base_time': baseTime}, apiName: 'updateStandardTime');
+  }
+
   // ---------------------------------------------------------------------------
   // 모델 대시보드 (Model Dashboard)
   // ---------------------------------------------------------------------------
@@ -219,6 +229,28 @@ class ApiClient extends GetConnect {
       'DELETE',
       body: jsonEncode({'loginId': loginId, 'description': description}),
       apiName: 'deleteConfig',
+    );
+  }
+
+  //Serverlog - server 로그 조회 & 필터링
+  Future<dynamic> getApiLog({
+    required int startDate,
+    required String endDate,
+    String? username,
+    String? type,
+    String? description,
+  }) {
+    return _requestRaw(
+      '/api/v1/logs/api',
+      'POST',
+      body: jsonEncode({
+        'startDate': startDate,
+        'endDate': endDate,
+        'username': username,
+        'type': type,
+        'description': description,
+      }),
+      apiName: 'getApiLog',
     );
   }
 }
