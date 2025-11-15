@@ -38,7 +38,7 @@ class Messages(str, Enum):
     ENSEMBLE_REGISTER_INTERNAL_ERROR = "모델 등록 중 내부 오류 발생"
 
     # ---- Model 공통 ----
-    MODEL_NOT_FOUND_FOUND = "해당 모델을 찾을 수 없습니다."
+    MODEL_NOT_FOUND = "해당 모델을 찾을 수 없습니다."
     MODEL_REGISTER_DB_ERROR = "DB 저장 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
     MODEL_DELETE_DB_ERROR = "DB 삭제 중 오류가 발생했습니다. 이전의 모든 변경사항을 롤백했습니다."
 
@@ -96,6 +96,7 @@ class Messages(str, Enum):
     UID_NOT_FOUND = "해당 UID를 찾을 수 없습니다"
 
     # ---- Metrics ----
+    DASHBOARD_MODEL_LIST_SUCCESS = "대시보드용 모델 목록 조회 성공"
     SERVER_METRICS_FETCH_SUCCESS = "서버 실시간 메트릭 조회 성공"
     RESOURCE_TIMESERIES_FETCH_SUCCESS = "리소스 시계열 데이터 조회 성공"
     METRICS_INVALID_PERIOD = "지원하지 않는 period 값입니다. (허용: 1h, 6h, 24h)"
