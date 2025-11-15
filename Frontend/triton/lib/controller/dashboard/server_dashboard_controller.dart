@@ -1,81 +1,71 @@
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:triton/widgets/dashboard/server_metrics.dart';
-import 'package:triton/utils/api_client.dart'; // ← 🔥 추가 필요
+import 'package:triton/utils/api_client.dart';
 
-/// ------------------------------------------------------------
-///  ServerDashboardController (New GPU Utilization Structure)
-/// ------------------------------------------------------------
 class ServerDashboardController extends GetxController {
-  /// 🔹 서버 전체 스냅샷 (CPU / RAM / GPU Utilization)
+  /// 서버 전체 스냅샷
   final metrics = ServerMetrics.mock.obs;
 
-  /// 🔹 시계열 (RAM / GPU VRAM)
+  /// 시계열 (RAM / GPU VRAM)
   final gpuVramSeries = <FlSpot>[].obs;
   final ramSeries = <FlSpot>[].obs;
 
-  /// 🔹 로딩 상태
+  /// timestamp 저장 (chart 라벨용)
+  final gpuVramTimestamps = <DateTime>[].obs;
+  final ramTimestamps = <DateTime>[].obs;
+
+  /// 로딩 상태
   final loading = false.obs;
 
-  // API Client 인스턴스
+  /// 에러 상태
+  final cpuError = RxnString();
+  final gpuError = RxnString();
+  final vramError = RxnString();
+  final ramError = RxnString();
+
+  /// API Client
   late final ApiClient _api;
 
-  // ============================================================
-  // ⬇️ Computed Fields
-  // ============================================================
+  // ------------------------------------------------------------
+  // Computed Fields
+  // ------------------------------------------------------------
   double get latestCpuUsage => metrics.value.cpuUsage;
   double get latestGpuUtil => metrics.value.gpuUtilization;
   double get latestGpuVram => gpuVramSeries.isNotEmpty ? gpuVramSeries.last.y : metrics.value.gpuVram;
   double get latestRamUsage => ramSeries.isNotEmpty ? ramSeries.last.y : metrics.value.ramUsage;
 
-  // ============================================================
-  // Init
-  // ============================================================
   @override
   void onInit() {
     super.onInit();
-
-    /// 1) API client 주입
     _api = Get.find<ApiClient>();
 
-    /// 2) 시계열 mock은 그대로 유지 (추후 timeseries API로 대체)
-    gpuVramSeries.assignAll(ServerGpuMockData.vramUsage);
-    ramSeries.assignAll(ServerRamMockData.ramUsage);
-
-    /// 옵션: 최초 1회 fetch
-    // fetchAll();
+    // 초기 빈값
+    gpuVramSeries.value = [];
+    ramSeries.value = [];
+    gpuVramTimestamps.value = [];
+    ramTimestamps.value = [];
   }
 
-  // ============================================================
-  // 🔥 전체 서버 메트릭 로드 (CPU + RAM + GPU Utilization + GPU VRAM)
-  // ============================================================
   Future<void> fetchAll() async {
     loading.value = true;
 
+    // ------------------------------------------------------------
+    // 1) CPU / GPU Utilization
+    // ------------------------------------------------------------
     try {
-      // mock delay 제거 가능하지만 임시 유지
-      await Future.delayed(const Duration(milliseconds: 300));
+      final metricData = await _api.getServerMetrics();
 
-      // 기존 mock 업데이트 제거하고 API 기반으로 교체
-      final apiData = await _api.getServerMetrics();
-      print('🔥🔥🔥 server metrics apiData: $apiData');
+      cpuError.value = null;
+      gpuError.value = null;
 
-      // null-safe
-      if (apiData == null) {
-        loading.value = false;
-        return;
-      }
+      final cpu = (metricData['cpu_utilization'] ?? 0).toDouble();
 
-      final cpu = (apiData['cpu_utilization'] ?? 0).toDouble();
-
-      final gpuList = apiData['gpu'] as List<dynamic>;
-      final gpu = gpuList.isNotEmpty ? (gpuList[0]['gpu_util'] ?? 0).toDouble() : 0.0;
+      final gpuList = metricData['gpu'] as List<dynamic>? ?? [];
+      final gpu = gpuList.isNotEmpty ? (gpuList.first['gpu_util'] ?? 0).toDouble() : 0.0;
 
       final prev = metrics.value;
 
-      // ======================================================
-      // [수정 #3] metrics 스냅샷 갱신 — CPU/GPU만 실제 값으로 교체
-      // ======================================================
       metrics.value = ServerMetrics(
         cpuUsage: cpu,
         ramUsage: prev.ramUsage,
@@ -84,7 +74,67 @@ class ServerDashboardController extends GetxController {
         models: prev.models,
       );
     } catch (e) {
-      print('[ServerDashboardController] fetchAll Error: $e');
+      cpuError.value = "CPU Error: $e";
+      gpuError.value = "GPU Error: $e";
+    }
+
+    // ------------------------------------------------------------
+    // 2) VRAM / RAM 시계열
+    // ------------------------------------------------------------
+    try {
+      final tsData = await _api.getServerTimeSeries();
+
+      vramError.value = null;
+      ramError.value = null;
+
+      List<dynamic> _safeList(Map src, String key) {
+        final v = src[key];
+        if (v is List && v.isNotEmpty) return v;
+        throw "Missing or empty '$key' field in timeseries response";
+      }
+
+      // -------------------------
+      // 🔥 VRAM (timestamp + index 기반)
+      // -------------------------
+      final vramNode = _safeList(tsData, 'vram');
+      final vramValues = vramNode.first['values'] as List<dynamic>? ?? [];
+
+      gpuVramTimestamps.assignAll(vramValues.map((v) => DateTime.parse(v['ts'])).toList());
+
+      gpuVramSeries.assignAll(
+        List.generate(vramValues.length, (i) {
+          final y = (vramValues[i]['value'] ?? 0).toDouble();
+          return FlSpot(i.toDouble(), y);
+        }),
+      );
+
+      // -------------------------
+      // 🔥 RAM (timestamp + index 기반)
+      // -------------------------
+      final ramNode = _safeList(tsData, 'ram');
+      final ramValues = ramNode.first['values'] as List<dynamic>? ?? [];
+
+      ramTimestamps.assignAll(ramValues.map((v) => DateTime.parse(v['ts'])).toList());
+
+      ramSeries.assignAll(
+        List.generate(ramValues.length, (i) {
+          final y = (ramValues[i]['value'] ?? 0).toDouble();
+          return FlSpot(i.toDouble(), y);
+        }),
+      );
+
+      // snapshot 업데이트
+      final prev = metrics.value;
+      metrics.value = ServerMetrics(
+        cpuUsage: prev.cpuUsage,
+        gpuUtilization: prev.gpuUtilization,
+        ramUsage: ramSeries.isNotEmpty ? ramSeries.last.y : prev.ramUsage,
+        gpuVram: gpuVramSeries.isNotEmpty ? gpuVramSeries.last.y : prev.gpuVram,
+        models: prev.models,
+      );
+    } catch (e) {
+      vramError.value = "VRAM Error: $e";
+      ramError.value = "RAM Error: $e";
     }
 
     loading.value = false;
