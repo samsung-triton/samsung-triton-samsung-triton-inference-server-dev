@@ -25,47 +25,103 @@ class CommonMetricHeaderBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ✅ 왼쪽: Reset Time 설정 영역 (그대로 유지)
-          Row(
-            children: [
-              Text("Reset Time", style: T.t16(color: primaryDarker, bold: true)),
-              const SizedBox(width: 8),
-              Dropdown(
-                width: 76,
-                items: const [
-                  '00',
-                  '01',
-                  '02',
-                  '03',
-                  '04',
-                  '05',
-                  '06',
-                  '07',
-                  '08',
-                  '09',
-                  '10',
-                  '11',
-                  '12',
-                  '13',
-                  '14',
-                  '15',
-                  '16',
-                  '17',
-                  '18',
-                  '19',
-                  '20',
-                  '21',
-                  '22',
-                  '23',
-                ],
-                hintText: '06',
-              ),
-              const SizedBox(width: 4),
-              Dropdown(width: 76, items: const ['00', '10', '20', '30', '40', '50'], hintText: '30'),
-            ],
-          ),
+          /// ✅ 왼쪽: Reset Time 영역 (role + resetTime 반영)
+          Obx(() {
+            final isDevel = dashboardController.isDevel;
+            final hourText = dashboardController.resetHour.value.toString().padLeft(2, '0');
+            final minuteText = dashboardController.resetMinute.value.toString().padLeft(2, '0');
 
-          // ✅ 오른쪽: Last Updated + Update 버튼
+            return Row(
+              children: [
+                Text("Reset Time", style: T.t16(color: primaryDarker, bold: true)),
+                const SizedBox(width: 8),
+
+                // 🔹 Hour Dropdown
+                IgnorePointer(
+                  ignoring: !isDevel, // DEVEL만 선택 가능
+                  child: Opacity(
+                    opacity: isDevel ? 1.0 : 0.6,
+                    child: Dropdown(
+                      width: 76,
+                      items: const [
+                        '00',
+                        '01',
+                        '02',
+                        '03',
+                        '04',
+                        '05',
+                        '06',
+                        '07',
+                        '08',
+                        '09',
+                        '10',
+                        '11',
+                        '12',
+                        '13',
+                        '14',
+                        '15',
+                        '16',
+                        '17',
+                        '18',
+                        '19',
+                        '20',
+                        '21',
+                        '22',
+                        '23',
+                      ],
+                      // 서버에서 받은 기준 시간을 hint로 표시
+                      hintText: hourText,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        dashboardController.setResetHour(value);
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+
+                // 🔹 Minute Dropdown
+                IgnorePointer(
+                  ignoring: !isDevel,
+                  child: Opacity(
+                    opacity: isDevel ? 1.0 : 0.6,
+                    child: Dropdown(
+                      width: 76,
+                      items: const ['00', '10', '20', '30', '40', '50'],
+                      hintText: minuteText,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        dashboardController.setResetMinute(value);
+                      },
+                    ),
+                  ),
+                ),
+
+                // 🔹 DEVEL만 Reset 버튼 노출
+                if (isDevel) const SizedBox(width: 8),
+                if (isDevel)
+                  SizedBox(
+                    height: 28,
+                    child: ElevatedButton(
+                      onPressed: () => dashboardController.updateResetTime(),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: white,
+                        foregroundColor: primaryDarker,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(color: lightGray),
+                        ),
+                      ),
+                      child: Text('Apply', style: T.t12(color: primaryDarker, bold: true)),
+                    ),
+                  ),
+              ],
+            );
+          }),
+
+          /// ✅ 오른쪽: Last Updated + Update 버튼
           Row(
             children: [
               Text("Last Updated", style: T.t16(color: primaryDarker, bold: true)),
