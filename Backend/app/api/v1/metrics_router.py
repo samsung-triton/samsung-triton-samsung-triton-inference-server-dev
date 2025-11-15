@@ -20,11 +20,6 @@ async def get_server_metrics():
     return await get_server_metrics_service()
 
 
-@metrics_router.get("/server/timeseries")
-async def gpu_util(end: Optional[str] = Query(None, description="RFC3339(…Z) 또는 epoch 초")):
-    return await get_timeseries_service(end_iso=end)
-
-
 @metrics_router.get("/models", response_model=BaseResponse, status_code=status.HTTP_200_OK)
 async def get_dashboard_models(db: Session = Depends(get_db)):
     return await get_dashboard_models_list_service(db)
@@ -40,3 +35,8 @@ async def get_model_per_inference_latency(
     model_id: int = Path(...), end: Optional[str] = Query(None), db: Session = Depends(get_db)
 ):
     return await get_model_per_inference_latency_service(model_id, end, db)
+
+
+@metrics_router.get("/server/timeseries")
+async def gpu_util(end: Optional[str] = Query(None, description="RFC3339(…Z) 또는 epoch 초")):
+    return await get_timeseries_service(end_iso=end)

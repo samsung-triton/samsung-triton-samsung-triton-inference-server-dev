@@ -96,6 +96,7 @@ class Messages(str, Enum):
     UID_NOT_FOUND = "해당 UID를 찾을 수 없습니다"
 
     # ---- Metrics ----
+    DASHBOARD_MODEL_LIST_SUCCESS = "대시보드용 모델 목록 조회 성공"
     SERVER_METRICS_FETCH_SUCCESS = "서버 실시간 메트릭 조회 성공"
     RESOURCE_TIMESERIES_FETCH_SUCCESS = "리소스 시계열 데이터 조회 성공"
     METRICS_INVALID_PERIOD = "지원하지 않는 period 값입니다. (허용: 1h, 6h, 24h)"

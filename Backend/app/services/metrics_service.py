@@ -17,6 +17,8 @@ from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, Met
 from app.schemas.base_schema import BaseResponse
 from app.models.model import Model
 from app.models.inference_logs import InferenceLogs
+from app.clients.triton_client import triton_client
+from app.services.server_service import get_server_status_service
 
 
 # ============================================================
@@ -226,84 +228,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
 
 
 # ============================================================
-# 4. model_id 기반 모델 통계
-# ============================================================
-async def get_dashboard_models_list_service(db: Session):
-    # ---------------------------------------
-    # 1. 서버 상태 확인
-    # ---------------------------------------
-    server = await get_server_status_service(db)
-    status = server.data.get("status")
-
-    if status != "START":
-        return create_response(
-            code=CustomCode.DASH_002.value,
-            message=Messages.DASHBOARD_SERVER_STOPPED.value,
-            data={"models": []},
-        )
-
-    # ---------------------------------------
-    # 2. Triton 모델 READY 리스트 가져오기
-    # ---------------------------------------
-    try:
-        triton_models = triton_client.list_models()
-        ready_names = {m["name"] for m in triton_models if m.get("ready", False)}
-    except Exception:
-        # Triton 접속 실패 시 대시보드에 빈 리스트 반환
-        return create_response(
-            code=CustomCode.DASH_002.value, message="Triton 서버에 연결할 수 없습니다.", data={"models": []}
-        )
-
-    if not ready_names:
-        return create_response(
-            code=CustomCode.DASH_001.value,
-            message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
-            data={"models": []},
-        )
-
-    # ---------------------------------------
-    # 3. DB 모델 매핑
-    # ---------------------------------------
-    db_models = db.query(Model).filter(Model.name.in_(ready_names)).all()
-
-    result = []
-
-    for m in db_models:
-        # inference_logs 테이블에서 OK/NG 카운트 집계
-        ok_count = (
-            db.query(func.count(InferenceLogs.inference_log_id))
-            .filter(InferenceLogs.model_id == m.model_id, InferenceLogs.inference_status == "OK")
-            .scalar()
-        )
-
-        ng_count = (
-            db.query(func.count(InferenceLogs.inference_log_id))
-            .filter(InferenceLogs.model_id == m.model_id, InferenceLogs.inference_status == "NG")
-            .scalar()
-        )
-
-        result.append(
-            {
-                "modelId": m.model_id,
-                "modelName": m.name,
-                "loaded": True,
-                "inferOK": ok_count,
-                "inferNG": ng_count,
-            }
-        )
-
-    # ---------------------------------------
-    # 4. 응답
-    # ---------------------------------------
-    return create_response(
-        code=CustomCode.DASH_001.value,
-        message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
-        data={"models": result},
-    )
-
-
-# ============================================================
-# 4. model_id 기반 모델 통계
+# 3. model_id 기반 모델 통계
 # ============================================================
 def get_aggregation_window_from_str(base_time_str: str) -> tuple[datetime, datetime]:
     now = datetime.now(TIMEZONE)
@@ -371,7 +296,7 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
 
 
 # ============================================================
-# 5. model_id 기반 모델 latency
+# 4. model_id 기반 모델 latency
 # ============================================================
 async def get_model_per_inference_latency_service(
     model_id: int, end_iso: Optional[str], db: Session
@@ -466,7 +391,7 @@ async def get_model_per_inference_latency_service(
             },
         }
 
-        return create_response(code="DASH-200", message="Inference latency timeseries fetched", data=data)
+        return create_response(code=CustomCode.DASH_003.value, message="{model.name} 레이턴시 조회 성공", data=data)
 
     except Exception as e:
         raise CustomHTTPException(
@@ -475,3 +400,85 @@ async def get_model_per_inference_latency_service(
             message=f"Failed: {e}",
             data=None,
         )
+
+
+# ============================================================
+# 5. 대시보드 모델 목록 조회
+# ============================================================ㅋ
+async def get_dashboard_models_list_service(db: Session):
+    # 1. 서버 상태 확인
+    try:
+        triton_alive = triton_client.client.is_server_ready()
+    except Exception:
+        triton_alive = False
+
+    if not triton_alive:
+        return create_response(
+            code=CustomCode.DASH_005.value,
+            message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+            data={"models": []},
+        )
+
+    # 2. Triton 모델 READY 리스트 가져오기
+    try:
+        resp = triton_client.list_models()
+        triton_models = resp.get("models", [])
+
+        ready_names = {m["name"] for m in triton_models if m.get("state") == "READY"}
+
+        if not ready_names:
+            return create_response(
+                CustomCode.DASH_005.value,
+                Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+                {"models": []},
+            )
+
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.MODEL_LIST_FETCH_ERROR.value,
+            data={"detail": str(e)},
+        )
+
+    # 3. DB 모델 매핑
+    db_models = db.query(Model).filter(Model.name.in_(ready_names)).all()
+
+    results = []
+
+    base_time_str = current_standard_time()
+    start_time, end_time = get_aggregation_window_from_str(base_time_str)
+
+    for m in db_models:
+        q = (
+            db.query(
+                func.count(InferenceLogs.inference_log_id).label("inference_total"),
+                func.count().filter(InferenceLogs.inference_status == "OK").label("inference_ok"),
+                func.count().filter(InferenceLogs.inference_status == "NG").label("inference_ng"),
+            )
+            .filter(InferenceLogs.model_id == m.model_id)
+            .filter(InferenceLogs.completed_at >= start_time)
+            .filter(InferenceLogs.completed_at < end_time)
+        )
+
+        row = q.first()
+
+        inference_total = row.inference_total or 0
+        inference_ok = row.inference_ok or 0
+        ok_ratio = round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0
+
+        results.append(
+            {
+                "modelId": m.model_id,
+                "modelName": m.name,
+                "inference_total": inference_total,
+                "inference_ok": inference_ok,
+                "ok_ratio": ok_ratio,
+            }
+        )
+
+    return create_response(
+        code=CustomCode.DASH_005.value,
+        message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+        data={"models": results},
+    )

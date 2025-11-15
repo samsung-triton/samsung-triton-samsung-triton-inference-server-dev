@@ -53,7 +53,9 @@ class CustomCode(str, Enum):
     # 대시보드 관리
     DASH_001 = "DASH-001"  # 서버 gpu, cpu util 조회 성공
     DASH_002 = "DASH-002"  # 서버 ram, vram 조회 성공
-    DASH_003 = "DASH-003"  # 모델별 추론 및 요청 통계 조회 성공
+    DASH_003 = "DASH-003"  # 모델별 추론 결과 조회 성공
+    DASH_004 = "DASH-004"  # 모델별 추론 레이턴시 조회 성공
+    DASH_005 = "DASH-005"  # 대시보드 모델 목록 조회 성공
 
     # 로그 관리 (업데이트 예정)
     LOG_001 = "LOG-001"
