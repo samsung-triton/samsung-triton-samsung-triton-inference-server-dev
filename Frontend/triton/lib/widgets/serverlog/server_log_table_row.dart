@@ -17,9 +17,8 @@ class ServerLogTableRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start, // 여러 줄일 때 위로 정렬
         children: [
           _textCell(log['date']!, width: 150),
-          _textCell(log['type']!, width: 100),
-          _textCell(log['username']!, width: 100),
-          _textCell(log['detail']!, width: 150),
+          _textCell(log['type']!, width: 150),
+          _textCell(log['username']!, width: 150),
           _textCell(log['description']!, expanded: true, textAlign: TextAlign.left),
         ],
       ),

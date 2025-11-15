@@ -57,7 +57,6 @@ class ServerLogTable extends StatelessWidget {
                         'username': log['username'],
                         'date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.parse(log['date'])), //출력 파싱
                         'type': log['type'],
-                        'detail': log['detail'],
                         'description': log['description'],
                       },
                     );
