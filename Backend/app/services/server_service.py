@@ -1,39 +1,37 @@
 from sqlalchemy.orm import Session
 from fastapi import status
+from datetime import datetime
 
-from app.clients.gpu_router import get_triton_status, start_triton, stop_triton, restart_triton
+from app.clients.gpu_router import (
+    get_triton_status,
+    start_triton,
+    stop_triton,
+    restart_triton,
+)
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.models.server import Server, ServerStatus
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.models.user import User
-from datetime import datetime
 from app.core.config import TIMEZONE
+from app.common.utils import get_user_or_404
 
 
-def get_user_or_404(db: Session, login_id: str) -> User:
-    user = db.query(User).filter(User.login_id == login_id).first()
-    if not user:
-        raise CustomHTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code=CustomCode.ERR_404.value,
-            message=Messages.USER_NOT_FOUND.value,
-        )
-    return user
-
-
-def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus, description: str | None = None):
-    server_log = Server(actor_id=user_id, status=status_enum, description=description)
+def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus, description: str = None):
+    server_log = Server(
+        actor_id=user_id,
+        status=status_enum,
+        description=description
+    )
     db.add(server_log)
     db.commit()
 
 
-# Triton 서버 상태 조회
 async def get_server_status_service(db: Session):
     try:
         result = await get_triton_status()
-        status_data = result.data if hasattr(result, "data") else {}
+        status_data = result.data
 
         is_ready = status_data.get("status") == "ready"
 
@@ -48,38 +46,36 @@ async def get_server_status_service(db: Session):
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code=CustomCode.ERR_503.value,
             message=f"서버 상태 조회 실패: {str(e)}",
-            data={"status": "not_ready", "started_at": None},
+            data={"status": "stopped", "started_at": None},
         )
 
 
-# Triton 서버 제어 공통 함수
 async def _execute_server_action(
     db: Session,
     actor_login_id: str,
     action_func,
     success_status: ServerStatus,
-    description: str | None = None,
+    description: str = None,
 ):
     user = get_user_or_404(db, actor_login_id)
 
     try:
-        # 실행
         result = await action_func()
         data = result.data
         message = result.message
 
-        # 성공 코드 매핑
-        if success_status == ServerStatus.START:
-            code = CustomCode.DOCKER_006.value
-        elif success_status == ServerStatus.STOP:
-            code = CustomCode.DOCKER_002.value
-        elif success_status == ServerStatus.RESTART:
-            code = CustomCode.DOCKER_003.value
+        # 상태 → 코드 매핑
+        code_map = {
+            ServerStatus.START: CustomCode.DOCKER_006.value,
+            ServerStatus.STOP: CustomCode.DOCKER_002.value,
+            ServerStatus.RESTART: CustomCode.DOCKER_003.value,
+        }
+        code = code_map[success_status]
 
         # 로그 저장
         _log_server_action(db, user.user_id, success_status, description)
 
-        # restart → started_at 강제 최신화
+        # restart → started_at 갱신
         if success_status == ServerStatus.RESTART:
             data["started_at"] = datetime.now(TIMEZONE).isoformat()
 
@@ -95,20 +91,17 @@ async def _execute_server_action(
         )
 
 
-# 서버 시작
 async def start_server_service(db: Session, actor_login_id: str):
     return await _execute_server_action(db, actor_login_id, start_triton, ServerStatus.START)
 
 
-# 서버 중지
-async def stop_server_service(db: Session, actor_login_id: str, description: str | None = None):
+async def stop_server_service(db: Session, actor_login_id: str, description: str = None):
     return await _execute_server_action(
         db, actor_login_id, stop_triton, ServerStatus.STOP, description
     )
 
 
-# 서버 재시작
-async def restart_server_service(db: Session, actor_login_id: str, description: str | None = None):
+async def restart_server_service(db: Session, actor_login_id: str, description: str = None):
     return await _execute_server_action(
         db, actor_login_id, restart_triton, ServerStatus.RESTART, description
     )
