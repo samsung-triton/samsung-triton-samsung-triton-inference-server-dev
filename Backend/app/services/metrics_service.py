@@ -21,6 +21,7 @@ from app.clients.triton_client import triton_client
 from app.services.server_service import get_server_status_service
 
 
+
 # ============================================================
 # 1. 서버 실시간 메트릭
 # ============================================================
@@ -203,7 +204,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
                 except Exception:
                     continue
 
-            ram_series_list.append(NoneGPUSeriesItem(values=points))
+            ram_series_list.append(SeriesItem(gpu_uuid=metric.get("gpu_uuid", "none"), values=points))
 
         # 4) TimeWindow 생성
         time_window = TimeWindow(

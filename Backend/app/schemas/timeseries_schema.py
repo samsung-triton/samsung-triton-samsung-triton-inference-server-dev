@@ -12,10 +12,6 @@ class SeriesItem(BaseModel):
     values: List[ValueItem]
 
 
-class NoneGPUSeriesItem(BaseModel):
-    values: List[ValueItem]
-
-
 class TimeWindow(BaseModel):
     start: str
     end: str
@@ -26,3 +22,7 @@ class MetricData(BaseModel):
     window: TimeWindow
     vram: List[SeriesItem]
     ram: List[SeriesItem]
+
+
+class NoneGPUSeriesItem(BaseModel):
+    values: List[ValueItem]
