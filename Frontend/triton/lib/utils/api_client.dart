@@ -113,6 +113,16 @@ class ApiClient extends GetConnect {
     return _get('/api/v1/dashboard/server/timeseries', apiName: 'getServerTimeSeries');
   }
 
+  // GET /api/v1/models/standard-time
+  Future<dynamic> getStandardTime() {
+    return _get('/api/v1/models/standard-time', apiName: 'getStandardTime');
+  }
+
+  // POST /api/v1/models/standard-time
+  Future<dynamic> updateStandardTime(String baseTime) {
+    return _postJson('/api/v1/models/standard-time', {'base_time': baseTime}, apiName: 'updateStandardTime');
+  }
+
   // ---------------------------------------------------------------------------
   // 모델 대시보드 (Model Dashboard)
   // ---------------------------------------------------------------------------
