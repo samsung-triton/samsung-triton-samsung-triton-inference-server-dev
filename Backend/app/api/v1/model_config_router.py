@@ -55,7 +55,7 @@ async def get_config_history_with_selected(
 
 
 # 모델 Config 파일 교체 및 Triton 반영
-@model_config_router.patch("/{model_id}/config/apply", response_model=BaseResponse)
+@model_config_router.post("/{model_id}/config/apply", response_model=BaseResponse)
 async def update_model_config(model_id: int, request: ConfigUpdateRequest, db: Session = Depends(get_db)):
     return update_model_config_service(
         model_id=model_id,
