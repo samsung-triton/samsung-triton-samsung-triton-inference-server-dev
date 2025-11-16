@@ -116,8 +116,8 @@ class ApiClient extends GetConnect {
   }
 
   // POST /api/v1/models/standard-time
-  Future<dynamic> updateStandardTime(int baseTime) {
-    return _postJson('/api/v1/models/standard-time', {'base_time': baseTime}, apiName: 'updateStandardTime');
+  Future<dynamic> updateStandardTime(String newTime) {
+    return _postJson('/api/v1/models/standard-time?new_time=$newTime', null, apiName: 'updateStandardTime');
   }
 
   // ---------------------------------------------------------------------------
