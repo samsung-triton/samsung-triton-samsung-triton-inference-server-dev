@@ -16,7 +16,7 @@ class ModelSidebar extends StatelessWidget {
 
     return Obx(() {
       final models = modelManageController.models;
-      final selected = modelManageController.selectedModelId.value;
+      final selected = modelManageController.selectedModel.value?.modelId;
 
       // 카드 리스트
       final cards = <Widget>[

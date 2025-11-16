@@ -62,7 +62,7 @@ class VersionManageController extends GetxController {
     final deleteId = _authStorage.read<String>('loginedId') ?? '';
     // 버전 채워 넣기
     final modelManageController = Get.find<ModelManageController>();
-    final modelId = modelManageController.selectedModelId.value;
+    final modelId = modelManageController.selectedModel.value?.modelId;
     if (modelId == null) {
       if (context != null) {
         showAlert(context, message: "Select Model");

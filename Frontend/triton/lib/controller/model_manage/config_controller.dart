@@ -53,7 +53,7 @@ class ConfigController extends GetxController {
     final modelManageController = Get.find<ModelManageController>();
 
     // 모델이 바뀌면 "사용자 선택 여부" 초기화
-    _modelWatcher = ever<int?>(modelManageController.selectedModelId, (_) {
+    _modelWatcher = ever<ModelItem?>(modelManageController.selectedModel, (_) {
       _hasUserSelectedOnce = false;
     });
   }
@@ -67,7 +67,7 @@ class ConfigController extends GetxController {
 
   // 현재 선택된 modelId 반환
   int? _currentModelId() {
-    return Get.find<ModelManageController>().selectedModelId.value;
+    return Get.find<ModelManageController>().selectedModel.value?.modelId;
   }
 
   // 외부에서 에디터 내용만 주입
