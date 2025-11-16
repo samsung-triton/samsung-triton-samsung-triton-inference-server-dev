@@ -29,7 +29,7 @@ class DashboardController extends GetxController {
   /// 사용자 권한
   final _authStorage = GetStorage('auth');
   final role = ''.obs;
-  bool get isDevel => role.value == 'DEVEL';
+  bool get isDevel => role.value.toUpperCase() == 'DEVEL';
 
   late final ApiClient _api;
 
@@ -154,18 +154,19 @@ class DashboardController extends GetxController {
   Future<void> updateResetTime() async {
     if (!isDevel) return;
 
-    final timeStr = "${resetHour.value.toString().padLeft(2, '0')}:${resetMinute.value.toString().padLeft(2, '0')}";
+    final hh = resetHour.value.toString().padLeft(2, '0');
+    final mm = resetMinute.value.toString().padLeft(2, '0');
+    final newTime = "$hh:$mm";
 
     try {
-      final res = await _api.updateStandardTime(timeStr);
-      // res = { "base_time": "10:30" }
-      final base = res['base_time'];
+      final res = await _api.updateStandardTime(newTime);
 
+      final base = res['base_time']; // 서버 응답
       resetTime.value = base;
 
       final parts = base.split(':');
-      resetHour.value = int.tryParse(parts[0]) ?? resetHour.value;
-      resetMinute.value = int.tryParse(parts[1]) ?? resetMinute.value;
+      resetHour.value = int.parse(parts[0]);
+      resetMinute.value = int.parse(parts[1]);
     } catch (e) {
       print("❌ ResetTime POST 실패: $e");
     }
