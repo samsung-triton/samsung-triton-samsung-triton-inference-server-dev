@@ -6,6 +6,7 @@ import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/serverlog/filter_block_server.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/server_log/server_log_controller.dart';
+import 'package:triton/widgets/serverlog/filter_block_triton.dart';
 
 class ServerLogHeader extends StatefulWidget {
   const ServerLogHeader({super.key});
@@ -73,7 +74,20 @@ class _ServerLogHeaderState extends State<ServerLogHeader> with SingleTickerProv
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           child: _isFilterOpen
-              ? Container(width: double.infinity, color: white, child: const FilterBlockServer())
+              ? Obx(() {
+                  final server = controller.serverName.value;
+
+                  if (server == 'triton') {
+                    return const FilterBlockTriton();
+                  } else if (server == 'server') {
+                    return const FilterBlockServer();
+                  } else {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Text('Please select a server.', style: T.t12(color: gray, bold: false)),
+                    );
+                  }
+                })
               : const SizedBox.shrink(),
         ),
       ],
