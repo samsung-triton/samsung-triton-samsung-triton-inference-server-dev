@@ -46,7 +46,23 @@ class _ModalRollbackState extends State<ModalRollback> {
 
     return Obx(() {
       final rollbacks = configController.rollbacks;
-      final selectedId = configController.selectedConfigId.value;
+      int? selectedId = configController.selectedConfig.value?.configId;
+
+      if (selectedId != null && !rollbacks.any((e) => e.configId == selectedId)) {
+        selectedId = null; // 로컬에서 우선 해제
+
+        // 컨트롤러 상태는 다음 프레임에서 정리
+        Future.microtask(() {
+          RollbackItem? current;
+          for (final rollback in rollbacks) {
+            if (rollback.isCurrent) {
+              current = rollback;
+              break;
+            }
+          }
+          configController.selectRollback(current!.configId);
+        });
+      }
 
       // 선택된 항목이 서버 사용중(isCurrent)인지 체크
       bool isCurrentSelected = false;
@@ -73,13 +89,13 @@ class _ModalRollbackState extends State<ModalRollback> {
           RadioGroup<int>(
             groupValue: selectedId,
             onChanged: (id) {
-              if (id != null) configController.selectedConfigId.value = id;
+              if (id != null) configController.selectRollback(id);
             },
             child: RollbackTable(
               items: rollbacks,
               selectedId: selectedId,
               onSelect: (id) {
-                configController.selectedConfigId.value = id;
+                configController.selectRollback(id);
               },
             ),
           ),
@@ -159,7 +175,10 @@ class RollbackTable extends StatelessWidget {
 
           // 데이터
           Column(
-            children: [for (final item in items) RollbackListRow(item: item, isSelected: selectedId == item.configId)],
+            children: [
+              for (final item in items)
+                RollbackListRow(key: ValueKey(item.configId), item: item, isSelected: selectedId == item.configId),
+            ],
           ),
         ],
       ),

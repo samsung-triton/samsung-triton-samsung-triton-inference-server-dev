@@ -31,12 +31,12 @@ class ConfigController extends GetxController {
 
   // 롤백 목록 & 선택
   final rollbacks = <RollbackItem>[].obs;
-  final selectedConfigId = RxnInt();
+  final selectedConfig = Rxn<RollbackItem>(); // 선택된 롤백 항목
 
   // 공통 API 클라이언트 사용
   late final ApiClient _api;
 
-  // 게정 정보 확인을 위한 저장소 사용
+  // 계정 정보 확인을 위한 저장소
   GetStorage get _authStorage => GetStorage('auth');
 
   // 사용자가 getRollback으로 직접 선택했는지 여부
@@ -53,7 +53,7 @@ class ConfigController extends GetxController {
     final modelManageController = Get.find<ModelManageController>();
 
     // 모델이 바뀌면 "사용자 선택 여부" 초기화
-    _modelWatcher = ever<int?>(modelManageController.selectedModelId, (_) {
+    _modelWatcher = ever<ModelItem?>(modelManageController.selectedModel, (_) {
       _hasUserSelectedOnce = false;
     });
   }
@@ -67,12 +67,18 @@ class ConfigController extends GetxController {
 
   // 현재 선택된 modelId 반환
   int? _currentModelId() {
-    return Get.find<ModelManageController>().selectedModelId.value;
+    return Get.find<ModelManageController>().selectedModel.value?.modelId;
   }
 
   // 외부에서 에디터 내용만 주입
   void setEditorCtrlText({required String text}) {
     editorCtrl.text = text;
+  }
+
+  // 롤백 선택 함수
+  void selectRollback(int configId) {
+    if (selectedConfig.value?.configId == configId) return;
+    selectedConfig.value = rollbacks.firstWhereOrNull((rollback) => rollback.configId == configId);
   }
 
   // 롤백 목록 로드
@@ -90,10 +96,10 @@ class ConfigController extends GetxController {
       return;
     }
 
-    // models 추출
+    // configs 추출
     final List<dynamic> rawConfigs = (data['configs'] as List?) ?? [];
 
-    // rawModel을 ModelItem 변환
+    // rawConfigs → RollbackItem 변환
     final List<RollbackItem> fetchedConfigs = rawConfigs.map((rawConfig) {
       return RollbackItem(
         configId: rawConfig['configId'] as int,
@@ -109,31 +115,45 @@ class ConfigController extends GetxController {
 
     // 서버에서 사용중인 current 탐색
     RollbackItem? currentConfig;
-    for (final config in fetchedConfigs) {
-      if (config.isCurrent) {
-        currentConfig = config;
+    for (final rollback in fetchedConfigs) {
+      if (rollback.isCurrent) {
+        currentConfig = rollback;
         break;
       }
     }
 
     // 선택값 유지/초기화
     if (_hasUserSelectedOnce) {
-      final prev = selectedConfigId.value;
+      final prevId = selectedConfig.value?.configId;
       var exists = false;
-      if (prev != null) {
-        for (final e in fetchedConfigs) {
-          if (e.configId == prev) {
+      if (prevId != null) {
+        for (final rollback in fetchedConfigs) {
+          if (rollback.configId == prevId) {
             exists = true;
             break;
           }
         }
       }
+
       if (!exists) {
-        selectedConfigId.value = currentConfig?.configId;
+        // 이전 선택이 더 이상 없으면 current로 이동
+        if (currentConfig != null) {
+          selectRollback(currentConfig.configId);
+        } else {
+          selectedConfig.value = null;
+        }
+      } else {
+        // 이전 선택이 여전히 존재하면, 새 리스트 기준으로 다시 셋팅
+        selectRollback(prevId!);
       }
     } else {
-      editorCtrl.text = currentConfig!.content;
-      selectedConfigId.value = currentConfig.configId;
+      // 최초 로드
+      if (currentConfig != null) {
+        editorCtrl.text = currentConfig.content;
+        selectRollback(currentConfig.configId);
+      } else {
+        selectedConfig.value = null;
+      }
     }
   }
 
@@ -147,7 +167,6 @@ class ConfigController extends GetxController {
 
     print(content);
 
-    // API 호출
     final dynamic data = await _api.applyConfig(
       modelId: modelId,
       loginId: saveId,
@@ -165,10 +184,11 @@ class ConfigController extends GetxController {
 
   // 롤백 삭제
   void deleteRollback(String description) async {
-    // 삭제 타겟 확인
+    // 삭제 타겟 확인 (현재 선택 기준)
+    final currentSelectedId = selectedConfig.value?.configId;
     RollbackItem? target;
     for (final rollback in rollbacks) {
-      if (rollback.configId == selectedConfigId.value) {
+      if (rollback.configId == currentSelectedId) {
         target = rollback;
         break;
       }
@@ -192,6 +212,7 @@ class ConfigController extends GetxController {
       loginId: deleteId,
       description: description,
     );
+
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
       final context = Get.context;
@@ -199,33 +220,45 @@ class ConfigController extends GetxController {
       return;
     }
 
-    loadRollbacks();
+    // 삭제 후 목록 재로딩
+    await loadRollbacks();
+
+    // 새 목록 기준으로 선택 정리
+    if (rollbacks.isNotEmpty) {
+      RollbackItem? current;
+      for (final rollback in rollbacks) {
+        if (rollback.isCurrent) {
+          current = rollback;
+          break;
+        }
+      }
+
+      if (current != null) {
+        selectRollback(current.configId);
+      } else {
+        selectRollback(rollbacks.first.configId);
+      }
+    } else {
+      selectedConfig.value = null;
+    }
   }
 
-  // 선택
+  // 에디터에 반영
   void getRollback() {
-    if (selectedConfigId.value == null) {
-      for (final e in rollbacks) {
-        if (e.isCurrent) {
-          selectedConfigId.value = e.configId;
+    // 아무것도 선택 안 돼 있으면 current 기준으로 한 번 선택
+    if (selectedConfig.value == null) {
+      for (final rollback in rollbacks) {
+        if (rollback.isCurrent) {
+          selectRollback(rollback.configId);
           break;
         }
       }
     }
 
-    final targetId = selectedConfigId.value;
-    if (targetId == null) return;
+    final rollback = selectedConfig.value;
+    if (rollback == null) return;
 
-    RollbackItem? entry;
-    for (final e in rollbacks) {
-      if (e.configId == targetId) {
-        entry = e;
-        break;
-      }
-    }
-    if (entry == null) return;
-
-    editorCtrl.text = entry.content;
+    editorCtrl.text = rollback.content;
     _hasUserSelectedOnce = true;
   }
 }
