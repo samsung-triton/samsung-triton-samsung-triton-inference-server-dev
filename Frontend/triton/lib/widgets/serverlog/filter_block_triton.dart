@@ -8,8 +8,8 @@ import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
 import 'package:triton/controller/server_log/server_log_controller.dart';
 
-class FilterBlockServer extends StatelessWidget {
-  const FilterBlockServer({super.key});
+class FilterBlockTriton extends StatelessWidget {
+  const FilterBlockTriton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -65,20 +65,8 @@ class FilterBlockServer extends StatelessWidget {
               FilterText(label: 'log type'),
               SizedBox(width: 8),
               Dropdown(
-                items: [
-                  'TRITON-START',
-                  'TRITON-STOP',
-                  'TRITON-RESTART',
-                  'CONFIG-CREATE',
-                  'CONFIG-UPDATE',
-                  'CONFIG-DELETE',
-                  'MODEL-CREATE',
-                  'MODEL-UPDATE',
-                  'MODEL-DELETE',
-                  'VERSION-CREATE',
-                  'VERSION-UPDATE',
-                  'VERSION-DELETE',
-                ],
+                //현재 연결 안되어있음
+                items: ['trtiton', '입니다'],
                 width: 200,
                 hintText: 'selcct logtype',
                 //onChanged: / {},
@@ -90,15 +78,6 @@ class FilterBlockServer extends StatelessWidget {
           Row(
             children: [
               const FilterText(label: 'search'),
-              const SizedBox(width: 8),
-              Dropdown(
-                items: ['user name', 'description'],
-                width: 200,
-                hintText: 'sort',
-                onChanged: (value) {
-                  controller.sort.value = value ?? '';
-                },
-              ),
               const SizedBox(width: 8),
               SizedBox(
                 child: InputSmall(hintText: 'Enter keyword', width: 424, height: 28, controller: keywordCtrl),
