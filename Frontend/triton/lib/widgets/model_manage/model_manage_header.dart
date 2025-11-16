@@ -34,7 +34,7 @@ class ModelManageHeader extends StatelessWidget {
         children: [
           // 좌측: 모델 정보
           Obx(
-            () => Text(modelManageController.selectedModelName.value, style: T.t20(bold: true, color: primaryNormal)),
+            () => Text(modelManageController.selectedModel.value!.name, style: T.t20(bold: true, color: primaryNormal)),
           ),
           Obx(() => Text(' | ${versionManageController.versions.length} versions', style: T.t16())),
           const Spacer(),

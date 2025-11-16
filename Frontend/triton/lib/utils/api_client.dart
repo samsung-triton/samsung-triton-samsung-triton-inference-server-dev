@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 
 // 앱 전체에서 공통으로 사용하는 API 클라이언트.
 class ApiClient extends GetConnect {
-  static const String _baseUrl = 'http://163.5.212.63:39890';
+  static const String _baseUrl = 'http://213.181.122.2:53617';
 
   @override
   void onInit() {
@@ -26,12 +26,6 @@ class ApiClient extends GetConnect {
   /// Post 요청 공통 래퍼
   Future<dynamic> _postJson(String path, dynamic body, {String? apiName}) async {
     final res = await post(path, body, contentType: 'application/json');
-    return _unwrapResponse(res, apiName ?? path);
-  }
-
-  /// Patch 요청 공통 래퍼
-  Future<dynamic> _patchJson(String path, dynamic body, {String? apiName}) async {
-    final res = await patch(path, body, contentType: 'application/json');
     return _unwrapResponse(res, apiName ?? path);
   }
 
@@ -210,7 +204,7 @@ class ApiClient extends GetConnect {
     required String description,
     required String configContent,
   }) {
-    return _patchJson(
+    return _postJson(
       '/api/v1/models/$modelId/config/apply',
       jsonEncode({'loginId': loginId, 'description': description, 'configContent': configContent}),
       apiName: 'applyConfig',

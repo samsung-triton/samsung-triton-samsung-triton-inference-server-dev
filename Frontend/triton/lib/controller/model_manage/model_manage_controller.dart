@@ -29,8 +29,7 @@ class ModelManageController extends GetxController {
   final models = <ModelItem>[].obs;
 
   // 선택 모델 관리
-  final selectedModelId = RxnInt();
-  final selectedModelName = ''.obs;
+  final selectedModel = Rxn<ModelItem>();
 
   // 공통 API 클라이언트 사용
   late final ApiClient _api;
@@ -86,11 +85,8 @@ class ModelManageController extends GetxController {
 
   // 모델 선택
   Future<void> selectModel(int modelId) async {
-    if (selectedModelId.value == modelId) return;
-    selectedModelId.value = modelId;
-
-    final model = models.firstWhereOrNull((e) => e.modelId == modelId);
-    selectedModelName.value = model?.name ?? '';
+    if (selectedModel.value?.modelId == modelId) return;
+    selectedModel.value = models.firstWhereOrNull((e) => e.modelId == modelId);
 
     await loadModelInfo();
   }
@@ -98,7 +94,7 @@ class ModelManageController extends GetxController {
   Future<void> loadModelInfo() async {
     final context = Get.context;
 
-    final modelId = selectedModelId.value;
+    final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
       if (context != null) {
         showAlert(context, message: "Select Model");
@@ -173,7 +169,7 @@ class ModelManageController extends GetxController {
   Future<void> registerAssets(dynamic body) async {
     final context = Get.context;
 
-    final modelId = selectedModelId.value;
+    final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
       if (context != null) {
         showAlert(context, message: "Select Model");
@@ -197,7 +193,7 @@ class ModelManageController extends GetxController {
   Future<void> deleteModel(int modeld, String description) async {
     final context = Get.context;
 
-    final modelId = selectedModelId.value;
+    final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
       if (context != null) {
         showAlert(context, message: "Select Model");

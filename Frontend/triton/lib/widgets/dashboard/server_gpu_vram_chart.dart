@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
+import 'package:intl/intl.dart';
 
 class ServerGpuResourceChart extends StatelessWidget {
   const ServerGpuResourceChart({super.key});
@@ -14,54 +15,52 @@ class ServerGpuResourceChart extends StatelessWidget {
     final controller = Get.find<ServerDashboardController>();
 
     return Obx(() {
-      if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+      final data = controller.gpuVramSeries;
+      final timestamps = controller.gpuVramTimestamps;
+
+      if (data.isEmpty) {
+        return const Center(child: Text('No RAM data available'));
       }
 
-      final data = controller.gpuVramSeries;
+      final minX = 0.0;
+      final maxX = (data.length - 1).toDouble();
 
-      return Padding(
+      return Container(
         padding: const EdgeInsets.all(8),
         child: LineChart(
           LineChartData(
-            minX: 0,
-            maxX: 21,
+            minX: minX,
+            maxX: maxX,
             minY: 0,
             maxY: 100,
-            lineTouchData: LineTouchData(
-              enabled: true,
-              handleBuiltInTouches: true,
-              getTouchedSpotIndicator: (barData, spotIndexes) => spotIndexes.map((index) {
-                return TouchedSpotIndicatorData(
-                  FlLine(color: primaryDarker, strokeWidth: 1, dashArray: [3, 3]),
-                  FlDotData(
-                    show: true,
-                    getDotPainter: (spot, percent, barData, index) =>
-                        FlDotCirclePainter(radius: 3, color: primaryDarker, strokeWidth: 0),
-                  ),
-                );
-              }).toList(),
-              touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (touchedSpot) => primaryDarker,
-                tooltipBorderRadius: BorderRadius.circular(6),
-                tooltipPadding: const EdgeInsets.all(6),
-                getTooltipItems: (spots) =>
-                    spots.map((s) => LineTooltipItem('${s.y.toInt()}%', T.t12(color: white, bold: true))).toList(),
-              ),
-            ),
+
             gridData: FlGridData(
               show: true,
-              drawVerticalLine: false,
-              getDrawingHorizontalLine: (value) => FlLine(color: lightGray.withOpacity(0.5), strokeWidth: 0.5),
+              drawHorizontalLine: true,
+              drawVerticalLine: true,
+              horizontalInterval: 25, // 0, 25, 50, 75, 100%
+              verticalInterval: 1, // x축 5등분
+              getDrawingHorizontalLine: (value) =>
+                  FlLine(color: darkGray.withOpacity(0.3), strokeWidth: 1, dashArray: [6, 6]),
+              getDrawingVerticalLine: (value) =>
+                  FlLine(color: darkGray.withOpacity(0.25), strokeWidth: 1, dashArray: [6, 6]),
             ),
-            borderData: FlBorderData(show: false),
+
+            lineTouchData: LineTouchData(
+              enabled: true,
+              getTouchedSpotIndicator: (barData, idx) => idx.map((index) {
+                return TouchedSpotIndicatorData(FlLine(color: primaryNormal, dashArray: [3, 3]), FlDotData(show: true));
+              }).toList(),
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipItems: (spots) =>
+                    spots.map((s) => LineTooltipItem('${s.y.toStringAsFixed(2)}%', T.t12(color: white))).toList(),
+              ),
+            ),
+
             titlesData: FlTitlesData(
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 32,
                   interval: 25,
                   getTitlesWidget: (value, _) => Text('${value.toInt()}%', style: T.t8(color: darkGray)),
                 ),
@@ -69,25 +68,31 @@ class ServerGpuResourceChart extends StatelessWidget {
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  interval: 3,
+                  interval: 1, // 🔥 고정 간격 대신 자동 조정
                   getTitlesWidget: (value, _) {
-                    final hour = value.toInt().toString().padLeft(2, '0');
-                    return Text('$hour:00', style: T.t8(color: darkGray));
+                    final index = value.toInt();
+                    if (index < 0 || index >= timestamps.length) return const SizedBox.shrink();
+
+                    final t = timestamps[index];
+                    return Text(DateFormat("HH:mm").format(t), style: T.t8(color: darkGray));
                   },
                 ),
               ),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
+
             lineBarsData: [
               LineChartBarData(
                 spots: data,
                 isCurved: false,
-                color: primaryDarker,
+                color: primaryNormal,
                 barWidth: 1.2,
                 dotData: FlDotData(show: false),
                 belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(
-                    colors: [primaryDarker.withOpacity(0.9), primaryDarker.withOpacity(0.05)],
+                    colors: [primaryLighter.withOpacity(0.8), primaryLighter.withOpacity(0.05)],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
