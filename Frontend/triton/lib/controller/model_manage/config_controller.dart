@@ -1,14 +1,16 @@
 // config 관리 컨트롤러
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-import '../../controller/model_manage/model_manage_controller.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:triton/controller/model_manage/model_manage_controller.dart';
+import 'package:triton/utils/api_client.dart';
+import 'package:triton/utils/show_alert.dart';
 
 // 롤백 엔트리 모델
 class RollbackItem {
   final int configId;
   final int version;
-  final DateTime createdAt;
+  final String createdAt;
   final String userName;
   final String content;
   final bool isCurrent;
@@ -31,6 +33,12 @@ class ConfigController extends GetxController {
   final rollbacks = <RollbackItem>[].obs;
   final selectedConfigId = RxnInt();
 
+  // 공통 API 클라이언트 사용
+  late final ApiClient _api;
+
+  // 게정 정보 확인을 위한 저장소 사용
+  GetStorage get _authStorage => GetStorage('auth');
+
   // 사용자가 getRollback으로 직접 선택했는지 여부
   bool _hasUserSelectedOnce = false;
 
@@ -40,6 +48,8 @@ class ConfigController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _api = Get.find<ApiClient>();
+
     final modelManageController = Get.find<ModelManageController>();
 
     // 모델이 바뀌면 "사용자 선택 여부" 초기화
@@ -70,16 +80,38 @@ class ConfigController extends GetxController {
     final modelId = _currentModelId();
     if (modelId == null) return;
 
-    // TODO: API 연동 (modelId 기준 롤백 목록 조회)
-    final list = _dummyRollbacks(modelId);
+    // API 호출
+    final dynamic data = await _api.getConfigHistory(modelId: modelId);
 
-    rollbacks.assignAll(list);
+    // 데이터가 String이면 에러 메시지로 간주
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to load the model list.\nPlease retry or restart the server.");
+      return;
+    }
+
+    // models 추출
+    final List<dynamic> rawConfigs = (data['configs'] as List?) ?? [];
+
+    // rawModel을 ModelItem 변환
+    final List<RollbackItem> fetchedConfigs = rawConfigs.map((rawConfig) {
+      return RollbackItem(
+        configId: rawConfig['configId'] as int,
+        version: rawConfig['version'] as int,
+        createdAt: rawConfig['createdAt'] as String,
+        userName: rawConfig['userName'] as String,
+        content: rawConfig['content'] as dynamic,
+        isCurrent: rawConfig['isCurrent'] as bool,
+      );
+    }).toList();
+
+    rollbacks.assignAll(fetchedConfigs);
 
     // 서버에서 사용중인 current 탐색
-    RollbackItem? current;
-    for (final e in list) {
-      if (e.isCurrent) {
-        current = e;
+    RollbackItem? currentConfig;
+    for (final config in fetchedConfigs) {
+      if (config.isCurrent) {
+        currentConfig = config;
         break;
       }
     }
@@ -89,7 +121,7 @@ class ConfigController extends GetxController {
       final prev = selectedConfigId.value;
       var exists = false;
       if (prev != null) {
-        for (final e in list) {
+        for (final e in fetchedConfigs) {
           if (e.configId == prev) {
             exists = true;
             break;
@@ -97,55 +129,47 @@ class ConfigController extends GetxController {
         }
       }
       if (!exists) {
-        selectedConfigId.value = current?.configId;
+        selectedConfigId.value = currentConfig?.configId;
       }
     } else {
-      editorCtrl.text = current!.content;
-      selectedConfigId.value = current.configId;
+      editorCtrl.text = currentConfig!.content;
+      selectedConfigId.value = currentConfig.configId;
     }
   }
 
   // 저장
-  Future<void> save() async {
+  Future<void> save(String description) async {
     final modelId = _currentModelId();
     if (modelId == null) return;
 
     final content = editorCtrl.text;
+    final saveId = _authStorage.read<String>('loginedId') ?? '';
 
-    // TODO: 저장 API 호출 시 서버가 configId를 생성해주면 그 값을 사용
-    final newId = DateTime.now().millisecondsSinceEpoch;
-    const username = 'system';
+    print(content);
 
-    // TODO: 추후 삭제
-    var maxV = 0;
-    for (final e in rollbacks) {
-      if (e.version > maxV) maxV = e.version;
-    }
-
-    final newEntry = RollbackItem(
-      configId: newId,
-      version: maxV + 1,
-      createdAt: DateTime.now(),
-      userName: username,
-      content: content,
-      isCurrent: false,
+    // API 호출
+    final dynamic data = await _api.applyConfig(
+      modelId: modelId,
+      loginId: saveId,
+      description: description,
+      configContent: content,
     );
 
-    rollbacks.insert(0, newEntry);
-
-    selectedConfigId.value = newEntry.configId;
+    // 데이터가 String이면 에러 메시지로 간주
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to load the model list.\nPlease retry or restart the server.");
+      return;
+    }
   }
 
   // 롤백 삭제
-  void deleteRollback() {
-    final modelId = _currentModelId();
-    if (modelId == null) return;
-
-    // 추후 삭제
+  void deleteRollback(String description) async {
+    // 삭제 타겟 확인
     RollbackItem? target;
-    for (final e in rollbacks) {
-      if (e.configId == selectedConfigId.value) {
-        target = e;
+    for (final rollback in rollbacks) {
+      if (rollback.configId == selectedConfigId.value) {
+        target = rollback;
         break;
       }
     }
@@ -157,13 +181,25 @@ class ConfigController extends GetxController {
       return;
     }
 
-    // 정상 삭제
-    rollbacks.removeWhere((e) => e.configId == selectedConfigId.value);
+    final modelId = _currentModelId();
+    if (modelId == null) return;
 
-    selectedConfigId.value = rollbacks.first.configId;
+    final deleteId = _authStorage.read<String>('loginedId') ?? '';
 
-    // TODO: 서버 롤백 엔트리 삭제 API 호출
-    // await api.createRollback(modelId: mid, entry: newEntry);
+    final dynamic data = await _api.deleteConfig(
+      modelId: modelId,
+      configId: target.configId,
+      loginId: deleteId,
+      description: description,
+    );
+    // 데이터가 String이면 에러 메시지로 간주
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to Delete rollback.\nPlease retry or restart the server.");
+      return;
+    }
+
+    loadRollbacks();
   }
 
   // 선택
@@ -191,36 +227,5 @@ class ConfigController extends GetxController {
 
     editorCtrl.text = entry.content;
     _hasUserSelectedOnce = true;
-  }
-
-  // 더미 데이터 (API 연결 전 테스트용)
-  List<RollbackItem> _dummyRollbacks(int modelId) {
-    final now = DateTime.now();
-    return [
-      RollbackItem(
-        configId: modelId * 1000 + 3,
-        version: 3,
-        createdAt: now.subtract(const Duration(minutes: 5)),
-        userName: 'jane',
-        content: '# rollback 3 for model $modelId\nmax_batch_size: 16\n',
-        isCurrent: false,
-      ),
-      RollbackItem(
-        configId: modelId * 1000 + 2,
-        version: 2,
-        createdAt: now.subtract(const Duration(hours: 1, minutes: 12)),
-        userName: 'minsu',
-        content: '# rollback 2 for model $modelId\nmax_batch_size: 8\n',
-        isCurrent: true,
-      ),
-      RollbackItem(
-        configId: modelId * 1000 + 1,
-        version: 1,
-        createdAt: now.subtract(const Duration(days: 1, minutes: 3)),
-        userName: 'admin',
-        content: '# rollback 1 for model $modelId\nmax_batch_size: 4\n',
-        isCurrent: false,
-      ),
-    ];
   }
 }
