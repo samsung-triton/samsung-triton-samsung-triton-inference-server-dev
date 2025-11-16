@@ -1,6 +1,7 @@
 // config 관리 컨트롤러
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:triton/controller/model_manage/model_manage_controller.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/show_alert.dart';
@@ -34,6 +35,9 @@ class ConfigController extends GetxController {
 
   // 공통 API 클라이언트 사용
   late final ApiClient _api;
+
+  // 게정 정보 확인을 위한 저장소 사용
+  GetStorage get _authStorage => GetStorage('auth');
 
   // 사용자가 getRollback으로 직접 선택했는지 여부
   bool _hasUserSelectedOnce = false;
@@ -134,34 +138,29 @@ class ConfigController extends GetxController {
   }
 
   // 저장
-  Future<void> save() async {
+  Future<void> save(String description) async {
     final modelId = _currentModelId();
     if (modelId == null) return;
 
     final content = editorCtrl.text;
+    final saveId = _authStorage.read<String>('loginedId') ?? '';
 
-    // TODO: 저장 API 호출 시 서버가 configId를 생성해주면 그 값을 사용
-    final newId = DateTime.now().millisecondsSinceEpoch;
-    const username = 'system';
+    print(content);
 
-    // TODO: 추후 삭제
-    var maxV = 0;
-    for (final e in rollbacks) {
-      if (e.version > maxV) maxV = e.version;
-    }
-
-    final newEntry = RollbackItem(
-      configId: newId,
-      version: maxV + 1,
-      createdAt: "DateTime.now()",
-      userName: username,
-      content: content,
-      isCurrent: false,
+    // API 호출
+    final dynamic data = await _api.applyConfig(
+      modelId: modelId,
+      loginId: saveId,
+      description: description,
+      configContent: content,
     );
 
-    rollbacks.insert(0, newEntry);
-
-    selectedConfigId.value = newEntry.configId;
+    // 데이터가 String이면 에러 메시지로 간주
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to load the model list.\nPlease retry or restart the server.");
+      return;
+    }
   }
 
   // 롤백 삭제
