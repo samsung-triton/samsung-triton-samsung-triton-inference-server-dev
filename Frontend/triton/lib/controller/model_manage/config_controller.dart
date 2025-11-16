@@ -164,15 +164,12 @@ class ConfigController extends GetxController {
   }
 
   // 롤백 삭제
-  void deleteRollback() {
-    final modelId = _currentModelId();
-    if (modelId == null) return;
-
-    // 추후 삭제
+  void deleteRollback(String description) async {
+    // 삭제 타겟 확인
     RollbackItem? target;
-    for (final e in rollbacks) {
-      if (e.configId == selectedConfigId.value) {
-        target = e;
+    for (final rollback in rollbacks) {
+      if (rollback.configId == selectedConfigId.value) {
+        target = rollback;
         break;
       }
     }
@@ -184,13 +181,25 @@ class ConfigController extends GetxController {
       return;
     }
 
-    // 정상 삭제
-    rollbacks.removeWhere((e) => e.configId == selectedConfigId.value);
+    final modelId = _currentModelId();
+    if (modelId == null) return;
 
-    selectedConfigId.value = rollbacks.first.configId;
+    final deleteId = _authStorage.read<String>('loginedId') ?? '';
 
-    // TODO: 서버 롤백 엔트리 삭제 API 호출
-    // await api.createRollback(modelId: mid, entry: newEntry);
+    final dynamic data = await _api.deleteConfig(
+      modelId: modelId,
+      configId: target.configId,
+      loginId: deleteId,
+      description: description,
+    );
+    // 데이터가 String이면 에러 메시지로 간주
+    if (data is String) {
+      final context = Get.context;
+      showAlert(context!, message: "Failed to Delete rollback.\nPlease retry or restart the server.");
+      return;
+    }
+
+    loadRollbacks();
   }
 
   // 선택
