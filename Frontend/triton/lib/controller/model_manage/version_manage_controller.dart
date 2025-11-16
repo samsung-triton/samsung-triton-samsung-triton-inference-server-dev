@@ -24,8 +24,7 @@ class VersionItem {
 class VersionManageController extends GetxController {
   // 버전 리스트 + 라디오 선택 버전
   final versions = <VersionItem>[].obs;
-  final selectedVersionId = RxnInt();
-  final selectedVersion = RxnInt();
+  final selectedVersion = Rxn<VersionItem>();
 
   // 공통 API 클라이언트 사용
   late final ApiClient _api;
@@ -41,21 +40,20 @@ class VersionManageController extends GetxController {
   }
 
   // 버전 목록 받기
-  void setVersions(List<VersionItem> items) {
-    versions.assignAll(items);
-    selectedVersion.value = versions.isNotEmpty ? versions.first.version : null;
-    selectedVersionId.value = versions.isNotEmpty ? versions.first.versionId : null;
+  void setVersions(List<VersionItem> versionList) {
+    versions.assignAll(versionList);
+    selectedVersion.value = versions.isNotEmpty ? versions.first : null;
   }
 
   // 버전 선택
-  void selectVersion(int versionId, int version) {
-    selectedVersion.value = version;
-    selectedVersionId.value = versionId;
+  void selectVersion(int versionId) {
+    if (selectedVersion.value?.versionId == versionId) return;
+    selectedVersion.value = versions.firstWhereOrNull((version) => version.versionId == versionId);
   }
 
   // 선택된 버전 삭제
   Future<void> deleteSelectedVersion(String description) async {
-    final version = selectedVersion.value;
+    final version = selectedVersion.value?.version;
     if (version == null) return;
 
     final context = Get.context;
@@ -87,11 +85,9 @@ class VersionManageController extends GetxController {
 
     // 첫 번째 버전 자동 선택
     if (versions.isNotEmpty) {
-      selectedVersion.value = versions.first.version;
-      selectedVersionId.value = versions.first.versionId;
+      selectedVersion.value = versions.first;
     } else {
       selectedVersion.value = null;
-      selectedVersionId.value = null;
     }
   }
 }
