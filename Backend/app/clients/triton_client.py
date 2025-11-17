@@ -21,6 +21,12 @@ class TritonClient:
         return self.client.unload_model(model_name=model_name)
 
     def is_model_ready(self, model_name: str, model_version: str | None = None) -> bool:
+        if model_version is None:
+            # Triton이 요구하는 기본값 ""
+            model_version = ""
+        else:
+            # 숫자로 넘어오면 강제 str()
+            model_version = str(model_version)
         return self.client.is_model_ready(model_name=model_name, model_version=model_version)
 
     def list_models(self) -> List[Dict]:
