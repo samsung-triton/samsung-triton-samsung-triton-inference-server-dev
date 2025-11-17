@@ -56,11 +56,15 @@ class ServerLogController extends GetxController {
 
   // 필터 입력값
   final serverName = ''.obs;
-  final logType = ''.obs;
-  final sort = ''.obs;
+  final logType = RxnString(); //null 허용
+  final sort = RxnString();
   final keyword = ''.obs;
   final startDate = Rxn<DateTime>();
   final endDate = Rxn<DateTime>();
+
+  String get safeLogType => logType.value ?? ""; //null 안전하게 처리
+  String get safeSort => sort.value ?? "";
+  String get safeKeyword => keyword.value;
 
   /// 필터링 결과 (UI에 바인딩)
   final filteredLogs = <ServerLogItem>[].obs;
@@ -89,13 +93,11 @@ class ServerLogController extends GetxController {
     final end = _formatDate(endDate.value!);
 
     try {
-      final usernameFilter = sort.value == 'user name' ? keyword.value : "";
+      final typeFilter = logType.value ?? "";
 
-      final descriptionFilter = sort.value == 'description' ? keyword.value : "";
-
-      final grobalSearchFilter = sort.value == 'all' ? keyword.value : "";
-
-      final typeFilter = logType.value.isEmpty ? "" : logType.value;
+      final usernameFilter = safeSort == 'user name' ? safeKeyword : "";
+      final descriptionFilter = safeSort == 'description' ? safeKeyword : "";
+      final grobalSearchFilter = safeSort == 'all' ? safeKeyword : "";
 
       final dynamic data = await _api.getApiLog(
         startDate: start,
@@ -126,6 +128,16 @@ class ServerLogController extends GetxController {
         await showAlert(ctx, title: "Notification", message: "Failed to retrieve server logs.");
       }
     }
+  }
+
+  void resetFilter() {
+    // 리셋될 때도 디폴트값 지정
+    final now = DateTime.now();
+    startDate.value = DateTime(now.year, now.month, now.day, 0, 0, 0);
+    endDate.value = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    logType.value = '';
+    sort.value = 'all';
+    keyword.value = '';
   }
 }
 
