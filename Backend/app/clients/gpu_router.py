@@ -12,8 +12,7 @@ from app.core.config import settings, TIMEZONE
 
 def _run_compose(cmd: str, error_code, error_msg):
     try:
-        result = subprocess.run(cmd, shell=True, check=True,
-                                capture_output=True, text=True)
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         raise CustomHTTPException(
@@ -31,8 +30,7 @@ async def get_triton_status():
     """Triton 컨테이너 상태 조회"""
     try:
         cmd = f"docker inspect {settings.TRITON_CONTAINER_NAME}"
-        result = subprocess.run(cmd, shell=True,
-                                capture_output=True, text=True)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
         if result.returncode != 0 or not result.stdout.strip():
             return create_response(
@@ -49,11 +47,7 @@ async def get_triton_status():
         # 변환
         started_at = None
         if started_at_raw and started_at_raw != "0001-01-01T00:00:00Z":
-            started_at = (
-                datetime.fromisoformat(started_at_raw.replace("Z", "+00:00"))
-                .astimezone(TIMEZONE)
-                .isoformat()
-            )
+            started_at = datetime.fromisoformat(started_at_raw.replace("Z", "+00:00")).astimezone(TIMEZONE).isoformat()
 
         # running == ready 로 통일
         status_str = "ready" if is_running else "stopped"
@@ -87,9 +81,8 @@ async def start_triton():
             {"status": "ready"},
         )
 
-    cmd = f"docker compose {_compose_path()} up -d"
-    _run_compose(cmd, CustomCode.DOCKER_ERROR.value,
-                 Messages.SERVER_START_ERROR.value)
+    cmd = f"docker compose -f {_compose_path()} up -d"
+    _run_compose(cmd, CustomCode.DOCKER_ERROR.value, Messages.SERVER_START_ERROR.value)
 
     return create_response(
         CustomCode.DOCKER_006.value,
@@ -102,9 +95,8 @@ async def start_triton():
 
 
 async def stop_triton():
-    cmd = f"docker compose {_compose_path()} down"
-    _run_compose(cmd, CustomCode.DOCKER_ERROR.value,
-                 Messages.SERVER_STOP_ERROR.value)
+    cmd = f"docker compose -f {_compose_path()} down"
+    _run_compose(cmd, CustomCode.DOCKER_ERROR.value, Messages.SERVER_STOP_ERROR.value)
 
     return create_response(
         CustomCode.DOCKER_002.value,
@@ -114,9 +106,8 @@ async def stop_triton():
 
 
 async def restart_triton():
-    cmd = f"docker compose {_compose_path()} restart"
-    _run_compose(cmd, CustomCode.DOCKER_ERROR.value,
-                 Messages.SERVER_RESTART_ERROR.value)
+    cmd = f"docker compose -f {_compose_path()} restart"
+    _run_compose(cmd, CustomCode.DOCKER_ERROR.value, Messages.SERVER_RESTART_ERROR.value)
 
     return create_response(
         CustomCode.DOCKER_003.value,
