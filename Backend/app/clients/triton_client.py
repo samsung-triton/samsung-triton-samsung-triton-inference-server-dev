@@ -22,12 +22,11 @@ class TritonClient:
 
     def is_model_ready(self, model_name: str, model_version: str | None = None) -> bool:
         if model_version is None:
-            # Triton이 요구하는 기본값 ""
-            model_version = ""
-        else:
-            # 숫자로 넘어오면 강제 str()
-            model_version = str(model_version)
-        return self.client.is_model_ready(model_name=model_name, model_version=model_version)
+            # 버전 인자를 아예 전달하지 않아야 Triton이 기본 버전 체크로 동작함
+            return self.client.is_model_ready(model_name=model_name)
+
+        # 버전이 있으면 string으로 변환
+        return self.client.is_model_ready(model_name=model_name, model_version=str(model_version))
 
     def list_models(self) -> List[Dict]:
         return self.client.get_model_repository_index(as_json=True)
