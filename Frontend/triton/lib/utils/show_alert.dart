@@ -1,48 +1,26 @@
-// 알람 모달
-import 'package:flutter/material.dart';
-import 'package:triton/theme/app_colors.dart';
-import 'package:triton/theme/typography.dart';
-import 'package:triton/widgets/button/button_large.dart';
+// lib/utils/global_alert.dart
+import 'package:get/get.dart';
 
-Future<void> showAlert(BuildContext context, {String title = 'Notification', required String message}) {
-  return showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) {
-      return Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 제목
-                Text(
-                  title,
-                  style: T.t20(bold: true, color: darkGray),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
+class ShowAlert {
+  // 전역 상태 (컨트롤러 없이 static Rx)
+  static final RxBool _isVisible = false.obs;
+  static final RxString _title = 'Notification'.obs;
+  static final RxString _message = ''.obs;
 
-                // 내용
-                Text(
-                  message,
-                  style: T.t16(color: darkGray),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
+  // 읽기용 getter
+  static RxBool get isVisible => _isVisible;
+  static RxString get title => _title;
+  static RxString get message => _message;
 
-                // 확인 버튼
-                ButtonLarge(text: "OK", onPressed: () => Navigator.of(ctx).pop()),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
+  // 보여주기
+  static void show({String title = 'Notification', required String message}) {
+    _title.value = title;
+    _message.value = message;
+    _isVisible.value = true;
+  }
+
+  // 숨기기
+  static void hide() {
+    _isVisible.value = false;
+  }
 }
