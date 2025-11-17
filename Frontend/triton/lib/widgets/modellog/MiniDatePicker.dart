@@ -7,17 +7,38 @@ import 'package:triton/theme/typography.dart';
 class MiniDatePicker extends StatefulWidget {
   final ValueChanged<DateTime>? onDateSelected;
   final DateTime? firstDate;
+  final DateTime? initialDate; // UI에 표시될 날짜 (Controller가 관리)
 
-  const MiniDatePicker({super.key, this.onDateSelected, this.firstDate});
+  const MiniDatePicker({super.key, this.onDateSelected, this.firstDate, this.initialDate});
 
   @override
   State<MiniDatePicker> createState() => _MiniDatePickerState();
 }
 
 class _MiniDatePickerState extends State<MiniDatePicker> {
-  final GlobalKey _buttonKey = GlobalKey(); // 버튼 위치 계산용 Key
-  DateTime? selectedDate = DateTime.now();
+  final GlobalKey _buttonKey = GlobalKey();
+
+  DateTime? selectedDate;
+
   OverlayEntry? _overlayEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedDate = widget.initialDate; // 초기날짜 반영
+  }
+
+  @override
+  void didUpdateWidget(covariant MiniDatePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // 외부에서 값이 바뀌면 UI 갱신
+    if (widget.initialDate != oldWidget.initialDate) {
+      setState(() {
+        selectedDate = widget.initialDate;
+      });
+    }
+  }
 
   void _toggleCalendar() {
     if (_overlayEntry != null) {
@@ -34,18 +55,17 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
     _overlayEntry = OverlayEntry(
       builder: (context) => Stack(
         children: [
-          // 전체 화면 클릭 감지용 반투명 배경 (달력 닫기)
           Positioned.fill(
             child: GestureDetector(
-              behavior: HitTestBehavior.translucent, // 빈 공간 클릭도 감지
               onTap: _removeOverlay,
-              child: Container(color: Colors.transparent), // 투명 배경
+              behavior: HitTestBehavior.translucent,
+              child: Container(color: Colors.transparent),
             ),
           ),
 
           Positioned(
             left: offset.dx,
-            top: offset.dy + renderBox.size.height - 44, //버튼의 위치를 제대로 잡지 못해서 위치 수동으로 조정
+            top: offset.dy + renderBox.size.height - 44,
             child: Material(
               color: Colors.transparent,
               child: Container(
@@ -81,8 +101,8 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
                     outsideTextStyle: TextStyle(fontSize: 10, color: gray),
                     disabledTextStyle: TextStyle(fontSize: 10, color: lightGray),
                     isTodayHighlighted: true,
-                    selectedDecoration: BoxDecoration(color: primaryNormal, shape: BoxShape.rectangle),
-                    todayDecoration: BoxDecoration(color: lightGray, shape: BoxShape.rectangle),
+                    selectedDecoration: BoxDecoration(color: primaryNormal),
+                    todayDecoration: BoxDecoration(color: lightGray),
                     selectedTextStyle: TextStyle(fontSize: 11, color: white),
                   ),
                   daysOfWeekStyle: const DaysOfWeekStyle(
@@ -96,7 +116,6 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
                     });
 
                     widget.onDateSelected?.call(selected);
-
                     _removeOverlay(); // 날짜 선택 시 닫기
                   },
                 ),
@@ -117,13 +136,10 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (selectedDate != null) widget.onDateSelected?.call(selectedDate!);
-    });
     return GestureDetector(
       onTap: _toggleCalendar,
       child: Container(
-        key: _buttonKey, // 버튼 위치 추적용 Key
+        key: _buttonKey,
         height: 28,
         width: 200,
         padding: const EdgeInsets.symmetric(horizontal: 8),

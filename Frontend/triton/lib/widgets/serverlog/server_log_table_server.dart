@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/serverlog/server_log_table_row.dart';
 import 'package:triton/widgets/serverlog/server_log_table_header.dart';
 import 'package:triton/controller/server_log/server_log_controller.dart';
 
-class ServerLogTable extends StatelessWidget {
-  const ServerLogTable({super.key});
+class ServerLogTableServer extends StatelessWidget {
+  const ServerLogTableServer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -44,23 +43,14 @@ class ServerLogTable extends StatelessWidget {
               return RawScrollbar(
                 thumbColor: lightGray, // 스크롤 색상 지정
                 radius: const Radius.circular(4), // 둥근 모서리
-                thickness: 8, // ✅ 두께
+                thickness: 8, // 두께
                 thumbVisibility: false, // 항상 보이게
                 interactive: true, // 드래그로 스크롤 가능
                 child: ListView.builder(
                   itemCount: logs.length,
                   itemBuilder: (context, i) {
                     final log = logs[i];
-                    return ServerLogTableRow(
-                      log: {
-                        // 기존 구조에 맞게 변환
-                        'username': log['username'],
-                        'date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.parse(log['date'])), //출력 파싱
-                        'type': log['type'],
-                        'detail': log['detail'],
-                        'description': log['description'],
-                      },
-                    );
+                    return ServerLogTableRow(log: log);
                   },
                 ),
               );
