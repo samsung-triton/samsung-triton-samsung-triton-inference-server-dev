@@ -12,7 +12,7 @@ from app.models.user import User
 from app.core.customException import CustomHTTPException
 
 
-def get_api_log_service(start_date, end_date, username, type, description, db: Session) -> BaseResponse:
+def get_api_log_service(start_date, end_date, username, type, description, global_search, db: Session) -> BaseResponse:
 
     start_dt = datetime.combine(start_date, datetime.min.time())
     end_dt = datetime.combine(end_date, datetime.max.time())
@@ -64,11 +64,21 @@ def get_api_log_service(start_date, end_date, username, type, description, db: S
 
     final_list = server_result + release_result
 
-    if username:
-        final_list = [log for log in final_list if log.get("username") and username in log["username"]]
+    if global_search:
+        # name이나 description 에서 부문 문자열이 있다면 그 행은 가져오기
+        final_list = [
+            log
+            for log in final_list
+            if (log.get("username") and global_search in log["username"])
+            or (log.get("description") and global_search in log["description"])
+        ]
 
-    if description:
-        final_list = [log for log in final_list if log.get("description") and description in log["description"]]
+    else:
+        if username:
+            final_list = [log for log in final_list if log.get("username") and username in log["username"]]
+
+        if description:
+            final_list = [log for log in final_list if log.get("description") and description in log["description"]]
     if type:
         final_list = [log for log in final_list if type in log["type"]]
 
