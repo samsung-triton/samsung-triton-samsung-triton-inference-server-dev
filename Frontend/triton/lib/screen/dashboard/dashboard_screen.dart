@@ -5,14 +5,42 @@ import 'package:triton/widgets/dashboard/dashboard_sidebar.dart';
 import 'package:triton/widgets/dashboard/model_dashboard_panel.dart';
 import 'package:triton/widgets/dashboard/server_dashboard_panel.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // ✅ DashboardController만 등록
-    final dashboardController = Get.put(DashboardController());
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
 
+class _DashboardScreenState extends State<DashboardScreen> {
+  late final DashboardController dashboardController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 이전 컨트롤러가 살아있으면 제거
+    if (Get.isRegistered<DashboardController>()) {
+      Get.delete<DashboardController>(force: true);
+    }
+
+    // 🔥 Controller 등록
+    dashboardController = Get.put(DashboardController());
+
+    // 🔥 Dashboard 화면 들어오면 polling 시작
+    dashboardController.startPolling();
+  }
+
+  @override
+  void dispose() {
+    // 🔥 Dashboard 화면 벗어나면 polling 중단
+    dashboardController.stopPolling();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Row(
@@ -26,7 +54,7 @@ class DashboardScreen extends StatelessWidget {
                   return const ServerDashboardPanel();
                 case DashboardType.model:
                 case DashboardType.ensemble:
-                  return const ModelDashboardPanel(); // ensemble은 일단 공용 처리
+                  return const ModelDashboardPanel();
               }
             }),
           ),

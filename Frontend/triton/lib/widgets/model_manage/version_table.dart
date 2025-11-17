@@ -28,8 +28,7 @@ class VersionTable extends StatelessWidget {
         confirmMsg: "Are you sure you want to delete it?",
         onOK: () async {
           final versionManageController = Get.find<VersionManageController>();
-          // TODO: 추후 descCtrl 글자 추가
-          await versionManageController.deleteSelectedVersion();
+          await versionManageController.deleteSelectedVersion(descCtrl.text);
           descCtrl.dispose();
         },
       ),
@@ -41,8 +40,34 @@ class VersionTable extends StatelessWidget {
     final versionManageController = Get.find<VersionManageController>();
 
     return Obx(() {
-      final items = versionManageController.versions;
-      final selectedId = versionManageController.selectedVersionId.value;
+      final versions = versionManageController.versions;
+      int? selectedId = versionManageController.selectedVersion.value?.versionId;
+
+      if (versions.isEmpty) {
+        selectedId = null;
+
+        Future.microtask(() {
+          versionManageController.selectedVersion.value = null;
+        });
+      } else {
+        // 선택된 ID가 현재 리스트에 없으면 안전하게 재선택
+        if (selectedId != null && !versions.any((version) => version.versionId == selectedId)) {
+          selectedId = null; // 로컬에서는 우선 해제
+
+          Future.microtask(() {
+            // 목록이 비지 않으므로 첫 번째 버전을 기본 선택으로
+            versionManageController.selectedVersion.value = versions.first;
+          });
+        }
+
+        // 아무것도 선택 안 돼 있으면 첫 번째 버전을 기본 선택으로
+        if (selectedId == null && versionManageController.selectedVersion.value == null) {
+          Future.microtask(() {
+            versionManageController.selectedVersion.value = versions.first;
+          });
+          selectedId = versions.first.versionId;
+        }
+      }
 
       return SizedBox(
         width: double.infinity,
@@ -98,19 +123,19 @@ class VersionTable extends StatelessWidget {
                   groupValue: selectedId,
                   onChanged: (int? id) {
                     if (id == null) return;
-                    final row = items.firstWhere((e) => e.versionId == id);
-                    versionManageController.selectVersion(row.versionId, row.version);
+                    final row = versions.firstWhere((e) => e.versionId == id);
+                    versionManageController.selectVersion(row.versionId);
                   },
                   child: Scrollbar(
                     thumbVisibility: true,
                     child: ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      itemCount: items.length,
+                      itemCount: versions.length,
                       separatorBuilder: (_, __) => const Divider(height: 1, thickness: 1, color: primaryLightest),
                       itemBuilder: (context, i) {
-                        final row = items[i];
+                        final row = versions[i];
                         final isSelected = selectedId == row.versionId;
-                        return VersionListRow(item: row, isSelected: isSelected);
+                        return VersionListRow(key: ValueKey(row.versionId), item: row, isSelected: isSelected);
                       },
                     ),
                   ),

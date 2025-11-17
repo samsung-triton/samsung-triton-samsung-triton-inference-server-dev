@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 
 // 앱 전체에서 공통으로 사용하는 API 클라이언트.
 class ApiClient extends GetConnect {
-  static const String _baseUrl = 'http://163.5.212.63:39890';
+  static const String _baseUrl = 'http://213.181.122.2:53617';
 
   @override
   void onInit() {
@@ -26,12 +26,6 @@ class ApiClient extends GetConnect {
   /// Post 요청 공통 래퍼
   Future<dynamic> _postJson(String path, dynamic body, {String? apiName}) async {
     final res = await post(path, body, contentType: 'application/json');
-    return _unwrapResponse(res, apiName ?? path);
-  }
-
-  /// Patch 요청 공통 래퍼
-  Future<dynamic> _patchJson(String path, dynamic body, {String? apiName}) async {
-    final res = await patch(path, body, contentType: 'application/json');
     return _unwrapResponse(res, apiName ?? path);
   }
 
@@ -116,18 +110,33 @@ class ApiClient extends GetConnect {
     return _get('/api/v1/dashboard/server/timeseries', apiName: 'getServerTimeSeries');
   }
 
+  // GET /api/v1/models/standard-time
+  Future<dynamic> getStandardTime() {
+    return _get('/api/v1/models/standard-time', apiName: 'getStandardTime');
+  }
+
+  // POST /api/v1/models/standard-time
+  Future<dynamic> updateStandardTime(String newTime) {
+    return _postJson('/api/v1/models/standard-time?new_time=$newTime', null, apiName: 'updateStandardTime');
+  }
+
   // ---------------------------------------------------------------------------
   // 모델 대시보드 (Model Dashboard)
   // ---------------------------------------------------------------------------
 
-  // 모델 통계 (inference count, success, fail 등)
-  Future<dynamic> getModelStats({required String modelName}) {
-    return _get('/api/v1/dashboard/model/stats?model_name=$modelName', apiName: 'getModelStats');
+  // 대시보드용 모델 목록 조회
+  Future<dynamic> getDashboardModelList() {
+    return _get('/api/v1/dashboard/models', apiName: 'getDashboardModelList');
   }
 
-  // 모델 latency timeseries
-  Future<dynamic> getModelLatency({required String modelName}) {
-    return _get('/api/v1/dashboard/model/latency?model_name=$modelName', apiName: 'getModelLatency');
+  // 모델 통계 조회
+  Future<dynamic> getDashboardModelStats(int modelId) {
+    return _get('/api/v1/dashboard/model/$modelId/stats', apiName: 'getDashboardModelStats');
+  }
+
+  // 모델 레이턴시 조회 (timeseries)
+  Future<dynamic> getDashboardModelLatency(int modelId) {
+    return _get('/api/v1/dashboard/model/$modelId/latency', apiName: 'getDashboardModelLatency');
   }
 
   // ---------------------------------------------------------------------------
@@ -200,7 +209,7 @@ class ApiClient extends GetConnect {
     required String description,
     required String configContent,
   }) {
-    return _patchJson(
+    return _postJson(
       '/api/v1/models/$modelId/config/apply',
       jsonEncode({'loginId': loginId, 'description': description, 'configContent': configContent}),
       apiName: 'applyConfig',
@@ -220,5 +229,31 @@ class ApiClient extends GetConnect {
       body: jsonEncode({'loginId': loginId, 'description': description}),
       apiName: 'deleteConfig',
     );
+  }
+
+  //Serverlog - server 로그 조회 & 필터링
+  Future<List<dynamic>> getApiLog({
+    required String startDate,
+    required String endDate,
+    String? username,
+    String? type,
+    String? description,
+    String? grobalSearch,
+  }) async {
+    final res = await _requestRaw(
+      '/api/v1/logs/api',
+      'POST',
+      body: jsonEncode({
+        'start_date': startDate,
+        'end_date': endDate,
+        'username': username,
+        'type': type,
+        'description': description,
+        'global_search': grobalSearch,
+      }),
+      apiName: 'getApiLog',
+    );
+    final logs = (res['logs'] as List?) ?? [];
+    return logs;
   }
 }

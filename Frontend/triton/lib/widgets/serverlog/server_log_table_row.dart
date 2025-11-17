@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:triton/controller/server_log/server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 
 class ServerLogTableRow extends StatelessWidget {
-  final Map<String, String> log;
+  final ServerLogItem log;
   const ServerLogTableRow({super.key, required this.log});
 
   @override
@@ -16,11 +17,10 @@ class ServerLogTableRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start, // 여러 줄일 때 위로 정렬
         children: [
-          _textCell(log['date']!, width: 150),
-          _textCell(log['type']!, width: 100),
-          _textCell(log['username']!, width: 100),
-          _textCell(log['detail']!, width: 150),
-          _textCell(log['description']!, expanded: true, textAlign: TextAlign.left),
+          _textCell(log.date, width: 150),
+          _textCell(log.type, width: 150),
+          _textCell(log.username, width: 150),
+          _textCell(log.description, expanded: true, textAlign: TextAlign.left),
         ],
       ),
     );

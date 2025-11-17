@@ -1,6 +1,7 @@
 // 컨피그 에디터 헤더
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:triton/widgets/modal/modal_description.dart';
 
 import '../../controller/model_manage/config_controller.dart';
 
@@ -17,17 +18,34 @@ class EditorHeader extends StatelessWidget {
   const EditorHeader({super.key});
 
   // 롤백 모달 열기
-  Future<void> _openRegisterModal(BuildContext context) async {
+  Future<void> _openRollbackModal(BuildContext context) async {
     final codeEditorController = Get.find<ConfigController>();
 
     await codeEditorController.loadRollbacks();
     ModalPortal.open(context, builder: (dialogContext) => const ModalRollback());
   }
 
+  // 저장 모달 열기
+  void _openSaveModal(BuildContext context) {
+    final descCtrl = TextEditingController();
+
+    ModalPortal.open(
+      context,
+      builder: (dialogCtx) => ModalDescription(
+        descCtrl: descCtrl,
+        confirmMsg: "Are you sure you want to save it?",
+        onOK: () async {
+          final codeEditorController = Get.find<ConfigController>();
+          await codeEditorController.save(descCtrl.text);
+          descCtrl.dispose();
+          _openRollbackModal(context);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final codeEditorController = Get.find<ConfigController>();
-
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -38,10 +56,10 @@ class EditorHeader extends StatelessWidget {
           const Spacer(),
 
           // 롤백 버튼
-          ButtonLarge(onPressed: () => _openRegisterModal(context), text: 'rollback', backgroundColor: primaryNormal),
+          ButtonLarge(onPressed: () => _openRollbackModal(context), text: 'rollback', backgroundColor: primaryNormal),
           const SizedBox(width: 10),
           // 저장 버튼
-          ButtonLarge(onPressed: () => codeEditorController.save, text: 'save', backgroundColor: primaryNormal),
+          ButtonLarge(onPressed: () => _openSaveModal(context), text: 'save', backgroundColor: primaryNormal),
         ],
       ),
     );
