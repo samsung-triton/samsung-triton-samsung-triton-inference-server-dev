@@ -3,40 +3,39 @@ import 'package:get/get.dart';
 import 'package:triton/widgets/sidebar/sidebar_base.dart';
 import 'package:triton/widgets/dashboard/common_sidebar_card.dart';
 import 'package:triton/controller/dashboard/dashboard_controller.dart';
-import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
 
 class DashboardSidebar extends StatelessWidget {
   const DashboardSidebar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // ✅ 이제 DashboardController만 사용
     final controller = Get.find<DashboardController>();
-    final serverCtrl = Get.find<ServerDashboardController>();
 
     return Obx(() {
-      final serverCtrl = Get.find<ServerDashboardController>();
-
       return SidebarBase(
         children: [
-          // Server Header
+          // ───────────────────────────────
+          // Triton Server Header
+          // ───────────────────────────────
           CommonSidebarCard(
             type: SidebarCardType.header,
             title: 'Triton Server',
             active: controller.selectedType.value == DashboardType.server,
-            onTap: () => controller.changeType(DashboardType.server, item: 'server'),
+            onTap: () => controller.changeType(DashboardType.server),
           ),
 
-          // 🔥 Model cards (dynamic)
-          ...serverCtrl.metrics.value.models.map((m) {
+          // ───────────────────────────────
+          // 모델 목록 (대시보드 모델 리스트 API 기반)
+          // ───────────────────────────────
+          ...controller.modelList.map((m) {
             return CommonSidebarCard(
               type: SidebarCardType.normal,
-              title: m.name,
-              status: m.percent > 90, // 예시: 90% 이상이면 green
-              active: controller.selectedItem.value == m.key,
-              current: m.success,
-              total: m.total,
-              onTap: () => controller.changeType(DashboardType.model, item: m.key),
+              title: m.modelName,
+              status: m.okRatio > 0.9,
+              active: controller.selectedModelId.value == m.modelId,
+              current: m.inferenceOk,
+              total: m.inferenceTotal,
+              onTap: () => controller.changeType(DashboardType.model, modelId: m.modelId),
             );
           }).toList(),
         ],
