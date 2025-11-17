@@ -45,7 +45,12 @@ class _ServerLogHeaderState extends State<ServerLogHeader> with SingleTickerProv
                     hintText: "server name",
                     onChanged: (value) {
                       controller.serverName.value = value ?? '';
-                      controller.applyFilter(); // 즉시 필터링 실행
+
+                      if (value == "triton") {
+                        controller.applyFilter();
+                      } else if (value == "server") {
+                        controller.applyFilter();
+                      }
                     },
                   ),
                   const SizedBox(width: 12),
@@ -54,17 +59,23 @@ class _ServerLogHeaderState extends State<ServerLogHeader> with SingleTickerProv
               ),
 
               // 오른쪽: filter 토글
-              GestureDetector(
-                onTap: () => setState(() => _isFilterOpen = !_isFilterOpen),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(_isFilterOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: black, size: 24),
-                    const SizedBox(width: 2),
-                    Text("filter", style: T.t16(color: black)),
-                  ],
-                ),
-              ),
+              Obx(() {
+                if (controller.serverName.value.isEmpty) {
+                  return const SizedBox.shrink(); // server name 선택 전에는 숨김
+                }
+
+                return GestureDetector(
+                  onTap: () => setState(() => _isFilterOpen = !_isFilterOpen),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_isFilterOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: black, size: 24),
+                      const SizedBox(width: 2),
+                      Text("filter", style: T.t16(color: black)),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         ),
@@ -79,14 +90,11 @@ class _ServerLogHeaderState extends State<ServerLogHeader> with SingleTickerProv
 
                   if (server == 'triton') {
                     return const FilterBlockTriton();
-                  } else if (server == 'server') {
-                    return const FilterBlockServer();
-                  } else {
-                    return Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Text('Please select a server.', style: T.t12(color: gray, bold: false)),
-                    );
                   }
+                  if (server == 'server') {
+                    return const FilterBlockServer();
+                  }
+                  return const SizedBox.shrink();
                 })
               : const SizedBox.shrink(),
         ),
