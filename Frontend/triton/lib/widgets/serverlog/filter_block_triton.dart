@@ -66,7 +66,7 @@ class FilterBlockTriton extends StatelessWidget {
               SizedBox(width: 8),
               Dropdown(
                 //현재 연결 안되어있음
-                items: ['trtiton', '입니다'],
+                items: ['trtiton', 'filter는', '로그가나오면', '수정예정이에요'],
                 width: 200,
                 hintText: 'selcct logtype',
                 //onChanged: / {},
@@ -91,7 +91,7 @@ class FilterBlockTriton extends StatelessWidget {
                 onPressed: () {
                   final keyword = keywordCtrl.text.trim();
                   controller.keyword.value = keyword;
-                  controller.applyFilter();
+                  //controller.applyFilterTriton();
                 },
               ),
             ],
