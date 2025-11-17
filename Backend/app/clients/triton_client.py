@@ -20,8 +20,8 @@ class TritonClient:
     def unload_model(self, model_name: str):
         return self.client.unload_model(model_name=model_name)
 
-    def is_model_ready(self, model_name: str) -> bool:
-        return self.client.is_model_ready(model_name)
+    def is_model_ready(self, model_name: str, model_version: str | None = None) -> bool:
+        return self.client.is_model_ready(model_name=model_name, model_version=model_version)
 
     def list_models(self) -> List[Dict]:
         return self.client.get_model_repository_index(as_json=True)
