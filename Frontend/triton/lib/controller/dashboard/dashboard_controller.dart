@@ -167,7 +167,7 @@ class DashboardController extends GetxController {
 
           if (item != null) {
             try {
-              await modelCtrl.fetchAll(item.modelName); // 🔥 기존 구조 유지
+              await modelCtrl.fetchAll(item.modelId.toString()); // 🔥 기존 구조 유지
             } catch (e) {
               print("❌ ModelDashboard fetch 실패: $e");
             }
