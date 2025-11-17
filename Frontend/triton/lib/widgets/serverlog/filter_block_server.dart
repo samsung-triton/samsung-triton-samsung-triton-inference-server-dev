@@ -59,7 +59,7 @@ class FilterBlockServer extends StatelessWidget {
             ],
           ),
 
-          // 2행: log level
+          // 2행: log type
           Row(
             children: [
               FilterText(label: 'log type'),
@@ -81,7 +81,9 @@ class FilterBlockServer extends StatelessWidget {
                 ],
                 width: 200,
                 hintText: 'selcct logtype',
-                //onChanged: / {},
+                onChanged: (value) {
+                  controller.logType.value = value ?? '';
+                },
               ),
             ],
           ),
