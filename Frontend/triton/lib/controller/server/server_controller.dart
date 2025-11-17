@@ -66,7 +66,22 @@ class ServerController extends GetxController {
       isBusy.value = true;
       lastError.value = '';
 
-      serverStatus.value = const ServerStatus(status: "stopped", startedAt: null);
+      final data = await _api.getServerStatus();
+
+      final status = data['status'] ?? 'unknown'; // ready / not_ready
+
+      final startedAtString = data['started_at'] ?? data['startedAt'];
+      final hasStartedAt = startedAtString != null && startedAtString.isNotEmpty;
+
+      // 서버가 ready 상태이고 startedAt도 있을 때만 running
+      final isRunning = status == 'ready' && hasStartedAt;
+
+      DateTime? startedAt;
+      if (isRunning) {
+        startedAt = DateTime.tryParse(startedAtString!);
+      }
+
+      serverStatus.value = ServerStatus(status: isRunning ? 'running' : 'stopped', startedAt: startedAt);
     } catch (e) {
       lastError.value = '상태 조회 실패: $e';
       serverStatus.value = null;
