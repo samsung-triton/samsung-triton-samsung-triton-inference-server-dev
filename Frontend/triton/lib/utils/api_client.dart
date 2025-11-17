@@ -232,24 +232,28 @@ class ApiClient extends GetConnect {
   }
 
   //Serverlog - server 로그 조회 & 필터링
-  Future<dynamic> getApiLog({
-    required int startDate,
+  Future<List<dynamic>> getApiLog({
+    required String startDate,
     required String endDate,
     String? username,
     String? type,
     String? description,
-  }) {
-    return _requestRaw(
+    String? grobalSearch,
+  }) async {
+    final res = await _requestRaw(
       '/api/v1/logs/api',
       'POST',
       body: jsonEncode({
-        'startDate': startDate,
-        'endDate': endDate,
+        'start_date': startDate,
+        'end_date': endDate,
         'username': username,
         'type': type,
         'description': description,
+        'global_search': grobalSearch,
       }),
       apiName: 'getApiLog',
     );
+    final logs = (res['logs'] as List?) ?? [];
+    return logs;
   }
 }
