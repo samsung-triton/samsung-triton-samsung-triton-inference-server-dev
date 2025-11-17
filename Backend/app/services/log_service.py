@@ -65,7 +65,8 @@ def get_api_log_service(start_date, end_date, username, type, description, db: S
     final_list = server_result + release_result
 
     if username:
-        final_list = [log for log in final_list if log["username"] == username]
+        final_list = [log for log in final_list if log.get("username") and username in log["username"]]
+
     if description:
         final_list = [log for log in final_list if log.get("description") and description in log["description"]]
     if type:
