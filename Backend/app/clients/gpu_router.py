@@ -81,7 +81,7 @@ async def start_triton():
             {"status": "ready"},
         )
 
-    cmd = f"docker compose -f {_compose_path()} up -d"
+    cmd = f"docker compose {_compose_path()} up -d"
     _run_compose(cmd, CustomCode.DOCKER_ERROR.value, Messages.SERVER_START_ERROR.value)
 
     return create_response(
@@ -95,7 +95,7 @@ async def start_triton():
 
 
 async def stop_triton():
-    cmd = f"docker compose -f {_compose_path()} down"
+    cmd = f"docker compose {_compose_path()} down"
     _run_compose(cmd, CustomCode.DOCKER_ERROR.value, Messages.SERVER_STOP_ERROR.value)
 
     return create_response(
@@ -106,7 +106,7 @@ async def stop_triton():
 
 
 async def restart_triton():
-    cmd = f"docker compose -f {_compose_path()} restart"
+    cmd = f"docker compose {_compose_path()} restart"
     _run_compose(cmd, CustomCode.DOCKER_ERROR.value, Messages.SERVER_RESTART_ERROR.value)
 
     return create_response(
