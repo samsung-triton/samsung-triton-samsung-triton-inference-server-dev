@@ -9,6 +9,22 @@ import 'package:triton/widgets/modellog/dropdown.dart';
 class CommonMetricHeaderBar extends StatelessWidget {
   const CommonMetricHeaderBar({super.key});
 
+  // 🔹 일반 계정용 Fake Dropdown (모양만, 클릭 불가)
+  Widget _fakeDropdown(String text, double width) {
+    return Container(
+      width: width,
+      height: 28,
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: white,
+        border: Border.all(color: lightGray, width: 1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(text, style: T.t12(color: gray, bold: false)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboardController = Get.find<dash.DashboardController>();
@@ -25,55 +41,105 @@ class CommonMetricHeaderBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ✅ 왼쪽: Reset Time 설정 영역 (그대로 유지)
-          Row(
-            children: [
-              Text("Reset Time", style: T.t16(color: primaryDarker, bold: true)),
-              const SizedBox(width: 8),
-              Dropdown(
-                width: 76,
-                items: const [
-                  '00',
-                  '01',
-                  '02',
-                  '03',
-                  '04',
-                  '05',
-                  '06',
-                  '07',
-                  '08',
-                  '09',
-                  '10',
-                  '11',
-                  '12',
-                  '13',
-                  '14',
-                  '15',
-                  '16',
-                  '17',
-                  '18',
-                  '19',
-                  '20',
-                  '21',
-                  '22',
-                  '23',
-                ],
-                hintText: '06',
-              ),
-              const SizedBox(width: 4),
-              Dropdown(width: 76, items: const ['00', '10', '20', '30', '40', '50'], hintText: '30'),
-            ],
-          ),
+          /// ------------------------------------------
+          /// 🔹 왼쪽 영역 (Reset Time)
+          /// ------------------------------------------
+          Obx(() {
+            final isDevel = dashboardController.isDevel;
+            final hourText = dashboardController.resetHour.value.toString().padLeft(2, '0');
+            final minuteText = dashboardController.resetMinute.value.toString().padLeft(2, '0');
 
-          // ✅ 오른쪽: Last Updated + Update 버튼
+            return Row(
+              children: [
+                Text("Reset Time", style: T.t16(color: primaryDarker, bold: true)),
+                const SizedBox(width: 8),
+
+                /// 🔹 Hour Dropdown
+                isDevel
+                    ? Dropdown(
+                        width: 76,
+                        items: const [
+                          '00',
+                          '01',
+                          '02',
+                          '03',
+                          '04',
+                          '05',
+                          '06',
+                          '07',
+                          '08',
+                          '09',
+                          '10',
+                          '11',
+                          '12',
+                          '13',
+                          '14',
+                          '15',
+                          '16',
+                          '17',
+                          '18',
+                          '19',
+                          '20',
+                          '21',
+                          '22',
+                          '23',
+                        ],
+                        hintText: hourText,
+                        onChanged: (value) {
+                          dashboardController.setResetHour(value!);
+                        },
+                      )
+                    : _fakeDropdown(hourText, 76),
+
+                const SizedBox(width: 4),
+
+                /// 🔹 Minute Dropdown
+                isDevel
+                    ? Dropdown(
+                        width: 76,
+                        items: const ['00', '10', '20', '30', '40', '50'],
+                        hintText: minuteText,
+                        onChanged: (value) {
+                          dashboardController.setResetMinute(value!);
+                        },
+                      )
+                    : _fakeDropdown(minuteText, 76),
+
+                /// 🔹 Apply 버튼 (DEVEL만 표시)
+                if (isDevel) const SizedBox(width: 8),
+                if (isDevel)
+                  SizedBox(
+                    height: 28,
+                    child: ElevatedButton(
+                      onPressed: () => dashboardController.updateResetTime(),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: white,
+                        foregroundColor: primaryDarker,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(color: lightGray),
+                        ),
+                      ),
+                      child: Text('Apply', style: T.t12(color: primaryDarker, bold: true)),
+                    ),
+                  ),
+              ],
+            );
+          }),
+
+          /// ------------------------------------------
+          /// 🔹 오른쪽 영역 (Last Updated + Update 버튼)
+          /// ------------------------------------------
           Row(
             children: [
               Text("Last Updated", style: T.t16(color: primaryDarker, bold: true)),
               const SizedBox(width: 8),
 
-              // 날짜 + 시간 표시 (Obx로 갱신)
               Obx(() {
                 final text = dashboardController.formattedLastUpdated;
+
                 if (text == '-') {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -102,9 +168,9 @@ class CommonMetricHeaderBar extends StatelessWidget {
                   ],
                 );
               }),
+
               const SizedBox(width: 8),
 
-              // ✅ Update 버튼
               SizedBox(
                 height: 28,
                 child: ElevatedButton(

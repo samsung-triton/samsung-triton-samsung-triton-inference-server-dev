@@ -19,6 +19,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
 
+    // 이전 컨트롤러가 살아있으면 제거
+    if (Get.isRegistered<DashboardController>()) {
+      Get.delete<DashboardController>(force: true);
+    }
+
     // 🔥 Controller 등록
     dashboardController = Get.put(DashboardController());
 
