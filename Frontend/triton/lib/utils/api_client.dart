@@ -124,14 +124,19 @@ class ApiClient extends GetConnect {
   // 모델 대시보드 (Model Dashboard)
   // ---------------------------------------------------------------------------
 
-  // 모델 통계 (inference count, success, fail 등)
-  Future<dynamic> getModelStats({required String modelName}) {
-    return _get('/api/v1/dashboard/model/stats?model_name=$modelName', apiName: 'getModelStats');
+  // 대시보드용 모델 목록 조회
+  Future<dynamic> getDashboardModelList() {
+    return _get('/api/v1/dashboard/models', apiName: 'getDashboardModelList');
   }
 
-  // 모델 latency timeseries
-  Future<dynamic> getModelLatency({required String modelName}) {
-    return _get('/api/v1/dashboard/model/latency?model_name=$modelName', apiName: 'getModelLatency');
+  // 모델 통계 조회
+  Future<dynamic> getDashboardModelStats(int modelId) {
+    return _get('/api/v1/dashboard/model/$modelId/stats', apiName: 'getDashboardModelStats');
+  }
+
+  // 모델 레이턴시 조회 (timeseries)
+  Future<dynamic> getDashboardModelLatency(int modelId) {
+    return _get('/api/v1/dashboard/model/$modelId/latency', apiName: 'getDashboardModelLatency');
   }
 
   // ---------------------------------------------------------------------------
