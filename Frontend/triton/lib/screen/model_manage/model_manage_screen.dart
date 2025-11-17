@@ -48,25 +48,29 @@ class _ModelManageScreenState extends State<ModelManageScreen> {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: const [
+      children: [
         // 좌측: 모델 사이드바
-        ModelSidebar(),
+        const ModelSidebar(),
 
         // 우측: 버전 헤더 + 테이블 + 에디터
         Expanded(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ModelManageHeader(),
-                VersionTable(),
-                SizedBox(height: 24),
-                EditorHeader(),
-                Expanded(child: CodeEditor()),
-                SizedBox(height: 8),
-              ],
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Obx(() {
+              final selected = modelManageController.selectedModel.value;
+              final isNormal = selected?.type == 'NORMAL';
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const ModelManageHeader(),
+                  if (isNormal) ...[const VersionTable(), const SizedBox(height: 24)],
+                  const EditorHeader(),
+                  const Expanded(child: CodeEditor()),
+                  const SizedBox(height: 8),
+                ],
+              );
+            }),
           ),
         ),
       ],
