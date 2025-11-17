@@ -110,10 +110,7 @@ class ServerLogController extends GetxController {
 
       if (data is String) {
         // Alert 테스트 해야함
-        final ctx = Get.overlayContext ?? Get.context;
-        if (ctx != null) {
-          await showAlert(ctx, title: "Notification", message: "The filter is invalid. Please check again.");
-        }
+        ShowAlert.show(message: "The filter is invalid. Please check again.");
       }
 
       final List<dynamic> rawLogs = data as List<dynamic>;
@@ -123,10 +120,7 @@ class ServerLogController extends GetxController {
       filteredLogs.assignAll(fetchedLogs);
     } catch (e) {
       // Alert 테스트 해야함
-      final ctx = Get.overlayContext ?? Get.context;
-      if (ctx != null) {
-        await showAlert(ctx, title: "Notification", message: "Failed to retrieve server logs.");
-      }
+      ShowAlert.show(message: "Failed to retrieve server logs.");
     }
   }
 

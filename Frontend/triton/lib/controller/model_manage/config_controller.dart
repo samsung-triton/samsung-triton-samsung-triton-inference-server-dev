@@ -91,8 +91,7 @@ class ConfigController extends GetxController {
 
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
-      final context = Get.context;
-      showAlert(context!, message: "Failed to load the model list.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to load the model list.\nPlease retry or restart the server.");
       return;
     }
 
@@ -176,8 +175,7 @@ class ConfigController extends GetxController {
 
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
-      final context = Get.context;
-      showAlert(context!, message: "Failed to load the model list.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to load the model list.\nPlease retry or restart the server.");
       return;
     }
   }
@@ -215,8 +213,7 @@ class ConfigController extends GetxController {
 
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
-      final context = Get.context;
-      showAlert(context!, message: "Failed to Delete rollback.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to Delete rollback.\nPlease retry or restart the server.");
       return;
     }
 
