@@ -22,7 +22,12 @@ class ServerDashboardPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const SizedBox(child: CommonMetricHeaderBar()),
+          CommonMetricHeaderBar(
+            onRefresh: () {
+              serverCtrl.fetchAll();
+            },
+          ),
+
           const SizedBox(height: gap),
 
           // 🔼 상단: GPU Util + GPU VRAM
