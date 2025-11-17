@@ -1,11 +1,15 @@
 // 글자 테마 설정
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 // 글자 테마 베이스
 TextStyle base(double size, {Color? color, bool bold = false}) {
-  return GoogleFonts.inter(fontSize: size, color: color ?? black, fontWeight: bold ? FontWeight.w700 : FontWeight.w500);
+  return TextStyle(
+    fontFamily: 'Pretendard',
+    fontSize: size,
+    color: color ?? black,
+    fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+  );
 }
 
 // 글자 크기별 프리셋
