@@ -8,3 +8,4 @@ class LogRequest(BaseModel):
     username: str | None
     type: str | None
     description: str | None
+    global_search: str | None

@@ -19,5 +19,6 @@ def get_api_log(request: LogRequest, db: Session = Depends(get_db)):
         username=request.username,
         type=request.type,
         description=request.description,
+        global_search=request.global_search,
         db=db,
     )
