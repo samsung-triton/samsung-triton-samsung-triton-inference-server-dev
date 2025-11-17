@@ -56,15 +56,12 @@ class VersionManageController extends GetxController {
     final version = selectedVersion.value?.version;
     if (version == null) return;
 
-    final context = Get.context;
     final deleteId = _authStorage.read<String>('loginedId') ?? '';
     // 버전 채워 넣기
     final modelManageController = Get.find<ModelManageController>();
     final modelId = modelManageController.selectedModel.value?.modelId;
     if (modelId == null) {
-      if (context != null) {
-        showAlert(context, message: "Select Model");
-      }
+      ShowAlert.show(message: "Select Model");
       return;
     }
 
@@ -76,8 +73,7 @@ class VersionManageController extends GetxController {
     );
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
-      final context = Get.context;
-      showAlert(context!, message: "Failed to Delete version.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to Delete version.\nPlease retry or restart the server.");
       return;
     }
 

@@ -108,10 +108,7 @@ class ServerController extends GetxController {
 
       if (data is String) {
         // Alert 테스트 해야함
-        final ctx = Get.overlayContext ?? Get.context;
-        if (ctx != null) {
-          await showAlert(ctx, title: "Notification", message: data);
-        }
+        ShowAlert.show(message: data);
         return false;
       }
 
@@ -145,10 +142,7 @@ class ServerController extends GetxController {
 
       if (data is String) {
         // Alert 테스트 해야함
-        final ctx = Get.overlayContext ?? Get.context;
-        if (ctx != null) {
-          await showAlert(ctx, title: "Notification", message: data);
-        }
+        ShowAlert.show(message: data);
         return false;
       }
 
@@ -179,10 +173,7 @@ class ServerController extends GetxController {
 
       if (data is String) {
         // Alert 테스트 해야함
-        final ctx = Get.overlayContext ?? Get.context;
-        if (ctx != null) {
-          await showAlert(ctx, title: "Notification", message: data);
-        }
+        ShowAlert.show(message: data);
         return false;
       }
 
@@ -214,10 +205,7 @@ class ServerController extends GetxController {
       // 서버가 오류 메시지를 String으로 보냈을 때
       if (data is String) {
         // Alert 테스트 해야함
-        final ctx = Get.overlayContext ?? Get.context;
-        if (ctx != null) {
-          await showAlert(ctx, title: "Notification", message: data);
-        }
+        ShowAlert.show(message: data);
         return false;
       }
       return true;

@@ -53,8 +53,7 @@ class ModelManageController extends GetxController {
 
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
-      final context = Get.context;
-      showAlert(context!, message: "Failed to load the model list.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to load the model list.\nPlease retry or restart the server.");
       return;
     }
 
@@ -92,21 +91,16 @@ class ModelManageController extends GetxController {
   }
 
   Future<void> loadModelInfo() async {
-    final context = Get.context;
-
     final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
-      if (context != null) {
-        showAlert(context, message: "Select Model");
-      }
+      ShowAlert.show(message: "Select Model");
       return;
     }
 
     final dynamic data = await _api.getModelVersionsAndConfig(modelId: modelId);
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
-      final context = Get.context;
-      showAlert(context!, message: "Failed to load the model data.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to load the model data.\nPlease retry or restart the server.");
       return;
     }
 
@@ -142,8 +136,7 @@ class ModelManageController extends GetxController {
 
     final dynamic data = await _api.createModel(body);
     if (data is String) {
-      final context = Get.context;
-      showAlert(context!, message: "Failed to Register the model.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to Register the model.\nPlease retry or restart the server.");
       return;
     } else {
       await loadModels();
@@ -157,8 +150,7 @@ class ModelManageController extends GetxController {
 
     final dynamic data = await _api.createEnsembleModel(body);
     if (data is String) {
-      final context = Get.context;
-      showAlert(context!, message: "Failed to Register the model.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to Register the model.\nPlease retry or restart the server.");
       return;
     } else {
       await loadModels();
@@ -167,13 +159,9 @@ class ModelManageController extends GetxController {
 
   // 버전 or 셋업 등록
   Future<void> registerAssets(dynamic body) async {
-    final context = Get.context;
-
     final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
-      if (context != null) {
-        showAlert(context, message: "Select Model");
-      }
+      ShowAlert.show(message: "Select Model");
       return;
     }
 
@@ -182,7 +170,7 @@ class ModelManageController extends GetxController {
 
     final dynamic data = await _api.addModelAssets(modelId: modelId, body: body);
     if (data is String) {
-      showAlert(context!, message: "Failed to Register version or setup.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to Register version or setup.\nPlease retry or restart the server.");
       return;
     } else {
       await loadModelInfo();
@@ -191,13 +179,9 @@ class ModelManageController extends GetxController {
 
   // 모델 삭제
   Future<void> deleteModel(int modeld, String description) async {
-    final context = Get.context;
-
     final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
-      if (context != null) {
-        showAlert(context, message: "Select Model");
-      }
+      ShowAlert.show(message: "Select Model");
       return;
     }
 
@@ -205,7 +189,7 @@ class ModelManageController extends GetxController {
 
     final dynamic data = await _api.deleteModel(modelId: modelId, loginId: deleteId, description: description);
     if (data is String) {
-      showAlert(context!, message: "Failed to Delete model.\nPlease retry or restart the server.");
+      ShowAlert.show(message: "Failed to Delete model.\nPlease retry or restart the server.");
       return;
     } else {
       await loadModels();
