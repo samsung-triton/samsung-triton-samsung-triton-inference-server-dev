@@ -71,7 +71,7 @@ def get_api_log_service(start_date, end_date, username, type, description, db: S
     if type:
         final_list = [log for log in final_list if type in log["type"]]
 
-    final_list.sort(key=lambda x: x["date"])
+    final_list.sort(key=lambda x: x["date"], reverse=True)
 
     return create_response(
         code=CustomCode.LOG_001.value, message=Messages.MODEL_API_LOG_FETCH_SUCCESS.value, data={"logs": final_list}
