@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
-import 'package:triton/widgets/modellog/filter_block_model.dart';
+import 'package:triton/widgets/modellog/filter_block_infer.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import 'package:triton/controller/model_log/model_log_controller.dart';
+import 'package:triton/widgets/modellog/filter_block_triton.dart';
 
-class ModelLogHeader extends StatefulWidget {
-  const ModelLogHeader({super.key});
+class TritonLogHeader extends StatefulWidget {
+  const TritonLogHeader({super.key});
 
   @override
-  State<ModelLogHeader> createState() => _ModelLogHeaderState();
+  State<TritonLogHeader> createState() => _TritonLogHeaderState();
 }
 
-class _ModelLogHeaderState extends State<ModelLogHeader> with SingleTickerProviderStateMixin {
+class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProviderStateMixin {
   bool _isFilterOpen = false;
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ModelLogController>();
+    final controller = Get.find<TritonLogController>();
 
     return Column(
       children: [
@@ -39,12 +40,22 @@ class _ModelLogHeaderState extends State<ModelLogHeader> with SingleTickerProvid
                   Text("Model Log", style: T.t16(color: black, bold: true)),
                   const SizedBox(width: 12),
                   Dropdown(
-                    items: const ['yolov8-detector', 'resnet-50', 'llama-3', 'custom-ensemble'], //TODO API 연결
+                    items: const [
+                      'yolov8-detector',
+                      'resnet-50',
+                      'llama-3',
+                      'custom-ensemble',
+                    ], //TODO API 연결 + 'triton' 추가
                     width: 244,
                     hintText: "model name",
                     onChanged: (value) {
                       controller.modelName.value = value ?? '';
-                      controller.applyFilter(); // 즉시 필터링 실행
+
+                      if (value == "triton") {
+                        controller.applyFilter(); //서로 다른 컨트롤러 호출
+                      } else {
+                        controller.applyFilter();
+                      }
                     },
                   ),
                   const SizedBox(width: 12),
@@ -73,7 +84,17 @@ class _ModelLogHeaderState extends State<ModelLogHeader> with SingleTickerProvid
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           child: _isFilterOpen
-              ? Container(width: double.infinity, color: white, child: const FilterBlockModel())
+              ? Obx(() {
+                  final server = controller.modelName.value;
+
+                  if (server == 'triton') {
+                    return const FilterBlockTriton();
+                  }
+                  if (server == 'server') {
+                    return const FilterBlockInfer();
+                  }
+                  return const SizedBox.shrink();
+                })
               : const SizedBox.shrink(),
         ),
       ],
