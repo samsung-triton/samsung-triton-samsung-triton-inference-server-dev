@@ -36,9 +36,11 @@ class EditorHeader extends StatelessWidget {
         confirmMsg: "Are you sure you want to save it?",
         onOK: () async {
           final codeEditorController = Get.find<ConfigController>();
-          await codeEditorController.save(descCtrl.text);
+          final ok = await codeEditorController.save(descCtrl.text);
           descCtrl.dispose();
-          _openRollbackModal(context);
+          if (ok) {
+            _openRollbackModal(context);
+          }
         },
       ),
     );

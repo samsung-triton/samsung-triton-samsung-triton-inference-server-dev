@@ -25,15 +25,9 @@ class HeaderBar extends StatefulWidget {
 }
 
 class _HeaderBarState extends State<HeaderBar> {
-  late final ServerController serverController;
+  final ServerController serverController = Get.put(ServerController(), permanent: true);
   final _auth = Get.find<AuthController>();
   final _authStorage = GetStorage('auth');
-
-  @override
-  void initState() {
-    super.initState();
-    serverController = Get.put(ServerController(), permanent: false);
-  }
 
   @override
   void dispose() {

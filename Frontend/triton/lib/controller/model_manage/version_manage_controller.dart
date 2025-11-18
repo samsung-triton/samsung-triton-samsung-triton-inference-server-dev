@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:triton/controller/model_manage/model_manage_controller.dart';
 import 'package:triton/utils/api_client.dart';
+import 'package:triton/utils/server_guard.dart';
 import 'package:triton/utils/show_alert.dart';
 
 class VersionItem {
@@ -53,6 +54,17 @@ class VersionManageController extends GetxController {
 
   // 선택된 버전 삭제
   Future<void> deleteSelectedVersion(String description) async {
+    final ok = await isServerRunning();
+    if (!ok) {
+      ShowAlert.show(
+        title: 'Server Not Running',
+        message:
+            'The Triton server is currently not running.\n'
+            'Please start the server and try again.',
+      );
+      return;
+    }
+
     final version = selectedVersion.value?.version;
     if (version == null) return;
 
