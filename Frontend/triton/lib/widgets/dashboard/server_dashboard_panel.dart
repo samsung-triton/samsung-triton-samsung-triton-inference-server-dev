@@ -48,7 +48,7 @@ class ServerDashboardPanel extends StatelessWidget {
 
                     return CommonInfoCardBase(
                       title: 'GPU Utilization',
-                      usageText: '${serverCtrl.latestGpuUtil.toStringAsFixed(0)}% Usage',
+                      usageText: '${serverCtrl.latestGpuUtil.toStringAsFixed(2)}% Usage',
                       child: const ServerGpuUtilizationChart(),
                     );
                   }),
@@ -99,7 +99,7 @@ class ServerDashboardPanel extends StatelessWidget {
 
                     return CommonInfoCardBase(
                       title: 'CPU',
-                      usageText: '${serverCtrl.latestCpuUsage.toStringAsFixed(0)}% Usage',
+                      usageText: '${serverCtrl.latestCpuUsage.toStringAsFixed(2)}% Usage',
                       child: const ServerCpuUsageChart(),
                     );
                   }),
