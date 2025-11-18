@@ -13,14 +13,19 @@ class ServerLogScreen extends StatefulWidget {
 }
 
 class _ServerLogScreenState extends State<ServerLogScreen> {
-  late final ServerLogController serverLogController;
+  late final ServerLogController controller;
 
   @override
   void initState() {
     super.initState();
 
     // 페이지 단위로 컨트롤러 주입
-    serverLogController = Get.put(ServerLogController(), permanent: false);
+    controller = Get.put(ServerLogController(), permanent: false);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      //위젯 렌더링 후 필터 적용
+      controller.applyFilter();
+    });
   }
 
   @override
