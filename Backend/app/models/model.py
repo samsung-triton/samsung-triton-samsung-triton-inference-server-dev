@@ -1,5 +1,5 @@
 import enum
-from app.core.database import Base
+from app.core.DB.database import Base
 from sqlalchemy import Column, Integer, String, BigInteger, Text, ForeignKey, DateTime, Enum, func
 from sqlalchemy.orm import relationship
 

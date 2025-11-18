@@ -8,6 +8,7 @@ from app.api.v1.model_config_router import model_config_router
 from app.api.v1.models_router import model_router
 from app.api.v1.standard_time_router import standard_time_router
 from app.api.v1.log_router import log_router
+from app.api.v1.notification_router import notification_router
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(user_router)
@@ -19,3 +20,4 @@ api_router.include_router(model_config_router)
 api_router.include_router(standard_time_router)
 api_router.include_router(model_router)
 api_router.include_router(log_router)
+api_router.include_router(notification_router)

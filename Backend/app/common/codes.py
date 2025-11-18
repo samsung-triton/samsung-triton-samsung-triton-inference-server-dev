@@ -57,6 +57,11 @@ class CustomCode(str, Enum):
     DASH_004 = "DASH-004"  # 모델별 추론 레이턴시 조회 성공
     DASH_005 = "DASH-005"  # 대시보드 모델 목록 조회 성공
 
+    # Noticiation
+    NOTI_001 = "NOTI-001"  # notification 응답 완료
+
     # 로그 관리 (업데이트 예정)
     LOG_001 = "LOG-001"  # api 로그 응답 완료
-    LOG_002 = "LOG-002"
+    LOG_002 = "LOG-002"  # 모델 로그의 model_name 리스트 조회 성공
+    LOG_003 = "LOG_003"  # 모델 로그 조회 성공
+    LOG_004 = "LOG_004"  # 서버 로그 조회 성공
