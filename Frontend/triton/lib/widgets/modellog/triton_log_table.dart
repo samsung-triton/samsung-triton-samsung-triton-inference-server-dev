@@ -3,12 +3,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import 'package:triton/widgets/modellog/model_log_table_header.dart';
-import 'package:triton/widgets/modellog/model_log_table_row.dart';
+import 'package:triton/widgets/modellog/triton_log_table_header.dart';
+import 'package:triton/widgets/modellog/triton_log_table_row.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
 
-class ModelLogTable extends StatelessWidget {
-  const ModelLogTable({super.key});
+class TritonLogTable extends StatelessWidget {
+  const TritonLogTable({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class ModelLogTable extends StatelessWidget {
       color: white,
       child: Column(
         children: [
-          const ModelLogTableHeader(),
+          const TritonLogTableHeader(),
           Expanded(
             child: Obx(() {
               // 모델 선택 안한 경우
@@ -52,7 +52,7 @@ class ModelLogTable extends StatelessWidget {
                   itemCount: logs.length,
                   itemBuilder: (context, i) {
                     final log = logs[i];
-                    return ModelLogTableRow(
+                    return TritonLogTableRow(
                       log: {
                         // 기존 구조에 맞게 변환
                         'date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.parse(log['date'])), //출력 파싱
