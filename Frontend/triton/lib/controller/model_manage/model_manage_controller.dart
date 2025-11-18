@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:triton/controller/model_manage/config_controller.dart';
 import 'package:triton/controller/model_manage/version_manage_controller.dart';
 import 'package:triton/utils/api_client.dart';
+import 'package:triton/utils/server_guard.dart';
 import 'package:triton/utils/show_alert.dart';
 
 class ModelItem {
@@ -129,10 +130,19 @@ class ModelManageController extends GetxController {
 
   // 모델 등록
   Future<void> registerModel(dynamic body) async {
+    final ok = await isServerRunning();
+    if (!ok) {
+      ShowAlert.show(
+        title: 'Server Not Running',
+        message:
+            'The Triton server is currently not running.\n'
+            'Please start the server and try again.',
+      );
+      return;
+    }
+
     final registerId = _authStorage.read<String>('loginedId') ?? '';
     body.fields.add(MapEntry('LoginId', registerId));
-
-    print(body);
 
     final dynamic data = await _api.createModel(body);
     if (data is String) {
@@ -145,6 +155,17 @@ class ModelManageController extends GetxController {
 
   // 앙상블 모델 등록
   Future<void> registerEnsembleModel(dynamic body) async {
+    final ok = await isServerRunning();
+    if (!ok) {
+      ShowAlert.show(
+        title: 'Server Not Running',
+        message:
+            'The Triton server is currently not running.\n'
+            'Please start the server and try again.',
+      );
+      return;
+    }
+
     final registerId = _authStorage.read<String>('loginedId') ?? '';
     body.fields.add(MapEntry('LoginId', registerId));
 
@@ -159,6 +180,17 @@ class ModelManageController extends GetxController {
 
   // 버전 or 셋업 등록
   Future<void> registerAssets(dynamic body) async {
+    final ok = await isServerRunning();
+    if (!ok) {
+      ShowAlert.show(
+        title: 'Server Not Running',
+        message:
+            'The Triton server is currently not running.\n'
+            'Please start the server and try again.',
+      );
+      return;
+    }
+
     final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
       ShowAlert.show(message: "Select Model");
@@ -179,6 +211,17 @@ class ModelManageController extends GetxController {
 
   // 모델 삭제
   Future<void> deleteModel(int modeld, String description) async {
+    final ok = await isServerRunning();
+    if (!ok) {
+      ShowAlert.show(
+        title: 'Server Not Running',
+        message:
+            'The Triton server is currently not running.\n'
+            'Please start the server and try again.',
+      );
+      return;
+    }
+
     final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
       ShowAlert.show(message: "Select Model");
