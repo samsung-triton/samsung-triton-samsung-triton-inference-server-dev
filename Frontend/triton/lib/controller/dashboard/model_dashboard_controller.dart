@@ -21,19 +21,21 @@ class ModelDashboardController extends GetxController {
   double get inferencePercent => totalInference.value == 0 ? 0 : (successInference.value / totalInference.value) * 100;
 
   // ============================================================
-  // 🔹 2) Latency Stats (dummy 유지 → 다음 브랜치)
+  // 🔹 2) Latency Stats (API 결과 저장)
   // ============================================================
   RxList<double> queueLatency = <double>[].obs;
   RxList<double> inputLatency = <double>[].obs;
   RxList<double> inferLatency = <double>[].obs;
   RxList<double> outputLatency = <double>[].obs;
 
+  // 타임스탬프 (원하면 ModelLatencyChart에서 활용 가능)
+  RxList<DateTime> latencyTimestamps = <DateTime>[].obs;
+
   // ============================================================
   // 🔹 3) Notifications (dummy 유지 → 다음 브랜치)
   // ============================================================
   RxList<NotificationLog> notifications = <NotificationLog>[].obs;
 
-  // ============================================================
   final loading = false.obs;
 
   @override
@@ -43,42 +45,29 @@ class ModelDashboardController extends GetxController {
   }
 
   // ============================================================
-  // 🔥 fetchAll(modelName) → 지금은 Inference Stats만 실제 API로 호출
+  // 🔥 fetchAll(modelId)
   // ============================================================
-  Future<void> fetchAll(String modelName) async {
+  // ============================================================
+  // 🔥 fetchAll(modelId)
+  // ============================================================
+  Future<void> fetchAll(int modelId) async {
     loading.value = true;
 
-    // 🔥 1) Inference Stats만 실제 API 연동
-    await _fetchInference(modelName);
-
-    // 🔥 2) 나머지는 dummy 유지
-    await Future.wait([_fetchLatency(modelName), _fetchNotifications(modelName)]);
+    await Future.wait([
+      _fetchInference(modelId),
+      _fetchLatency(modelId),
+      _fetchNotifications(modelId), // 아직 dummy
+    ]);
 
     loading.value = false;
   }
 
   // ============================================================
-  // 🔥 Inference Fetch (실제 API 연동)
+  // 🔥 Inference Stats API 연동
   // ============================================================
-  Future<void> _fetchInference(String modelName) async {
+  Future<void> _fetchInference(int modelId) async {
     try {
-      // 지금 DashboardController가 modelId를 전달했기 때문에 modelName = "3" 같은 값이 들어옴
-      final id = int.tryParse(modelName);
-      if (id == null) throw "Invalid model id: $modelName";
-
-      // API 호출
-      final data = await _api.getDashboardModelStats(id);
-
-      // API 응답 구조:
-      // {
-      //   request_total,
-      //   request_success,
-      //   request_fail,
-      //   inference_total,
-      //   inference_ok,
-      //   inference_ng,
-      //   inference_error
-      // }
+      final data = await _api.getDashboardModelStats(modelId);
 
       totalRequests.value = data['request_total'] ?? 0;
       successRequests.value = data['request_success'] ?? 0;
@@ -86,6 +75,7 @@ class ModelDashboardController extends GetxController {
 
       totalInference.value = data['inference_total'] ?? 0;
       successInference.value = data['inference_ok'] ?? 0;
+
       failInference.value = (data['inference_ng'] ?? 0) + (data['inference_error'] ?? 0);
     } catch (e) {
       print("❌ Inference Stats API 실패: $e");
@@ -93,29 +83,56 @@ class ModelDashboardController extends GetxController {
   }
 
   // ============================================================
-  // 🔹 Latency Fetch (dummy)
+  // 🔥 Latency API 연동
   // ============================================================
-  Future<void> _fetchLatency(String modelName) async {
-    await Future.delayed(const Duration(milliseconds: 120));
+  Future<void> _fetchLatency(int modelId) async {
+    try {
+      final res = await _api.getDashboardModelLatency(modelId);
 
-    queueLatency.value = [10, 20, 30];
-    inputLatency.value = [20, 15, 10];
-    inferLatency.value = [100, 120, 140];
-    outputLatency.value = [5, 7, 8];
+      // latency = { queue: [...], input: [...], infer: [...], output: [...] }
+      final latency = res['latency'];
+
+      if (latency == null) {
+        print("❌ latency 데이터 없음");
+        return;
+      }
+
+      // 공통 파서: values → List<double>
+      List<double> _parseValues(List<dynamic>? list) {
+        if (list == null || list.isEmpty) return [];
+        final values = list.first['values'] as List?;
+        if (values == null) return [];
+        return values.map((e) => (e['value'] as num).toDouble()).toList();
+      }
+
+      // timestamps도 같이 파싱
+      List<DateTime> _parseTimestamps(List<dynamic>? list) {
+        if (list == null || list.isEmpty) return [];
+        final values = list.first['values'] as List?;
+        if (values == null) return [];
+        return values.map((e) => DateTime.parse(e['ts'])).toList();
+      }
+
+      queueLatency.value = _parseValues(latency['queue']);
+      inputLatency.value = _parseValues(latency['input']);
+      inferLatency.value = _parseValues(latency['infer']);
+      outputLatency.value = _parseValues(latency['output']);
+
+      // timestamps (하나만 사용)
+      latencyTimestamps.value = _parseTimestamps(latency['queue']);
+    } catch (e) {
+      print("❌ Latency API 실패: $e");
+    }
   }
 
   // ============================================================
-  // 🔹 Notifications Fetch (dummy)
+  // 🔹 Notifications (dummy)
   // ============================================================
-  Future<void> _fetchNotifications(String modelName) async {
+  Future<void> _fetchNotifications(int modelId) async {
     await Future.delayed(const Duration(milliseconds: 120));
 
     notifications.value = [
       NotificationLog(level: "INFO", message: "Dummy notification", timestamp: DateTime.now().toIso8601String()),
     ];
   }
-
-  // ============================================================
-  // Apply Methods (실제 값이 여기로 저장됨)
-  // ============================================================
 }

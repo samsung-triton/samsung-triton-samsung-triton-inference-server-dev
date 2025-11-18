@@ -7,6 +7,7 @@ import 'package:triton/widgets/dashboard/model_latency_chart.dart';
 import 'package:triton/widgets/dashboard/model_notification_panel.dart';
 
 // Controllers
+import 'package:triton/controller/dashboard/dashboard_controller.dart';
 import 'package:triton/controller/dashboard/model_dashboard_controller.dart';
 
 /// 🔹 Model Dashboard Panel
@@ -20,7 +21,7 @@ class ModelDashboardPanel extends StatelessWidget {
     const double gap = 8.0;
     const double rightPanelW = 280.0;
 
-    // 컨트롤러 인스턴스 확보 (현재는 위젯 내부에서 Get.find() 사용해도 되지만 유지)
+    final dashCtrl = Get.find<DashboardController>();
     final modelCtrl = Get.find<ModelDashboardController>();
 
     return Padding(
@@ -29,7 +30,15 @@ class ModelDashboardPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // ① Header
-          const SizedBox(child: CommonMetricHeaderBar()),
+          CommonMetricHeaderBar(
+            onRefresh: () {
+              final id = dashCtrl.selectedModelId.value;
+              if (id != null) {
+                modelCtrl.fetchAll(id);
+              }
+            },
+          ),
+
           const SizedBox(height: gap),
 
           // ② Main Body

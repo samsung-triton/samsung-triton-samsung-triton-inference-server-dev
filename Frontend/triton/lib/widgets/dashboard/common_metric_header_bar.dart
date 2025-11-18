@@ -7,7 +7,9 @@ import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
 
 class CommonMetricHeaderBar extends StatelessWidget {
-  const CommonMetricHeaderBar({super.key});
+  final VoidCallback? onRefresh; // 🔥 추가
+
+  const CommonMetricHeaderBar({super.key, this.onRefresh});
 
   // 🔹 일반 계정용 Fake Dropdown (모양만, 클릭 불가)
   Widget _fakeDropdown(String text, double width) {
@@ -174,7 +176,10 @@ class CommonMetricHeaderBar extends StatelessWidget {
               SizedBox(
                 height: 28,
                 child: ElevatedButton(
-                  onPressed: () => dashboardController.manualUpdate(),
+                  onPressed: () {
+                    dashboardController.manualUpdate(); // 기존 유지
+                    onRefresh?.call(); // 🔥 추가: Panel에서 넘겨준 API 호출
+                  },
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: white,

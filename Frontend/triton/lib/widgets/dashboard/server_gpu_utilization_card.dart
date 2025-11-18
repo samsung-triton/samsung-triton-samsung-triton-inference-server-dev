@@ -54,7 +54,7 @@ class ServerGpuUtilizationChart extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text('GPU Util', style: T.t12(color: darkGray)),
-                          Text('${gpu.toStringAsFixed(1)}%', style: T.t16(color: primaryDarker, bold: true)),
+                          Text('${gpu.toStringAsFixed(2)}%', style: T.t16(color: primaryDarker, bold: true)),
                         ],
                       ),
                     ],
