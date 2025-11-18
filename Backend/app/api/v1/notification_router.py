@@ -9,9 +9,6 @@ from app.services.notification_service import get_inference_notification_service
 notification_router = APIRouter(prefix="/noti", tags=["Notification"])
 
 
-notification_router = APIRouter(prefix="/noti", tags=["Notification"])
-
-
 @notification_router.get("", response_model=BaseResponse, status_code=status.HTTP_200_OK)
 def get_inference_notification(
     page: int = Query(1, ge=1, description="페이지 번호(1부터 시작)"),
