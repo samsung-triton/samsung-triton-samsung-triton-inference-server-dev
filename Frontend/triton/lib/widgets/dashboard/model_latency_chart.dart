@@ -19,6 +19,9 @@ class ModelLatencyChart extends StatefulWidget {
 class _ModelLatencyChartState extends State<ModelLatencyChart> {
   int? touchedIndex;
 
+  // 🔥 1) 이상치 상한
+  static const double maxAllowedLatency = 5000; // 5초 이상은 잘라냄
+
   @override
   Widget build(BuildContext context) {
     final c = Get.find<ModelDashboardController>();
@@ -40,11 +43,22 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
       // Time Labels
       final timeLabels = List.generate(len, (i) => "T${i + 1}");
 
-      // Total Latency
-      final totalLatencies = List.generate(len, (i) => queue[i] + input[i] + infer[i] + output[i]);
+      // 🔥 1) Total Latency + 이상치 cap 적용
+      final totalLatencies = List.generate(len, (i) {
+        final raw = queue[i] + input[i] + infer[i] + output[i];
+        // maxAllowedLatency로 제한
+        return raw > maxAllowedLatency ? maxAllowedLatency : raw;
+      });
 
+      // max값 계산
       final maxVal = totalLatencies.reduce(math.max);
-      final niceMaxY = ((maxVal / 50).ceil() * 50).toDouble();
+
+      // 🔥 2) Y축 max cap 적용
+      const double maxYAxisCap = 5000; // Y축 최대도 5초 이하로 제한
+      final safeMax = maxVal > maxYAxisCap ? maxYAxisCap : maxVal;
+
+      // Y축 보기 좋게 정리
+      final niceMaxY = ((safeMax / 50).ceil() * 50).toDouble();
 
       return CommonInfoCardBase(
         title: 'Model Latency',
@@ -63,7 +77,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                       minY: 0,
                       maxY: niceMaxY,
 
-                      // 🔥 index 기반 X축
                       minX: 0,
                       maxX: (len - 1).toDouble(),
 
@@ -91,7 +104,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                           ),
                         ),
 
-                        // 🔥 시간 라벨 = index → timestamp
+                        // 🔥 bottom time axis
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
@@ -100,8 +113,8 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                             getTitlesWidget: (value, meta) {
                               final idx = value.toInt();
                               if (idx < 0 || idx >= len) return const SizedBox.shrink();
-                              final ts = c.latencyTimestamps[idx];
-                              return Text(DateFormat('HH:mm').format(ts.toLocal()), style: T.t12(color: gray));
+                              final dt = c.latencyTimestamps[idx].toLocal();
+                              return Text(DateFormat('HH:mm').format(dt), style: T.t12(color: gray));
                             },
                           ),
                         ),
@@ -109,7 +122,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
 
                       borderData: FlBorderData(show: false),
 
-                      /// ---- 라인 그리기 ----
                       lineBarsData: [
                         LineChartBarData(
                           isCurved: false,
@@ -120,13 +132,10 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                             getDotPainter: (spot, percent, bar, index) =>
                                 FlDotCirclePainter(radius: 4, color: primaryNormal),
                           ),
-
-                          // 🔥 x = index, y = latency
                           spots: List.generate(len, (i) => FlSpot(i.toDouble(), totalLatencies[i])),
                         ),
                       ],
 
-                      /// ---- 터치 이벤트 처리 ----
                       lineTouchData: LineTouchData(
                         enabled: true,
                         handleBuiltInTouches: true,
@@ -139,7 +148,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                             return;
                           }
 
-                          // 🔥 x = index
                           final idx = response.lineBarSpots!.first.x.round();
                           if (idx >= 0 && idx < len) {
                             setState(() => touchedIndex = idx);
@@ -153,7 +161,13 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                           fitInsideVertically: true,
                           getTooltipItems: (spots) {
                             if (spots.isEmpty) return [];
-                            return [LineTooltipItem(spots.first.y.toInt().toString(), T.t12(color: white, bold: true))];
+
+                            final idx = spots.first.x.toInt();
+
+                            // RAW 값으로 다시 계산
+                            final rawTotal = queue[idx] + input[idx] + infer[idx] + output[idx];
+
+                            return [LineTooltipItem(rawTotal.toStringAsFixed(0), T.t12(color: white, bold: true))];
                           },
                         ),
                       ),
