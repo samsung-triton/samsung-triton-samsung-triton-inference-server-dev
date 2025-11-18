@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
 
+    # ClickHouse
+    CHK_HOST: str
+    CHK_DB: str
+    CHK_PORT: str
+    CHK_USER: str
+    CHK_PASSWORD: str
+
     # Triton
     TRITON_GRPC_URL: str
     TRITON_HTTP_URL: str  # ex: http://localhost:8000

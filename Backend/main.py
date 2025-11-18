@@ -5,6 +5,8 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.DB.database import SessionLocal
+from app.core.DB.clickhouse import ch_engine
+from clickhouse_sqlalchemy import make_session
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.core.customException import CustomHTTPException
@@ -31,14 +33,29 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def startup_event():
+        # =====================
+        # PostgreSQL 연결 테스트
+        # =====================
         try:
             db = SessionLocal()
             db.execute(text("SELECT 1"))
-            logger.info("DB 연결 성공")
+            logger.info("PostgreSQL DB 연결 성공")
         except Exception as e:
-            logger.error(f"DB 연결 실패: {e}")
+            logger.error(f"PostgreSQL DB 연결 실패: {e}")
         finally:
             db.close()
+
+        # =====================
+        # ClickHouse 연결 테스트
+        # =====================
+        try:
+            ch_db = make_session(ch_engine)
+            ch_db.execute(text("SELECT 1"))
+            logger.info("ClickHouse DB 연결 성공")
+        except Exception as e:
+            logger.error(f"ClickHouse DB 연결 실패: {e}")
+        finally:
+            ch_db.close()
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
