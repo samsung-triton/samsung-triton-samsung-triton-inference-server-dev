@@ -2,10 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/server_log/server_log_controller.dart';
-import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/serverlog/server_log_table_server.dart';
 import 'package:triton/widgets/serverlog/serverlog_header.dart';
-import '../../theme/app_colors.dart';
 
 class ServerLogScreen extends StatefulWidget {
   const ServerLogScreen({super.key});
@@ -15,14 +13,19 @@ class ServerLogScreen extends StatefulWidget {
 }
 
 class _ServerLogScreenState extends State<ServerLogScreen> {
-  late final ServerLogController serverLogController;
+  late final ServerLogController controller;
 
   @override
   void initState() {
     super.initState();
 
     // 페이지 단위로 컨트롤러 주입
-    serverLogController = Get.put(ServerLogController(), permanent: false);
+    controller = Get.put(ServerLogController(), permanent: false);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      //위젯 렌더링 후 필터 적용
+      controller.applyFilter();
+    });
   }
 
   @override
@@ -34,8 +37,6 @@ class _ServerLogScreenState extends State<ServerLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = serverLogController;
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -43,25 +44,7 @@ class _ServerLogScreenState extends State<ServerLogScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ServerLogHeader(),
-            Expanded(
-              child: Obx(() {
-                final target = controller.serverName.value;
-
-                if (target.isEmpty) {
-                  return Center(
-                    child: Text("Please select a server.", style: T.t12(color: gray)),
-                  );
-                }
-
-                if (target == 'triton') {
-                  //return const ServerLogTableTriton(); // Triton UI
-                } else if (target == 'server') {
-                  return const ServerLogTableServer();
-                }
-
-                return const SizedBox.shrink();
-              }),
-            ),
+            const Expanded(child: ServerLogTableServer()),
           ],
         ),
       ),
