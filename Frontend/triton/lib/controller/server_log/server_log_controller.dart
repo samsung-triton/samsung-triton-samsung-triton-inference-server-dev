@@ -14,11 +14,13 @@ class ServerLogItem {
 
   factory ServerLogItem.fromJson(Map<String, dynamic> json) {
     //YYYY-MM-DD HH:MM:SS 형태 변환
-    final rawDate = json['date']?.toString() ?? '';
+    final rawDate = json['date'];
 
     String formattedDate;
     try {
-      final d = DateTime.parse(rawDate);
+      final d = DateTime.parse(rawDate).toLocal();
+      print(rawDate);
+      print(d);
       formattedDate =
           "${d.year.toString().padLeft(4, '0')}-"
           "${d.month.toString().padLeft(2, '0')}-"
