@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:triton/controller/model_manage/model_manage_controller.dart';
 import 'package:triton/utils/api_client.dart';
+import 'package:triton/utils/server_guard.dart';
 import 'package:triton/utils/show_alert.dart';
 
 // 롤백 엔트리 모델
@@ -157,9 +158,20 @@ class ConfigController extends GetxController {
   }
 
   // 저장
-  Future<void> save(String description) async {
+  Future<bool> save(String description) async {
+    final ok = await isServerRunning();
+    if (!ok) {
+      ShowAlert.show(
+        title: 'Server Not Running',
+        message:
+            'The Triton server is currently not running.\n'
+            'Please start the server and try again.',
+      );
+      return false;
+    }
+
     final modelId = _currentModelId();
-    if (modelId == null) return;
+    if (modelId == null) return false;
 
     final content = editorCtrl.text;
     final saveId = _authStorage.read<String>('loginedId') ?? '';
@@ -176,12 +188,25 @@ class ConfigController extends GetxController {
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
       ShowAlert.show(message: "Failed to load the model list.\nPlease retry or restart the server.");
-      return;
+      return false;
     }
+
+    return true;
   }
 
   // 롤백 삭제
-  void deleteRollback(String description) async {
+  Future<bool> deleteRollback(String description) async {
+    final ok = await isServerRunning();
+    if (!ok) {
+      ShowAlert.show(
+        title: 'Server Not Running',
+        message:
+            'The Triton server is currently not running.\n'
+            'Please start the server and try again.',
+      );
+      return false;
+    }
+
     // 삭제 타겟 확인 (현재 선택 기준)
     final currentSelectedId = selectedConfig.value?.configId;
     RollbackItem? target;
@@ -192,15 +217,15 @@ class ConfigController extends GetxController {
       }
     }
 
-    if (target == null) return;
+    if (target == null) return false;
 
     // 현재 사용중 항목은 삭제 금지
     if (target.isCurrent) {
-      return;
+      return false;
     }
 
     final modelId = _currentModelId();
-    if (modelId == null) return;
+    if (modelId == null) return false;
 
     final deleteId = _authStorage.read<String>('loginedId') ?? '';
 
@@ -214,7 +239,7 @@ class ConfigController extends GetxController {
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
       ShowAlert.show(message: "Failed to Delete rollback.\nPlease retry or restart the server.");
-      return;
+      return false;
     }
 
     // 삭제 후 목록 재로딩
@@ -238,6 +263,8 @@ class ConfigController extends GetxController {
     } else {
       selectedConfig.value = null;
     }
+
+    return true;
   }
 
   // 에디터에 반영

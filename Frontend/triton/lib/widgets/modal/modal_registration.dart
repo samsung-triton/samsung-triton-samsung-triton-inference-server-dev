@@ -261,6 +261,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
                   } else {
                     modelType = ModelType.normal;
                   }
+                  errorText = null;
                 });
               },
             ),
@@ -277,6 +278,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         // 모델 파일
         if ((isModel && modelType == ModelType.normal) || isSetup) ...[
           _LabelInputRow(
+            key: const ValueKey('model-file-row'),
             label: 'model file',
             child: Row(
               children: [
@@ -291,6 +293,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
 
         // 셋업 파일
         _LabelInputRow(
+          key: const ValueKey('setup-file-row'),
           label: 'setup file',
           child: Row(
             children: [
@@ -346,7 +349,7 @@ class _LabelInputRow extends StatelessWidget {
   final Widget child;
   final bool alignTop;
 
-  const _LabelInputRow({required this.label, required this.child, this.alignTop = false});
+  const _LabelInputRow({super.key, required this.label, required this.child, this.alignTop = false});
 
   @override
   Widget build(BuildContext context) {

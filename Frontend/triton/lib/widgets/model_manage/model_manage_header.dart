@@ -30,19 +30,30 @@ class ModelManageHeader extends StatelessWidget {
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          // 좌측: 모델 정보
-          Obx(
-            () => Text(modelManageController.selectedModel.value!.name, style: T.t20(bold: true, color: primaryNormal)),
-          ),
-          Obx(() => Text(' | ${versionManageController.versions.length} versions', style: T.t16())),
-          const Spacer(),
+      child: Obx(() {
+        final selected = modelManageController.selectedModel.value;
+        final name = selected?.name ?? '';
+        final isNormal = selected?.type == 'NORMAL';
+        final versionsCount = versionManageController.versions.length;
 
-          // 우측: 버전 관리 버튼
-          ButtonLarge(onPressed: () => _openRegisterModal(context), text: 'register', backgroundColor: primaryNormal),
-        ],
-      ),
+        return Row(
+          children: [
+            // 좌측: 모델 정보
+            Text(name, style: T.t20(bold: true, color: primaryNormal)),
+            // (NORMAL일 때만 보이게)
+            if (isNormal) Text(' | $versionsCount versions', style: T.t16()),
+            const Spacer(),
+
+            // 우측: 버전 관리 버튼 (NORMAL일 때만 보이게)
+            if (isNormal)
+              ButtonLarge(
+                onPressed: () => _openRegisterModal(context),
+                text: 'register',
+                backgroundColor: primaryNormal,
+              ),
+          ],
+        );
+      }),
     );
   }
 }
