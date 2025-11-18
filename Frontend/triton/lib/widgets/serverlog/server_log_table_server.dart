@@ -22,13 +22,6 @@ class ServerLogTableServer extends StatelessWidget {
           const ServerLogTableHeader(),
           Expanded(
             child: Obx(() {
-              // 모델 선택 안한 경우
-              if (controller.serverName.value.isEmpty) {
-                return Center(
-                  child: Text('Please select a server.', style: T.t12(color: gray, bold: false)),
-                );
-              }
-
               final logs = controller.filteredLogs; // 필터링된 로그 가져오기
 
               // 필터링 결과가 없는 경우

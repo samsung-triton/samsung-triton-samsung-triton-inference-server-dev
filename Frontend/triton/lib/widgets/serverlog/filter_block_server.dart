@@ -125,9 +125,7 @@ class _FilterBlockServerState extends State<FilterBlockServer> {
                   key: ValueKey(controller.sort.value),
                   items: const ['all', 'user name', 'description'],
                   width: 200,
-
                   value: controller.sort.value,
-
                   hintText: 'sort',
                   onChanged: (value) {
                     controller.sort.value = value;
