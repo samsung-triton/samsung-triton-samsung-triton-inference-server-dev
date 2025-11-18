@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
-import 'package:triton/widgets/modellog/model_log_table.dart';
-import 'package:triton/widgets/modellog/modellog_header.dart';
+import 'package:triton/widgets/modellog/triton_log_table.dart';
+import 'package:triton/widgets/modellog/tritonlog_header.dart';
 
 class ModelLogScreen extends StatefulWidget {
   const ModelLogScreen({super.key});
@@ -39,8 +39,8 @@ class _ModelLogScreenState extends State<ModelLogScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
-            ModelLogHeader(),
-            Expanded(child: ModelLogTable()), // 테이블이 아래 전체 채움
+            TritonLogHeader(),
+            Expanded(child: TritonLogTable()), // 테이블이 아래 전체 채움
           ],
         ),
       ),
