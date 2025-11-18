@@ -8,8 +8,8 @@ import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
 
-class FilterBlockModel extends StatelessWidget {
-  const FilterBlockModel({super.key});
+class FilterBlockTriton extends StatelessWidget {
+  const FilterBlockTriton({super.key});
 
   @override
   Widget build(BuildContext context) {
