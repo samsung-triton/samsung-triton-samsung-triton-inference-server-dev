@@ -80,15 +80,6 @@ class CommonSidebarCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 상태 동그라미
-          Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(color: status ? statusGreen : statusRed, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 12),
-
-          // 오른쪽 영역
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
