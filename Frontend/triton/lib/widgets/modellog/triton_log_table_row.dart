@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 
-class ModelLogTableRow extends StatelessWidget {
+class TritonLogTableRow extends StatelessWidget {
   final Map<String, String> log;
-  const ModelLogTableRow({super.key, required this.log});
+  const TritonLogTableRow({super.key, required this.log});
 
   @override
   Widget build(BuildContext context) {
