@@ -13,7 +13,7 @@ from app.services.model_config_service import (
     update_model_config_service,
 )
 
-model_config_router = APIRouter(prefix="/api/v1/models", tags=["Model Config"])
+model_config_router = APIRouter(prefix="/models", tags=["Model Config"])
 
 
 # 현재 사용 중인 Config 조회

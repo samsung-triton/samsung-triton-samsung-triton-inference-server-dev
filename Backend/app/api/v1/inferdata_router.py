@@ -12,7 +12,7 @@ from app.schemas.base_schema import BaseResponse
 from app.schemas.inferoutput_schema import SaveInferenceResultRequest
 
 
-inferdata_router = APIRouter(prefix="/api/v1/infer", tags=["InferData"])
+inferdata_router = APIRouter(prefix="/infer", tags=["InferData"])
 
 
 @inferdata_router.post("/save/before", response_model=BaseResponse, status_code=status.HTTP_200_OK)
