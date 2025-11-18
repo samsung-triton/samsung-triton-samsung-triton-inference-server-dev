@@ -159,7 +159,7 @@ def get_model_logs_service(db, model_name, start, end, level, cursor, request_id
             message,
             request_id,
             model_name,
-            uid,
+            uid
         FROM triton_infer_logs
         WHERE {where_sql}
         ORDER BY ts DESC
@@ -234,7 +234,7 @@ def get_server_logs_service(db, start, end, level, cursor, global_search, limit)
             toString(ts) AS ts_raw,
             formatDateTime(ts, '%Y-%m-%dT%TZ') AS iso_utc,
             level,
-            message,
+            message
         FROM triton_logs
         WHERE {where_sql}
         ORDER BY ts DESC
