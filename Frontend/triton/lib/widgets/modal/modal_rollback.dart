@@ -33,7 +33,10 @@ class _ModalRollbackState extends State<ModalRollback> {
         confirmMsg: "Are you sure you want to delete it?",
         onOK: () async {
           final configController = Get.find<ConfigController>();
-          configController.deleteRollback(descCtrl.text);
+          final ok = await configController.deleteRollback(descCtrl.text);
+          if (!ok) {
+            ModalPortal.close(context, true);
+          }
           descCtrl.dispose();
         },
       ),
