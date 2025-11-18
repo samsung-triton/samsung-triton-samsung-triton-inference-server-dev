@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from fastapi import status
 
-from app.core.database import get_db
+from app.core.DB.database import get_db
 from app.services.log_service import get_api_log_service
 from app.schemas.base_schema import BaseResponse
 from app.schemas.log_schema import LogRequest

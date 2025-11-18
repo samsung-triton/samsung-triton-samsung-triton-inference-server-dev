@@ -4,7 +4,7 @@ from sqlalchemy import text
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.database import SessionLocal
+from app.core.DB.database import SessionLocal
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.core.customException import CustomHTTPException

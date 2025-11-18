@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, UploadFile, File, Form, status, Query, Request
 
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+from app.core.DB.database import get_db
 from app.services.inferdata_service import (
     save_input_before_infer_service,
     save_output_after_infer_service,
