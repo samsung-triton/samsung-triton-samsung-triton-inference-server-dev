@@ -114,6 +114,8 @@ class ServerController extends GetxController {
 
       final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
       serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
+
+      ShowAlert.show(message: "Server started successfully.");
       return true;
     } catch (e) {
       lastError.value = '서버 시작 실패: $e'; //alert로 띄울지, 메세지 커스텀 할지
