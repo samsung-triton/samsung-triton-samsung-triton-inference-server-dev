@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.services.masterkey_service import varify_mastekey_service
 from app.schemas.base_schema import BaseResponse
 
-mastekey_router = APIRouter(prefix="/api/v1/masterkey", tags=["MasterKey"])
+mastekey_router = APIRouter(prefix="/masterkey", tags=["MasterKey"])
 
 
 @mastekey_router.post("/verify", response_model=BaseResponse, status_code=status.HTTP_200_OK)

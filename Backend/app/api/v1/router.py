@@ -9,7 +9,7 @@ from app.api.v1.models_router import model_router
 from app.api.v1.standard_time_router import standard_time_router
 from app.api.v1.log_router import log_router
 
-api_router = APIRouter()  # /api/v1 라우터 묶기
+api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(user_router)
 api_router.include_router(mastekey_router)
 api_router.include_router(inferdata_router)
