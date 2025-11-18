@@ -1,5 +1,5 @@
 from sqlalchemy import Column, BigInteger, String, Text, Boolean, TIMESTAMP, func, Integer, Computed, Enum
-from app.core.database import Base
+from app.core.DB.database import Base
 from enum import Enum as PyEnum
 
 
