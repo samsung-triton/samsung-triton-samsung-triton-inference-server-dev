@@ -13,17 +13,12 @@ from app.core.customException import CustomHTTPException
 from app.models.server import Server, ServerStatus
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-from app.models.user import User
 from app.core.config import TIMEZONE
 from app.common.utils import get_user_or_404
 
 
 def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus, description: str = None):
-    server_log = Server(
-        actor_id=user_id,
-        status=status_enum,
-        description=description
-    )
+    server_log = Server(actor_id=user_id, status=status_enum, description=description)
     db.add(server_log)
     db.commit()
 
@@ -96,12 +91,8 @@ async def start_server_service(db: Session, actor_login_id: str):
 
 
 async def stop_server_service(db: Session, actor_login_id: str, description: str = None):
-    return await _execute_server_action(
-        db, actor_login_id, stop_triton, ServerStatus.STOP, description
-    )
+    return await _execute_server_action(db, actor_login_id, stop_triton, ServerStatus.STOP, description)
 
 
 async def restart_server_service(db: Session, actor_login_id: str, description: str = None):
-    return await _execute_server_action(
-        db, actor_login_id, restart_triton, ServerStatus.RESTART, description
-    )
+    return await _execute_server_action(db, actor_login_id, restart_triton, ServerStatus.RESTART, description)
