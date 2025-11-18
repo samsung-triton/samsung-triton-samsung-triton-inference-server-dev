@@ -107,16 +107,18 @@ class Messages(str, Enum):
     MODEL_PER_STATUS_FETCH_SUCCESS = "모델 별 요청 통계 조회 성공"
 
     # ---- Logs (Model / Server) ----
+    MODEL_LOG_MODEL_NAME_LIST_FETCH_SUCCESS = "모델 로그의 model_name 리스트 조회 성공"
     MODEL_LOG_FETCH_SUCCESS = "모델 로그 조회 성공"
-    MODEL_LOG_REQUIRED_PARAMS = "model_name, start, end는 필수입니다."
-    LOKI_MODEL_LOG_FETCH_ERROR = "Loki 모델 로그 조회 중 오류가 발생했습니다."
+    # MODEL_LOG_REQUIRED_PARAMS = "model_name, start, end는 필수입니다."
+    MODEL_LOG_FETCH_ERROR = "모델 로그 조회 중 오류가 발생했습니다."
 
     MODEL_API_LOG_FETCH_SUCCESS = "모델 API 로그 조회 성공"
     ERR_END_DATE_BEFORE_START_DATE = "end_date는 start_date보다 이전일 수 없습니다."
+    ERR_END_DATE_TOGETHER_START_DATE = "start와 end는 함께 존재해야 합니다."
 
     SERVER_LOG_FETCH_SUCCESS = "서버 로그 조회 성공"
-    SERVER_LOG_REQUIRED_PERIOD = "기간(start, end)은 필수입니다."
-    LOKI_LOG_FETCH_ERROR = "Loki 로그 조회 중 오류가 발생했습니다."
+    # SERVER_LOG_REQUIRED_PERIOD = "기간(start, end)은 필수입니다."
+    SERVER_LOG_FETCH_ERROR = "로그 조회 중 오류가 발생했습니다."
 
     STANDARD_TIME_FETCH_SUCCESS = "집계 기준 시각 조회 성공"
     STANDARD_TIME_UPDATE_SUCCESS = "집계 기준 시각이 업데이트되었습니다."
