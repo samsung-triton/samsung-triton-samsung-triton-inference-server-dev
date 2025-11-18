@@ -12,7 +12,7 @@ from app.services.metrics_service import (
     get_dashboard_models_list_service,
 )
 
-metrics_router = APIRouter(prefix="/api/v1/dashboard", tags=["Metircs"])
+metrics_router = APIRouter(prefix="/dashboard", tags=["Metircs"])
 
 
 @metrics_router.get("/server/metrics", response_model=BaseResponse, status_code=status.HTTP_200_OK)

@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.services.user_service import login_user_service
 from app.schemas.base_schema import BaseResponse
 
-user_router = APIRouter(prefix="/api/v1/auth", tags=["User"])
+user_router = APIRouter(prefix="/auth", tags=["User"])
 
 
 @user_router.post("/login", response_model=BaseResponse, status_code=status.HTTP_200_OK)

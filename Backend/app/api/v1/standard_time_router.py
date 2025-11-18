@@ -5,7 +5,7 @@ from app.core.standard_time_manager import current_standard_time, update_standar
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 
-standard_time_router = APIRouter(prefix="/api/v1/models", tags=["Standard Time"])
+standard_time_router = APIRouter(prefix="/models", tags=["Standard Time"])
 
 
 @standard_time_router.get("/standard-time", status_code=status.HTTP_200_OK)

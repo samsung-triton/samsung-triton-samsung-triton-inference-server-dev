@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Depends, status, Path, Form, Body
-from typing import List, Annotated
+from typing import Annotated
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -15,7 +15,7 @@ from app.services.model_service import (
 )
 from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 
-model_router = APIRouter(prefix="/api/v1/models", tags=["models"])
+model_router = APIRouter(prefix="/models", tags=["models"])
 
 
 @model_router.get("", response_model=BaseResponse, status_code=status.HTTP_200_OK, summary="모델 목록 (전체) 조회")

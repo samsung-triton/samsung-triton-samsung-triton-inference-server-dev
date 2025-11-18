@@ -8,7 +8,7 @@ from app.schemas.base_schema import BaseResponse
 from app.schemas.log_schema import LogRequest
 
 
-log_router = APIRouter(prefix="/api/v1/logs", tags=["Log"])
+log_router = APIRouter(prefix="/logs", tags=["Log"])
 
 
 @log_router.post("/api", response_model=BaseResponse, status_code=status.HTTP_200_OK)
