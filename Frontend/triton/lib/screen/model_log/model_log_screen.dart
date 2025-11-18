@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
+import 'package:triton/controller/model_log/triton_infer_log_controller.dart';
+import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/widgets/modellog/triton_log_table.dart';
 import 'package:triton/widgets/modellog/tritonlog_header.dart';
 
@@ -14,19 +16,25 @@ class ModelLogScreen extends StatefulWidget {
 
 class _ModelLogScreenState extends State<ModelLogScreen> {
   late final ModelLogController modelLogController;
+  late final TritonLogController tritonLogController;
+  late final TritonInferLogController tritonInferLogController;
 
   @override
   void initState() {
     super.initState();
 
     // 페이지 단위로 컨트롤러 주입
+    tritonLogController = Get.put(TritonLogController(), permanent: false);
     modelLogController = Get.put(ModelLogController(), permanent: false);
+    tritonInferLogController = Get.put(TritonInferLogController(), permanent: false);
   }
 
   @override
   void dispose() {
     // 페이지 나갈 때 컨트롤러 메모리 해제
+    Get.delete<TritonLogController>();
     Get.delete<ModelLogController>();
+    Get.delete<TritonInferLogController>();
     super.dispose();
   }
 
