@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import 'dart:math' as math;
 
 import 'package:triton/theme/app_colors.dart';
@@ -23,7 +24,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
     final c = Get.find<ModelDashboardController>();
 
     return Obx(() {
-      // ----- Controller 데이터 준비 -----
       final queue = c.queueLatency;
       final input = c.inputLatency;
       final infer = c.inferLatency;
@@ -37,7 +37,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
         );
       }
 
-      // 시간 레이블 생성 (임시)
+      // Time Labels
       final timeLabels = List.generate(len, (i) => "T${i + 1}");
 
       // Total Latency
@@ -62,14 +62,18 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                     LineChartData(
                       minY: 0,
                       maxY: niceMaxY,
+
+                      // 🔥 index 기반 X축
                       minX: 0,
                       maxX: (len - 1).toDouble(),
+
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
                         horizontalInterval: 50,
                         getDrawingHorizontalLine: (v) => FlLine(color: lightGray.withOpacity(0.4), strokeWidth: 1),
                       ),
+
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -82,24 +86,22 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                               if ((val % 50).abs() > 0.001) {
                                 return const SizedBox.shrink();
                               }
-                              return Text(val.toInt().toString(), style: T.t12(color: gray));
+                              return Text(val.toInt().toString(), style: T.t8(color: gray));
                             },
                           ),
                         ),
+
+                        // 🔥 시간 라벨 = index → timestamp
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 28,
                             interval: 1,
-                            getTitlesWidget: (val, meta) {
-                              int i = val.toInt();
-                              if (i < 0 || i >= len) {
-                                return const SizedBox.shrink();
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(timeLabels[i], style: T.t12(color: gray)),
-                              );
+                            getTitlesWidget: (value, meta) {
+                              final idx = value.toInt();
+                              if (idx < 0 || idx >= len) return const SizedBox.shrink();
+                              final ts = c.latencyTimestamps[idx];
+                              return Text(DateFormat('HH:mm').format(ts.toLocal()), style: T.t12(color: gray));
                             },
                           ),
                         ),
@@ -118,6 +120,8 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                             getDotPainter: (spot, percent, bar, index) =>
                                 FlDotCirclePainter(radius: 4, color: primaryNormal),
                           ),
+
+                          // 🔥 x = index, y = latency
                           spots: List.generate(len, (i) => FlSpot(i.toDouble(), totalLatencies[i])),
                         ),
                       ],
@@ -134,10 +138,14 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                             setState(() => touchedIndex = null);
                             return;
                           }
-                          setState(() {
-                            touchedIndex = response.lineBarSpots!.first.x.toInt();
-                          });
+
+                          // 🔥 x = index
+                          final idx = response.lineBarSpots!.first.x.round();
+                          if (idx >= 0 && idx < len) {
+                            setState(() => touchedIndex = idx);
+                          }
                         },
+
                         touchTooltipData: LineTouchTooltipData(
                           getTooltipColor: (_) => primaryNormal.withOpacity(0.85),
                           tooltipMargin: 8,

@@ -54,7 +54,7 @@ class ServerCpuUsageChart extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text('CPU Usage', style: T.t12(color: darkGray)),
-                          Text('${usage.toStringAsFixed(1)}%', style: T.t16(color: primaryDarker, bold: true)),
+                          Text('${usage.toStringAsFixed(2)}%', style: T.t16(color: primaryDarker, bold: true)),
                         ],
                       ),
                     ],

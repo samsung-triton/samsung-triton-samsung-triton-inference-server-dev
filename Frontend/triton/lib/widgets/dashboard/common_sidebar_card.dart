@@ -61,8 +61,16 @@ class CommonSidebarCard extends StatelessWidget {
     // 안전한 계산 추가 (NULL SAFE)
     // ───────────────────────────────
     final safeCurrent = current ?? 0;
-    final safeTotal = total ?? 1; // 0 나누기 방지
-    final percent = (safeCurrent / safeTotal).clamp(0.0, 1.0);
+    final safeTotal = total ?? 0;
+
+    // 0/0이면 percent = 0
+    double percent;
+    if (safeTotal == 0) {
+      percent = 0.0;
+    } else {
+      percent = (safeCurrent / safeTotal).clamp(0.0, 1.0);
+    }
+
     final percentText = "${(percent * 100).toStringAsFixed(0)}%";
 
     // UI 렌더링
