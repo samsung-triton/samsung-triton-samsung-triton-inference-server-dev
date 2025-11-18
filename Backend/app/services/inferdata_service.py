@@ -3,10 +3,9 @@ import shutil
 import logging
 from fastapi import status, UploadFile
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from app.models.inference_logs import InferenceLogs
 from app.models.model import Model
