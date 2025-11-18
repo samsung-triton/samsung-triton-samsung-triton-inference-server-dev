@@ -1,6 +1,6 @@
 from sqlalchemy import Column, BigInteger, TIMESTAMP, ForeignKey, Text, text
 from sqlalchemy.dialects.postgresql import ENUM
-from app.core.database import Base
+from app.core.DB.database import Base
 from enum import Enum as PyEnum
 
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.schemas.model_config_schema import ConfigUpdateRequest
-from app.core.database import get_db
+from app.core.DB.database import get_db
 from app.schemas.base_schema import BaseResponse
 from app.services.model_config_service import (
     delete_selected_config_service,

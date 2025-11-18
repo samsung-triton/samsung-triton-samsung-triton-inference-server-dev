@@ -1,4 +1,4 @@
-from app.core.database import Base
+from app.core.DB.database import Base
 from enum import Enum as PyEnum
 from sqlalchemy import Column, BigInteger, String, TIMESTAMP, text
 from sqlalchemy.dialects.postgresql import ENUM

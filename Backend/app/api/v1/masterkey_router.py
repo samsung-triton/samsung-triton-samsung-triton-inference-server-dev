@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import status
 
 from app.schemas.masterkey_schema import MasterKeyVarifyRequest
-from app.core.database import get_db
+from app.core.DB.database import get_db
 from app.services.masterkey_service import varify_mastekey_service
 from app.schemas.base_schema import BaseResponse
 
