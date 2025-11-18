@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:triton/controller/model_log/model_log_controller.dart';
+import 'package:triton/controller/model_log/triton_infer_log_controller.dart';
 import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
-import 'package:triton/widgets/modellog/filter_block_infer.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/modellog/filter_block_triton.dart';
@@ -20,7 +21,9 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<TritonLogController>();
+    final tritonInferController = Get.find<TritonInferLogController>();
+    final tritonController = Get.find<TritonLogController>();
+    final modelController = Get.find<ModelLogController>();
 
     return Column(
       children: [
@@ -39,42 +42,45 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                 children: [
                   Text("Model Log", style: T.t16(color: black, bold: true)),
                   const SizedBox(width: 12),
-                  Dropdown(
-                    items: const [
-                      'yolov8-detector',
-                      'resnet-50',
-                      'llama-3',
-                      'custom-ensemble',
-                    ], //TODO API 연결 + 'triton' 추가
-                    width: 244,
-                    hintText: "model name",
-                    onChanged: (value) {
-                      controller.modelName.value = value ?? '';
+                  Obx(() {
+                    return Dropdown(
+                      items: tritonInferController.modelList.toList(), // API + 'triton' 포함된 동적 리스트
+                      width: 244,
+                      hintText: "model name",
+                      onChanged: (value) {
+                        tritonController.modelName.value = value ?? '';
 
-                      if (value == "triton") {
-                        controller.applyFilter(); //서로 다른 컨트롤러 호출
-                      } else {
-                        controller.applyFilter();
-                      }
-                    },
-                  ),
+                        if (value == "triton") {
+                          tritonController.applyFilter(); // 서로 다른 흐름이면 분기
+                        } else {
+                          modelController.applyFilter();
+                        }
+                      },
+                    );
+                  }),
                   const SizedBox(width: 12),
-                  DownloadIconButton(onPressed: controller.exportFilteredLogsAsTxt),
+                  DownloadIconButton(onPressed: tritonController.exportFilteredLogsAsTxt),
                 ],
               ),
 
               // 오른쪽: filter 토글
-              GestureDetector(
-                onTap: () => setState(() => _isFilterOpen = !_isFilterOpen),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(_isFilterOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: black, size: 24),
-                    const SizedBox(width: 2),
-                    Text("filter", style: T.t16(color: black)),
-                  ],
-                ),
-              ),
+              Obx(() {
+                if (tritonController.modelName.value.isEmpty) {
+                  return const SizedBox.shrink(); // server name 선택 전에는 숨김
+                }
+
+                return GestureDetector(
+                  onTap: () => setState(() => _isFilterOpen = !_isFilterOpen),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_isFilterOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: black, size: 24),
+                      const SizedBox(width: 2),
+                      Text("filter", style: T.t16(color: black)),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         ),
@@ -83,19 +89,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
         AnimatedSize(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
-          child: _isFilterOpen
-              ? Obx(() {
-                  final server = controller.modelName.value;
-
-                  if (server == 'triton') {
-                    return const FilterBlockTriton();
-                  }
-                  if (server == 'server') {
-                    return const FilterBlockInfer();
-                  }
-                  return const SizedBox.shrink();
-                })
-              : const SizedBox.shrink(),
+          child: _isFilterOpen ? const FilterBlockTriton() : const SizedBox.shrink(),
         ),
       ],
     );
