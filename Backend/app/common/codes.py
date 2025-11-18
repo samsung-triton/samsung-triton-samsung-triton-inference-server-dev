@@ -62,4 +62,6 @@ class CustomCode(str, Enum):
 
     # 로그 관리 (업데이트 예정)
     LOG_001 = "LOG-001"  # api 로그 응답 완료
-    LOG_002 = "LOG-002"
+    LOG_002 = "LOG-002"  # 모델 로그의 model_name 리스트 조회 성공
+    LOG_003 = "LOG_003"  # 모델 로그 조회 성공
+    LOG_004 = "LOG_004"  # 서버 로그 조회 성공

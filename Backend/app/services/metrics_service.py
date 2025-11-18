@@ -18,8 +18,6 @@ from app.schemas.base_schema import BaseResponse
 from app.models.model import Model
 from app.models.inference_logs import InferenceLogs
 from app.clients.triton_client import triton_client
-from app.services.server_service import get_server_status_service
-
 
 
 # ============================================================
@@ -183,7 +181,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
                     v = float(val)
                     if math.isnan(v) or math.isinf(v):
                         continue
-                    points.append(ValueItem(ts=ts_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), value=round(v, 2)))
+                    points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
                 except Exception:
                     continue
 
@@ -200,16 +198,14 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
                     v = float(val)
                     if math.isnan(v) or math.isinf(v):
                         continue
-                    points.append(ValueItem(ts=ts_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), value=round(v, 2)))
+                    points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
                 except Exception:
                     continue
 
             ram_series_list.append(SeriesItem(gpu_uuid=metric.get("gpu_uuid", "none"), values=points))
 
         # 4) TimeWindow 생성
-        time_window = TimeWindow(
-            start=start_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), end=end_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), step="10m"
-        )
+        time_window = TimeWindow(start=start_dt.isoformat(), end=end_dt.isoformat(), step="10m")
 
         data = MetricData(window=time_window, vram=vram_series_list, ram=ram_series_list)
 
@@ -309,7 +305,6 @@ async def get_model_per_inference_latency_service(
     model_name = model.name
 
     try:
-        # 1) end 시각 파싱
         if end_iso:
             if end_iso.isdigit():
                 end_dt = datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
@@ -325,7 +320,6 @@ async def get_model_per_inference_latency_service(
         def to_epoch(dt: datetime) -> float:
             return dt.timestamp()
 
-        # 2) PromQL 준비
         metric_keys = {
             "total": "nv_inference_request_duration_us",
             "queue": "nv_inference_queue_duration_us",
@@ -339,15 +333,13 @@ async def get_model_per_inference_latency_service(
 
         latency_results = {}
 
-        # 3) prom_query_range 호출 (async 정상)
         for key, metric_key in metric_keys.items():
             promql = build_query(metric_key)
 
-            result = await prom_query_range(promql=promql, start=start_dt, end=end_dt, step="600")  # 600초 (10분)
+            result = await prom_query_range(promql=promql, start=start_dt, end=end_dt, step="600")
 
             latency_results[key] = result
 
-        # 4) 데이터 변환
         def convert_prometheus_series(result: List[dict]):
             none_gpu_series_list = []
 
@@ -362,8 +354,7 @@ async def get_model_per_inference_latency_service(
                     try:
                         ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
                         v = float(val)
-                        v_ms = round(v / 1000, 2)
-                        points.append(ValueItem(ts=ts_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), value=v_ms))
+                        points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
                     except:  # noqa: E722
                         continue
 
@@ -377,9 +368,7 @@ async def get_model_per_inference_latency_service(
         infer_series = convert_prometheus_series(latency_results["infer"])
         output_series = convert_prometheus_series(latency_results["output"])
 
-        time_window = TimeWindow(
-            start=start_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), end=end_dt.strftime("%Y-%m-%dT%H:%M:%SZ"), step="10m"
-        )
+        time_window = TimeWindow(start=start_dt.isoformat(), end=end_dt.isoformat(), step="10m")
 
         data = {
             "window": time_window.dict(),
@@ -392,7 +381,7 @@ async def get_model_per_inference_latency_service(
             },
         }
 
-        return create_response(code=CustomCode.DASH_003.value, message="{model.name} 레이턴시 조회 성공", data=data)
+        return create_response(code=CustomCode.DASH_003.value, message=f"{model.name} 레이턴시 조회 성공", data=data)
 
     except Exception as e:
         raise CustomHTTPException(
