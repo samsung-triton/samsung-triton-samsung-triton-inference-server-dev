@@ -120,5 +120,9 @@ class Messages(str, Enum):
     # SERVER_LOG_REQUIRED_PERIOD = "기간(start, end)은 필수입니다."
     SERVER_LOG_FETCH_ERROR = "로그 조회 중 오류가 발생했습니다."
 
+    # ---- Notification -----
+    NOTIFICATION_FETCH_SUCCESS = "알람 조회 성공"
+
+    # ---- STANDARD TIME ----
     STANDARD_TIME_FETCH_SUCCESS = "집계 기준 시각 조회 성공"
     STANDARD_TIME_UPDATE_SUCCESS = "집계 기준 시각이 업데이트되었습니다."

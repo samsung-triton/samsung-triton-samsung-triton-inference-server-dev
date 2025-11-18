@@ -90,12 +90,14 @@ def get_api_log_service(start_date, end_date, username, type, description, globa
 
 
 def get_model_name_list_service(db):
-    sql = text("""
+    sql = text(
+        """
         SELECT DISTINCT model_name
         FROM logs.triton_infer_logs
         WHERE model_name NOT IN ('', 'unknown')
         ORDER BY model_name ASC
-    """)
+    """
+    )
 
     rows = db.execute(sql).fetchall()
     model_names = [r[0] for r in rows]
@@ -151,7 +153,8 @@ def get_model_logs_service(db, model_name, start, end, level, cursor, request_id
     where_sql = " AND ".join(where) if where else "1=1"
 
     # SQL 실행
-    sql = text(f"""
+    sql = text(
+        f"""
         SELECT
             toString(ts) AS ts_raw,
             formatDateTime(ts, '%Y-%m-%dT%TZ') AS iso_utc,
@@ -164,7 +167,8 @@ def get_model_logs_service(db, model_name, start, end, level, cursor, request_id
         WHERE {where_sql}
         ORDER BY ts DESC
         LIMIT {limit}
-    """)
+    """
+    )
     rows = db.execute(sql).fetchall()
 
     # cursor 반환 포함 return
@@ -229,7 +233,8 @@ def get_server_logs_service(db, start, end, level, cursor, global_search, limit)
     where_sql = " AND ".join(where) if where else "1=1"
 
     # SQL 실행
-    sql = text(f"""
+    sql = text(
+        f"""
         SELECT
             toString(ts) AS ts_raw,
             formatDateTime(ts, '%Y-%m-%dT%TZ') AS iso_utc,
@@ -239,7 +244,8 @@ def get_server_logs_service(db, start, end, level, cursor, global_search, limit)
         WHERE {where_sql}
         ORDER BY ts DESC
         LIMIT {limit}
-    """)
+    """
+    )
 
     rows = db.execute(sql).fetchall()
 
