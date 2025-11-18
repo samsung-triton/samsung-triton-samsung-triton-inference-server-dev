@@ -76,19 +76,6 @@ class ServerLogController extends GetxController {
   }
 
   Future<void> applyFilter() async {
-    if (serverName.value.isEmpty) {
-      filteredLogs.clear();
-      return;
-    }
-
-    if (serverName.value == "server") {
-      return getServerLogs();
-    } else if (serverName.value == "triton") {
-      //return fetchApiLogs(); //triton 함수 작성 후 업데이트 예정
-    }
-  }
-
-  Future<void> getServerLogs() async {
     final start = _formatDate(startDate.value!);
     final end = _formatDate(endDate.value!);
 
