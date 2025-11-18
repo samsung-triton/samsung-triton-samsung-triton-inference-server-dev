@@ -47,20 +47,16 @@ class ModelDashboardController extends GetxController {
   // ============================================================
   // 🔥 fetchAll(modelId)
   // ============================================================
-  Future<void> fetchAll(String modelIdString) async {
+  // ============================================================
+  // 🔥 fetchAll(modelId)
+  // ============================================================
+  Future<void> fetchAll(int modelId) async {
     loading.value = true;
 
-    final id = int.tryParse(modelIdString);
-    if (id == null) {
-      print("❌ Invalid modelId: $modelIdString");
-      loading.value = false;
-      return;
-    }
-
     await Future.wait([
-      _fetchInference(id),
-      _fetchLatency(id),
-      _fetchNotifications(id), // 아직 dummy
+      _fetchInference(modelId),
+      _fetchLatency(modelId),
+      _fetchNotifications(modelId), // 아직 dummy
     ]);
 
     loading.value = false;

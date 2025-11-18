@@ -34,7 +34,7 @@ class ModelDashboardPanel extends StatelessWidget {
             onRefresh: () {
               final id = dashCtrl.selectedModelId.value;
               if (id != null) {
-                modelCtrl.fetchAll(id.toString());
+                modelCtrl.fetchAll(id);
               }
             },
           ),
