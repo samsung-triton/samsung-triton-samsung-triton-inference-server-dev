@@ -5,7 +5,7 @@ import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/widgets/modellog/triton_log_table.dart';
-import 'package:triton/widgets/modellog/tritonlog_header.dart';
+import 'package:triton/widgets/modellog/triton_log_header.dart';
 
 class ModelLogScreen extends StatefulWidget {
   const ModelLogScreen({super.key});

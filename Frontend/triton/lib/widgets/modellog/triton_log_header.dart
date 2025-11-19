@@ -8,7 +8,7 @@ import 'package:triton/widgets/input/dropdown.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/modellog/filter_block_model.dart';
-import 'package:triton/widgets/modellog/filter_block_triton.dart';
+import 'package:triton/widgets/modellog/filter_block_triton_server.dart';
 
 class TritonLogHeader extends StatefulWidget {
   const TritonLogHeader({super.key});
@@ -105,7 +105,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                   final server = tritonController.modelName.value;
 
                   if (server == 'Triton Server') {
-                    return const FilterBlockTriton();
+                    return const FilterBlockTritonServer();
                   } else {}
                   return const FilterBlockModel();
                 })
