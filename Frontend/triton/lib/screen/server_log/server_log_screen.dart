@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/server_log/server_log_controller.dart';
 import 'package:triton/widgets/serverlog/server_log_table.dart';
-import 'package:triton/widgets/serverlog/serverlog_header.dart';
+import 'package:triton/widgets/serverlog/server_log_header.dart';
 
 class ServerLogScreen extends StatefulWidget {
   const ServerLogScreen({super.key});
