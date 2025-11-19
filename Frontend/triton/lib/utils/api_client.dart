@@ -232,7 +232,9 @@ class ApiClient extends GetConnect {
   }
 
   //Serverlog - server 로그 조회 & 필터링
-  Future<List<dynamic>> getApiLog({
+  Future<Map<String, dynamic>> getApiLog({
+    required int page,
+    required int size,
     required String startDate,
     required String endDate,
     String? username,
@@ -241,7 +243,7 @@ class ApiClient extends GetConnect {
     String? grobalSearch,
   }) async {
     final res = await _requestRaw(
-      '/api/v1/logs/api',
+      '/api/v1/logs/api?page=$page&size=$size',
       'POST',
       body: jsonEncode({
         'start_date': startDate,
@@ -253,8 +255,8 @@ class ApiClient extends GetConnect {
       }),
       apiName: 'getApiLog',
     );
-    final logs = (res['logs'] as List?) ?? [];
-    return logs;
+
+    return res; // <-- Map 전체를 반환해야 함
   }
 
   //triton 로그에서 모델 목록 조회
