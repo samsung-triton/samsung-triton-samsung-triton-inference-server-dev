@@ -19,7 +19,7 @@ class ServerGpuResourceChart extends StatelessWidget {
       final timestamps = controller.gpuVramTimestamps;
 
       if (data.isEmpty) {
-        return const Center(child: Text('No RAM data available'));
+        return const Center(child: Text('No VRAM data available'));
       }
 
       final minX = 0.0;
@@ -38,8 +38,8 @@ class ServerGpuResourceChart extends StatelessWidget {
               show: true,
               drawHorizontalLine: true,
               drawVerticalLine: true,
-              horizontalInterval: 25, // 0, 25, 50, 75, 100%
-              verticalInterval: 1, // x축 5등분
+              horizontalInterval: 25,
+              verticalInterval: 1,
               getDrawingHorizontalLine: (value) =>
                   FlLine(color: darkGray.withOpacity(0.3), strokeWidth: 1, dashArray: [6, 6]),
               getDrawingVerticalLine: (value) =>
@@ -65,26 +65,30 @@ class ServerGpuResourceChart extends StatelessWidget {
                   getTitlesWidget: (value, _) => Text('${value.toInt()}%', style: T.t8(color: darkGray)),
                 ),
               ),
+
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  interval: 1, // 🔥 고정 간격 대신 자동 조정
+                  interval: 1,
                   getTitlesWidget: (value, _) {
                     final index = value.toInt();
-                    if (index < 0 || index >= timestamps.length) return const SizedBox.shrink();
+                    if (index < 0 || index >= timestamps.length) {
+                      return const SizedBox.shrink();
+                    }
 
-                    final t = timestamps[index];
+                    final t = timestamps[index].toLocal();
                     return Text(DateFormat("HH:mm").format(t), style: T.t8(color: darkGray));
                   },
                 ),
               ),
+
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
 
             lineBarsData: [
               LineChartBarData(
-                spots: data,
+                spots: data, // already List<FlSpot>
                 isCurved: false,
                 color: primaryNormal,
                 barWidth: 1.2,
