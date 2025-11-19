@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/controller/model_log/triton_infer_log_controller.dart';
-import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/modellog/infer_log_table_row.dart';
@@ -23,7 +22,7 @@ class _InferLogTableState extends State<InferLogTable> {
     super.initState();
 
     scrollController.addListener(() {
-      final modelController = Get.find<TritonLogController>();
+      final modelController = Get.find<ModelLogController>();
 
       if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
         modelController.fetchMoreLogs(); // 무한 스크롤 트리거
@@ -50,14 +49,19 @@ class _InferLogTableState extends State<InferLogTable> {
           const TritonLogTableHeader(),
           Expanded(
             child: Obx(() {
+              final logs = modelController.filteredLogs;
+
+              if (modelController.isLoading.value && modelController.filteredLogs.isEmpty) {
+                return Center(
+                  child: Text("Loading...", style: T.t12(color: gray, bold: false)),
+                );
+              }
+
               if (tritonInferController.modelName.value.isEmpty) {
                 return Center(
                   child: Text('Please select a model.', style: T.t12(color: gray, bold: false)),
                 );
               }
-
-              final logs = modelController.filteredLogs;
-
               if (logs.isEmpty) {
                 return Center(
                   child: Text(

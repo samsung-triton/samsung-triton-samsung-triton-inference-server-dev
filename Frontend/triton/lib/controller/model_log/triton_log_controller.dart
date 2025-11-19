@@ -121,6 +121,7 @@ class TritonLogController extends GetxController {
     }
 
     isLoadingMore.value = false;
+
     isLoading.value = false;
   }
 
