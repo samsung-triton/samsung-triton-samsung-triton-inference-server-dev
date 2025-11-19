@@ -8,14 +8,14 @@ import 'package:triton/widgets/input/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
 
-class FilterBlockInfer extends StatefulWidget {
-  const FilterBlockInfer({super.key});
+class FilterBlockModel extends StatefulWidget {
+  const FilterBlockModel({super.key});
 
   @override
-  State<FilterBlockInfer> createState() => _FilterBlockTritonState();
+  State<FilterBlockModel> createState() => _FilterBlockTritonState();
 }
 
-class _FilterBlockTritonState extends State<FilterBlockInfer> {
+class _FilterBlockTritonState extends State<FilterBlockModel> {
   final keywordCtrl = TextEditingController();
 
   @override

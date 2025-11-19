@@ -7,7 +7,7 @@ import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/widgets/input/dropdown.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import 'package:triton/widgets/modellog/filter_block_Infer.dart';
+import 'package:triton/widgets/modellog/filter_block_model.dart';
 import 'package:triton/widgets/modellog/filter_block_triton.dart';
 
 class TritonLogHeader extends StatefulWidget {
@@ -107,7 +107,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                   if (server == 'Triton Server') {
                     return const FilterBlockTriton();
                   } else {}
-                  return const FilterBlockInfer();
+                  return const FilterBlockModel();
                 })
               : const SizedBox.shrink(),
         ),
