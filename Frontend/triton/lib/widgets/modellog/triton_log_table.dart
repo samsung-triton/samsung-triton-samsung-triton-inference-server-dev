@@ -32,7 +32,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
       if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
         final model = tritonInferController.modelName.value;
 
-        if (model == 'triton') {
+        if (model == 'Triton Server') {
           tritonController.fetchMoreLogs();
         } else {
           modelController.fetchMoreLogs();
@@ -59,6 +59,13 @@ class _TritonLogTableState extends State<TritonLogTable> {
             child: Obx(() {
               final model = tritonInferController.modelName.value;
 
+              if (tritonController.isLoading.value && tritonController.filteredLogs.isEmpty ||
+                  modelController.isLoading.value && modelController.filteredLogs.isEmpty) {
+                return Center(
+                  child: Text("Loading...", style: T.t12(color: gray, bold: false)),
+                );
+              }
+
               if (model.isEmpty) {
                 return Center(
                   child: Text('Please select a model.', style: T.t12(color: gray)),
@@ -66,7 +73,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
               }
 
               // 🔥 로그 분기
-              final logs = (model == 'triton') ? tritonController.filteredLogs : modelController.filteredLogs;
+              final logs = (model == 'Triton Server') ? tritonController.filteredLogs : modelController.filteredLogs;
 
               if (logs.isEmpty) {
                 return Center(
@@ -82,7 +89,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
                 child: Obx(() {
                   final model = tritonInferController.modelName.value;
 
-                  if (model == 'triton') {
+                  if (model == 'Triton Server') {
                     final logs = tritonController.filteredLogs;
 
                     return ListView.builder(

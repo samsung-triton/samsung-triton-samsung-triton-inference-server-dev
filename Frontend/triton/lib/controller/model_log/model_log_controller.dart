@@ -44,6 +44,8 @@ class ModelLogItem {
 class ModelLogController extends GetxController {
   final modellogs = <ModelLogItem>[].obs;
 
+  final RxBool isLoading = false.obs;
+
   late final ApiClient _api;
 
   @override
@@ -91,6 +93,8 @@ class ModelLogController extends GetxController {
 
     isLoadingMore.value = true;
 
+    isLoading.value = true;
+
     try {
       final res = await _api.getInferLog(
         modelName: modelName.value,
@@ -120,6 +124,7 @@ class ModelLogController extends GetxController {
     }
 
     isLoadingMore.value = false;
+    isLoading.value = false;
   }
 
   void resetFilter() {

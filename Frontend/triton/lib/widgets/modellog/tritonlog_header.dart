@@ -53,7 +53,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                         modelController.modelName.value = value ?? '';
                         tritonInferController.modelName.value = value ?? '';
 
-                        if (value == "triton") {
+                        if (value == "Triton Server") {
                           tritonController.applyFilter(); // 서로 다른 흐름이면 분기
                         } else {
                           modelController.applyFilter();
@@ -64,7 +64,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                   const SizedBox(width: 12),
                   DownloadIconButton(
                     onPressed: () {
-                      if (tritonInferController.modelName.value == 'triton') {
+                      if (tritonInferController.modelName.value == 'Triton Server') {
                         tritonController.exportFilteredLogsAsTxt(); // Triton 로그 다운로드
                       } else {
                         modelController.exportFilteredLogsAsTxt(); // 모델별 Infer 로그 다운로드
@@ -104,7 +104,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
               ? Obx(() {
                   final server = tritonInferController.modelName.value;
 
-                  if (server == 'triton') {
+                  if (server == 'Triton Server') {
                     return const FilterBlockTriton();
                   } else {}
                   return const FilterBlockInfer();

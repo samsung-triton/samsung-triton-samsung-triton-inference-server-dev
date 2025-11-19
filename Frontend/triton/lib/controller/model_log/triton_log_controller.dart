@@ -70,6 +70,8 @@ class TritonLogController extends GetxController {
   /// 필터링 결과 (UI에 바인딩)
   final filteredLogs = <TritonLogItem>[].obs;
 
+  final RxBool isLoading = false.obs;
+
   String _formatDate(DateTime date) {
     return "${date.year.toString().padLeft(4, '0')}-"
         "${date.month.toString().padLeft(2, '0')}-"
@@ -86,6 +88,8 @@ class TritonLogController extends GetxController {
 
   Future<void> fetchMoreLogs() async {
     if (isLoadingMore.value || !hasMore.value) return;
+
+    isLoading.value = true;
 
     isLoadingMore.value = true;
 
@@ -117,6 +121,8 @@ class TritonLogController extends GetxController {
     }
 
     isLoadingMore.value = false;
+
+    isLoading.value = false;
   }
 
   void resetFilter() {
