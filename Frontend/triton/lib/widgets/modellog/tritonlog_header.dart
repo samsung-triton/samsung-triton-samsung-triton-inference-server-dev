@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/controller/model_log/triton_infer_log_controller.dart';
-import 'package:triton/controller/model_log/triton_log_controller.dart';
+import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/theme/app_colors.dart';
@@ -23,7 +23,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final tritonInferController = Get.find<TritonInferLogController>();
-    final tritonController = Get.find<TritonLogController>();
+    final tritonServerLogController = Get.find<TritonServerLogController>();
     final modelController = Get.find<ModelLogController>();
 
     return Column(
@@ -49,12 +49,12 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                       width: 244,
                       hintText: "model name",
                       onChanged: (value) {
-                        tritonController.modelName.value = value ?? '';
+                        tritonServerLogController.modelName.value = value ?? '';
                         modelController.modelName.value = value ?? '';
                         tritonInferController.modelName.value = value ?? '';
 
                         if (value == "Triton Server") {
-                          tritonController.applyFilter(); // 서로 다른 흐름이면 분기
+                          tritonServerLogController.applyFilter(); // 서로 다른 흐름이면 분기
                         } else {
                           modelController.applyFilter();
                         }
@@ -65,7 +65,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                   DownloadIconButton(
                     onPressed: () {
                       if (tritonInferController.modelName.value == 'Triton Server') {
-                        tritonController.exportFilteredLogsAsTxt(); // Triton 로그 다운로드
+                        tritonServerLogController.exportFilteredLogsAsTxt(); // Triton 로그 다운로드
                       } else {
                         modelController.exportFilteredLogsAsTxt(); // 모델별 Infer 로그 다운로드
                       }
@@ -76,7 +76,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
 
               // 오른쪽: filter 토글
               Obx(() {
-                if (tritonController.modelName.value.isEmpty) {
+                if (tritonServerLogController.modelName.value.isEmpty) {
                   return const SizedBox.shrink(); // model name 선택 전에는 숨김
                 }
 

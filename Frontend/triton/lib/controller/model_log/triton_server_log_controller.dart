@@ -38,7 +38,7 @@ class TritonLogItem {
   }
 }
 
-class TritonLogController extends GetxController {
+class TritonServerLogController extends GetxController {
   final tritonlogs = <TritonLogItem>[].obs;
 
   late final ApiClient _api;
@@ -136,7 +136,7 @@ class TritonLogController extends GetxController {
 }
 
 // 로그 다운로드 기능
-extension FilterExportExtension on TritonLogController {
+extension FilterExportExtension on TritonServerLogController {
   Future<void> exportFilteredLogsAsTxt() async {
     if (filteredLogs.isEmpty) {
       ShowAlert.show(message: "No filtered logs to export.");

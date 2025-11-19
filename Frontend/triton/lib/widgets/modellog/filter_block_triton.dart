@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:triton/controller/model_log/triton_log_controller.dart';
+import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/widgets/button/button_small.dart';
 import 'package:triton/widgets/input/input_small.dart';
@@ -26,7 +26,7 @@ class _FilterBlockTritonState extends State<FilterBlockTriton> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<TritonLogController>();
+    final controller = Get.find<TritonServerLogController>();
 
     return Container(
       padding: const EdgeInsets.all(8),

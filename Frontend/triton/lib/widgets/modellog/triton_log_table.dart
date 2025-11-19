@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/controller/model_log/triton_infer_log_controller.dart';
-import 'package:triton/controller/model_log/triton_log_controller.dart';
+import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/modellog/infer_log_table_row.dart';
@@ -24,7 +24,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
     super.initState();
 
     scrollController.addListener(() {
-      final tritonController = Get.find<TritonLogController>();
+      final tritonServerLogController = Get.find<TritonServerLogController>();
       final modelController = Get.find<ModelLogController>();
 
       final tritonInferController = Get.find<TritonInferLogController>();
@@ -33,7 +33,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
         final model = tritonInferController.modelName.value;
 
         if (model == 'Triton Server') {
-          tritonController.fetchMoreLogs();
+          tritonServerLogController.fetchMoreLogs();
         } else {
           modelController.fetchMoreLogs();
         }
@@ -43,7 +43,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
 
   @override
   Widget build(BuildContext context) {
-    final tritonController = Get.find<TritonLogController>();
+    final tritonServerLogController = Get.find<TritonServerLogController>();
     final modelController = Get.find<ModelLogController>();
 
     final tritonInferController = Get.find<TritonInferLogController>();
@@ -59,7 +59,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
             child: Obx(() {
               final model = tritonInferController.modelName.value;
 
-              if (tritonController.isLoading.value && tritonController.filteredLogs.isEmpty ||
+              if (tritonServerLogController.isLoading.value && tritonServerLogController.filteredLogs.isEmpty ||
                   modelController.isLoading.value && modelController.filteredLogs.isEmpty) {
                 return Center(
                   child: Text("Loading...", style: T.t12(color: gray, bold: false)),
@@ -73,7 +73,9 @@ class _TritonLogTableState extends State<TritonLogTable> {
               }
 
               // 🔥 로그 분기
-              final logs = (model == 'Triton Server') ? tritonController.filteredLogs : modelController.filteredLogs;
+              final logs = (model == 'Triton Server')
+                  ? tritonServerLogController.filteredLogs
+                  : modelController.filteredLogs;
 
               if (logs.isEmpty) {
                 return Center(
@@ -90,7 +92,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
                   final model = tritonInferController.modelName.value;
 
                   if (model == 'Triton Server') {
-                    final logs = tritonController.filteredLogs;
+                    final logs = tritonServerLogController.filteredLogs;
 
                     return ListView.builder(
                       controller: scrollController,
