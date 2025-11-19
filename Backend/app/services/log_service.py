@@ -13,7 +13,10 @@ from app.models.user import User
 from app.core.customException import CustomHTTPException
 
 
-def get_api_log_service(start_date, end_date, username, type, description, global_search, db: Session) -> BaseResponse:
+def get_api_log_service(
+    start_date, end_date, username, type, description, global_search, page: int, size: int, db: Session
+) -> BaseResponse:
+
     start_dt = datetime.combine(start_date, datetime.min.time())
     end_dt = datetime.combine(end_date, datetime.max.time())
 
@@ -65,7 +68,6 @@ def get_api_log_service(start_date, end_date, username, type, description, globa
     final_list = server_result + release_result
 
     if global_search:
-        # name이나 description 에서 부문 문자열이 있다면 그 행은 가져오기
         final_list = [
             log
             for log in final_list
@@ -79,13 +81,28 @@ def get_api_log_service(start_date, end_date, username, type, description, globa
 
         if description:
             final_list = [log for log in final_list if log.get("description") and description in log["description"]]
+
     if type:
         final_list = [log for log in final_list if type in log["type"]]
 
     final_list.sort(key=lambda x: x["date"], reverse=True)
 
+    total = len(final_list)
+    offset = (page - 1) * size
+    paginated_items = final_list[offset : offset + size]
+
+    total_pages = (total + size - 1) // size if total else 0
+
     return create_response(
-        code=CustomCode.LOG_001.value, message=Messages.MODEL_API_LOG_FETCH_SUCCESS.value, data={"logs": final_list}
+        code=CustomCode.LOG_001.value,
+        message=Messages.MODEL_API_LOG_FETCH_SUCCESS.value,
+        data={
+            "items": paginated_items,
+            "page": page,
+            "size": size,
+            "total": total,
+            "total_pages": total_pages,
+        },
     )
 
 

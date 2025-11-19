@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from fastapi import status
 
@@ -17,7 +17,12 @@ log_router = APIRouter(prefix="/logs", tags=["Log"])
 
 
 @log_router.post("/api", response_model=BaseResponse, status_code=status.HTTP_200_OK)
-def get_api_log(request: LogRequest, db: Session = Depends(get_db)):
+def get_api_log(
+    request: LogRequest,
+    page: int = Query(1, ge=1, description="페이지 번호(1부터 시작)"),
+    size: int = Query(30, ge=1, le=200, description="페이지당 개수 최댓감 :200"),
+    db: Session = Depends(get_db),
+):
     return get_api_log_service(
         start_date=request.start_date,
         end_date=request.end_date,
@@ -25,6 +30,8 @@ def get_api_log(request: LogRequest, db: Session = Depends(get_db)):
         type=request.type,
         description=request.description,
         global_search=request.global_search,
+        page=page,
+        size=size,
         db=db,
     )
 
