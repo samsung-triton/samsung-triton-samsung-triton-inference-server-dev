@@ -247,7 +247,7 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
 
     q = (
         db.query(
-            func.count(InferenceLogs.inference_log_id).label("request_total"),
+            func.count().label("request_total"),
             func.count().filter(InferenceLogs.inference_status == "OK").label("inference_ok"),
             func.count().filter(InferenceLogs.inference_status == "NG").label("inference_ng"),
             func.count().filter(InferenceLogs.inference_status == "ERROR").label("inference_error"),
@@ -442,7 +442,7 @@ async def get_dashboard_models_list_service(db: Session):
     for m in db_models:
         q = (
             db.query(
-                func.count(InferenceLogs.inference_log_id).label("inference_total"),
+                func.count().filter(InferenceLogs.request_status == "SUCCESS").label("request_success"),
                 func.count().filter(InferenceLogs.inference_status == "OK").label("inference_ok"),
                 func.count().filter(InferenceLogs.inference_status == "NG").label("inference_ng"),
             )
@@ -453,7 +453,7 @@ async def get_dashboard_models_list_service(db: Session):
 
         row = q.first()
 
-        inference_total = row.inference_total or 0
+        inference_total = row.request_success or 0
         inference_ok = row.inference_ok or 0
         ok_ratio = round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0
 
