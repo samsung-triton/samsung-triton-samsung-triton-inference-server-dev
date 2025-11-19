@@ -1,25 +1,23 @@
-//Triton Log 의 모델 추론 로그를 모델별로 필터링
 import 'package:get/get.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/show_alert.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_util' as js_util;
 
-class ModelLogItem {
+class TritonLogItem {
   final String ts;
   final String level;
   final String message;
-  final String modelName;
 
-  const ModelLogItem({required this.ts, required this.level, required this.message, required this.modelName});
+  const TritonLogItem({required this.ts, required this.level, required this.message});
 
-  factory ModelLogItem.fromJson(Map<String, dynamic> json) {
+  factory TritonLogItem.fromJson(Map<String, dynamic> json) {
     //YYYY-MM-DD HH:MM:SS 형태 변환
     final rawDate = json['ts'];
 
     String formattedDate;
     try {
-      final d = DateTime.parse(rawDate); //DB와 동일
+      final d = DateTime.parse(rawDate);
       //final d = DateTime.parse(rawDate).toLocal();
       formattedDate =
           "${d.year.toString().padLeft(4, '0')}-"
@@ -32,17 +30,16 @@ class ModelLogItem {
       formattedDate = rawDate; // 파싱 실패하면 raw 그대로
     }
 
-    return ModelLogItem(
+    return TritonLogItem(
       ts: formattedDate,
       level: json['level']?.toString() ?? '',
       message: json['message']?.toString() ?? '',
-      modelName: json['model_name']?.toString() ?? '',
     );
   }
 }
 
-class ModelLogController extends GetxController {
-  final modellogs = <ModelLogItem>[].obs;
+class TritonLogController extends GetxController {
+  final tritonlogs = <TritonLogItem>[].obs;
 
   late final ApiClient _api;
 
@@ -56,11 +53,12 @@ class ModelLogController extends GetxController {
   }
 
   // 필터 입력값
-  final modelName = ''.obs;
   final logLevel = RxnString(); //null 허용
   final keyword = ''.obs;
   final startDate = Rxn<DateTime>();
   final endDate = Rxn<DateTime>();
+
+  final modelName = ''.obs;
 
   final RxString cursor = ''.obs; // 백엔드에서 받은 다음 cursor 값
   final RxBool isLoadingMore = false.obs; // 중복 호출 방지
@@ -70,7 +68,7 @@ class ModelLogController extends GetxController {
   final RxBool hasMore = true.obs; // 데이터 더 있는지 여부
 
   /// 필터링 결과 (UI에 바인딩)
-  final filteredLogs = <ModelLogItem>[].obs;
+  final filteredLogs = <TritonLogItem>[].obs;
 
   String _formatDate(DateTime date) {
     return "${date.year.toString().padLeft(4, '0')}-"
@@ -92,20 +90,19 @@ class ModelLogController extends GetxController {
     isLoadingMore.value = true;
 
     try {
-      final res = await _api.getInferLog(
-        modelName: modelName.value,
+      final res = await _api.getTritonLog(
         startDate: _formatDate(startDate.value!),
         endDate: _formatDate(endDate.value!),
         level: logLevel.value,
         grobalSearch: keyword.value,
-        cursor: cursor.value.isEmpty ? "" : cursor.value,
+        cursor: cursor.value.isEmpty ? null : cursor.value,
       );
 
       // 서버 응답에서 logs 추가
       final data = res['data'] ?? {};
 
       final List<dynamic> raw = data['logs'] ?? [];
-      final newLogs = raw.map((e) => ModelLogItem.fromJson(e)).toList();
+      final newLogs = raw.map((e) => TritonLogItem.fromJson(e)).toList();
       filteredLogs.addAll(newLogs);
 
       final next = data['next_cursor'];
@@ -133,7 +130,7 @@ class ModelLogController extends GetxController {
 }
 
 // 로그 다운로드 기능
-extension FilterExportExtension on ModelLogController {
+extension FilterExportExtension on TritonLogController {
   Future<void> exportFilteredLogsAsTxt() async {
     if (filteredLogs.isEmpty) {
       ShowAlert.show(message: "No filtered logs to export.");
@@ -141,13 +138,13 @@ extension FilterExportExtension on ModelLogController {
     }
 
     final buffer = StringBuffer();
-    buffer.writeln('=== Infer Logs Export ===');
+    buffer.writeln('=== Triton Logs Export ===');
     buffer.writeln('Created at: ${DateTime.now()}');
     buffer.writeln('');
 
     for (var log in filteredLogs) {
       final date = log.ts;
-      buffer.writeln(' $date | ${log.modelName} | ${log.level} | ${log.message}');
+      buffer.writeln(' $date | ${log.level} | ${log.message}');
       buffer.writeln('');
     }
 

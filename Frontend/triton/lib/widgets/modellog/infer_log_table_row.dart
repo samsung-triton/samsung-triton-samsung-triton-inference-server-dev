@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 
-class ModelLogTableRow extends StatelessWidget {
-  final Map<String, String> log;
-  const ModelLogTableRow({super.key, required this.log});
+class InferLogTableRow extends StatelessWidget {
+  final ModelLogItem log;
+
+  const InferLogTableRow({super.key, required this.log});
 
   @override
   Widget build(BuildContext context) {
@@ -16,9 +18,9 @@ class ModelLogTableRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start, // 여러 줄일 때 위로 정렬
         children: [
-          _textCell(log['date']!, width: 120),
-          _textCell(log['level']!, width: 120),
-          _textCell(log['detail']!, expanded: true, textAlign: TextAlign.left),
+          _textCell(log.ts, width: 120),
+          _textCell(log.level, width: 120),
+          _textCell(log.message, expanded: true, textAlign: TextAlign.left),
         ],
       ),
     );
