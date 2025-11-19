@@ -4,7 +4,7 @@ import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/widgets/modellog/DownloadIconButton.dart';
-import 'package:triton/widgets/modellog/dropdown.dart';
+import 'package:triton/widgets/input/dropdown.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/modellog/filter_block_Infer.dart';

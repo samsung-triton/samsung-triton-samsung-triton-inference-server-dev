@@ -4,7 +4,7 @@ import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/widgets/button/button_small.dart';
 import 'package:triton/widgets/input/input_small.dart';
-import 'package:triton/widgets/modellog/dropdown.dart';
+import 'package:triton/widgets/input/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
 
