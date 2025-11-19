@@ -2,22 +2,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
-import 'package:triton/controller/model_log/triton_infer_log_controller.dart';
 import 'package:triton/controller/model_log/triton_log_controller.dart';
+import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/widgets/modellog/triton_log_table.dart';
-import 'package:triton/widgets/modellog/tritonlog_header.dart';
+import 'package:triton/widgets/modellog/triton_log_header.dart';
 
-class ModelLogScreen extends StatefulWidget {
-  const ModelLogScreen({super.key});
+class TritonLogScreen extends StatefulWidget {
+  const TritonLogScreen({super.key});
 
   @override
-  State<ModelLogScreen> createState() => _ModelLogScreenState();
+  State<TritonLogScreen> createState() => _TritonLogScreenState();
 }
 
-class _ModelLogScreenState extends State<ModelLogScreen> {
+class _TritonLogScreenState extends State<TritonLogScreen> {
   late final ModelLogController modelLogController;
+  late final TritonServerLogController tritonServerLogController;
   late final TritonLogController tritonLogController;
-  late final TritonInferLogController tritonInferLogController;
 
   final scrollController = ScrollController();
 
@@ -26,17 +26,17 @@ class _ModelLogScreenState extends State<ModelLogScreen> {
     super.initState();
 
     // 페이지 단위로 컨트롤러 주입
-    tritonLogController = Get.put(TritonLogController(), permanent: false);
+    tritonServerLogController = Get.put(TritonServerLogController(), permanent: false);
     modelLogController = Get.put(ModelLogController(), permanent: false);
-    tritonInferLogController = Get.put(TritonInferLogController(), permanent: false);
+    tritonLogController = Get.put(TritonLogController(), permanent: false);
   }
 
   @override
   void dispose() {
     // 페이지 나갈 때 컨트롤러 메모리 해제
-    Get.delete<TritonLogController>();
+    Get.delete<TritonServerLogController>();
     Get.delete<ModelLogController>();
-    Get.delete<TritonInferLogController>();
+    Get.delete<TritonLogController>();
     super.dispose();
   }
 

@@ -13,7 +13,7 @@ import 'package:triton/widgets/input/input_large.dart';
 import 'package:triton/widgets/input/input_medium.dart';
 import 'package:triton/widgets/modal/modal_base.dart';
 import 'package:triton/widgets/modal/modal_confirmation.dart';
-import 'package:triton/widgets/modellog/dropdown.dart';
+import 'package:triton/widgets/input/dropdown.dart';
 
 // 모달 등록 종류
 enum RegistrationKind { model, setup }
