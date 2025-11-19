@@ -6,12 +6,32 @@ import 'package:triton/widgets/serverlog/server_log_table_row.dart';
 import 'package:triton/widgets/serverlog/server_log_table_header.dart';
 import 'package:triton/controller/server_log/server_log_controller.dart';
 
-class ServerLogTableServer extends StatelessWidget {
+class ServerLogTableServer extends StatefulWidget {
   const ServerLogTableServer({super.key});
 
   @override
+  State<ServerLogTableServer> createState() => _ServerLogTableServerState();
+}
+
+class _ServerLogTableServerState extends State<ServerLogTableServer> {
+  final ScrollController scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    scrollController.addListener(() {
+      final serverController = Get.find<ServerLogController>();
+
+      if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
+        serverController.fetchMoreLogs();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ServerLogController>();
+    final serverController = Get.find<ServerLogController>();
 
     return Container(
       //margin: EdgeInsets.symmetric(vertical: 2),
@@ -22,7 +42,13 @@ class ServerLogTableServer extends StatelessWidget {
           const ServerLogTableHeader(),
           Expanded(
             child: Obx(() {
-              final logs = controller.filteredLogs; // 필터링된 로그 가져오기
+              final logs = serverController.filteredLogs; // 필터링된 로그 가져오기
+
+              if (serverController.isLoading.value && serverController.filteredLogs.isEmpty) {
+                return Center(
+                  child: Text("Loading...", style: T.t12(color: gray, bold: false)),
+                );
+              }
 
               // 필터링 결과가 없는 경우
               if (logs.isEmpty) {
@@ -40,10 +66,10 @@ class ServerLogTableServer extends StatelessWidget {
                 thumbVisibility: false, // 항상 보이게
                 interactive: true, // 드래그로 스크롤 가능
                 child: ListView.builder(
+                  controller: scrollController,
                   itemCount: logs.length,
                   itemBuilder: (context, i) {
-                    final log = logs[i];
-                    return ServerLogTableRow(log: log);
+                    return ServerLogTableRow(log: logs[i]);
                   },
                 ),
               );
