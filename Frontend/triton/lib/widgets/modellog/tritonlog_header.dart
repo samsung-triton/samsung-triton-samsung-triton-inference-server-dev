@@ -7,6 +7,7 @@ import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
+import 'package:triton/widgets/modellog/filter_block_Infer.dart';
 import 'package:triton/widgets/modellog/filter_block_triton.dart';
 
 class TritonLogHeader extends StatefulWidget {
@@ -49,6 +50,8 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                       hintText: "model name",
                       onChanged: (value) {
                         tritonController.modelName.value = value ?? '';
+                        modelController.modelName.value = value ?? '';
+                        tritonInferController.modelName.value = value ?? '';
 
                         if (value == "triton") {
                           tritonController.applyFilter(); // 서로 다른 흐름이면 분기
@@ -59,14 +62,22 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                     );
                   }),
                   const SizedBox(width: 12),
-                  DownloadIconButton(onPressed: tritonController.exportFilteredLogsAsTxt),
+                  DownloadIconButton(
+                    onPressed: () {
+                      if (tritonInferController.modelName.value == 'triton') {
+                        tritonController.exportFilteredLogsAsTxt(); // Triton 로그 다운로드
+                      } else {
+                        modelController.exportFilteredLogsAsTxt(); // 모델별 Infer 로그 다운로드
+                      }
+                    },
+                  ),
                 ],
               ),
 
               // 오른쪽: filter 토글
               Obx(() {
                 if (tritonController.modelName.value.isEmpty) {
-                  return const SizedBox.shrink(); // server name 선택 전에는 숨김
+                  return const SizedBox.shrink(); // model name 선택 전에는 숨김
                 }
 
                 return GestureDetector(
@@ -89,7 +100,16 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
         AnimatedSize(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
-          child: _isFilterOpen ? const FilterBlockTriton() : const SizedBox.shrink(),
+          child: _isFilterOpen
+              ? Obx(() {
+                  final server = tritonInferController.modelName.value;
+
+                  if (server == 'triton') {
+                    return const FilterBlockTriton();
+                  } else {}
+                  return const FilterBlockInfer();
+                })
+              : const SizedBox.shrink(),
         ),
       ],
     );
