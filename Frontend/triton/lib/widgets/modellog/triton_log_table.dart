@@ -5,7 +5,7 @@ import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import 'package:triton/widgets/modellog/infer_log_table_row.dart';
+import 'package:triton/widgets/modellog/model_log_table_row.dart';
 import 'package:triton/widgets/modellog/triton_log_table_header.dart';
 import 'package:triton/widgets/modellog/triton_log_table_row.dart';
 
@@ -107,7 +107,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
                       controller: scrollController,
                       itemCount: logs.length,
                       itemBuilder: (context, i) {
-                        return InferLogTableRow(log: logs[i]);
+                        return ModelLogTableRow(log: logs[i]);
                       },
                     );
                   }

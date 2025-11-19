@@ -3,10 +3,10 @@ import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 
-class InferLogTableRow extends StatelessWidget {
+class ModelLogTableRow extends StatelessWidget {
   final ModelLogItem log;
 
-  const InferLogTableRow({super.key, required this.log});
+  const ModelLogTableRow({super.key, required this.log});
 
   @override
   Widget build(BuildContext context) {
