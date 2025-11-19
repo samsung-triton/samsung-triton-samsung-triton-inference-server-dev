@@ -256,4 +256,61 @@ class ApiClient extends GetConnect {
     final logs = (res['logs'] as List?) ?? [];
     return logs;
   }
+
+  //triton 로그에서 모델 목록 조회
+  Future<dynamic> getLogModelList() {
+    return _get('/api/v1/logs/model-list', apiName: 'getLogModelList');
+  }
+
+  //Serverlog - Infer 로그 조회 & 필터링
+  Future<Map<String, dynamic>> getInferLog({
+    String? startDate,
+    String? endDate,
+    String? modelName,
+    String? cursor,
+    String? requestId,
+    String? level,
+    String? grobalSearch,
+    int limit = 200,
+  }) async {
+    final raw = await httpClient.post(
+      '/api/v1/logs/model',
+      body: jsonEncode({
+        'model_name': modelName,
+        'cursor': cursor,
+        'requestId': requestId,
+        'start_date': startDate,
+        'end_date': endDate,
+        'level': level,
+        'global_search': grobalSearch,
+        'limit': limit,
+      }),
+      contentType: 'application/json',
+    );
+    return raw.body; // JSON 반환
+  }
+
+  //Serverlog - Triton 로그 조회 & 필터링
+  Future<Map<String, dynamic>> getTritonLog({
+    String? startDate,
+    String? endDate,
+    String? cursor,
+    String? level,
+    String? grobalSearch,
+    int limit = 200,
+  }) async {
+    final raw = await httpClient.post(
+      '/api/v1/logs/system',
+      body: jsonEncode({
+        'cursor': cursor,
+        'start': startDate,
+        'end': endDate,
+        'level': level,
+        'global_search': grobalSearch,
+        'limit': limit,
+      }),
+      contentType: 'application/json',
+    );
+    return raw.body; // JSON 반환
+  }
 }
