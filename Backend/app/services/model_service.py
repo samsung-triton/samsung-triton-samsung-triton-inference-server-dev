@@ -254,8 +254,8 @@ def register_model_service(
         # config.pbtxt가 존재할 때만 Config 테이블 버전 생성
         if cfg_entry and cfg_entry.exists():
             config_text = cfg_entry.read_text(encoding="utf-8", errors="ignore")
-            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current).update(
-                {"is_current": False}
+            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True).update(
+                {"is_current": False}, synchronize_session=False
             )
             save_model_config(db, model.model_id, 1, config_text, str(cfg_entry), user.user_id)
 
@@ -416,7 +416,9 @@ def register_model_assets_service(
         if config_file and cfg_entry:
             # DB에서 기존 최신 config 조회
             prev_cfg = (
-                db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current).first()
+                db.query(ModelConfig)
+                .filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True)
+                .first()
             )
             if prev_cfg:
                 cfg_entry.write_text(prev_cfg.content, encoding="utf-8")
@@ -464,8 +466,8 @@ def register_model_assets_service(
             config_text = cfg_entry.read_text(encoding="utf-8", errors="ignore")
 
             # 기존 is_current 해제
-            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current).update(
-                {"is_current": False}
+            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True).update(
+                {"is_current": False}, synchronize_session=False
             )
 
             save_model_config(db, model.model_id, next_cfg_version, config_text, str(cfg_entry), user.user_id)
@@ -491,7 +493,9 @@ def register_model_assets_service(
         if config_file and cfg_entry:
             # DB에서 기존 최신 config 조회
             prev_cfg = (
-                db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current).first()
+                db.query(ModelConfig)
+                .filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True)
+                .first()
             )
             if prev_cfg:
                 cfg_entry.write_text(prev_cfg.content, encoding="utf-8")
@@ -691,7 +695,7 @@ def get_model_detail_service(model_id: int, db: Session):
         )
 
     # 현재 Config 조회
-    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).first()
+    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
 
     config_data = None
     if config:

@@ -18,7 +18,7 @@ from app.common.messages import Messages
 
 async def get_current_config_service(db: Session, model_id: int):
     """특정 모델의 현재 사용 중인 Config 조회"""
-    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).first()
+    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
 
     if not config:
         raise CustomHTTPException(
@@ -45,7 +45,7 @@ async def get_rollback_config_list_service(db: Session, model_id: int):
     results = (
         db.query(ModelConfig, User)
         .join(User, User.user_id == ModelConfig.created_by, isouter=True)
-        .filter(ModelConfig.model_id == model_id, not ModelConfig.is_current)
+        .filter(ModelConfig.model_id == model_id, ModelConfig.is_current == False)
         .order_by(ModelConfig.version.asc())
         .all()
     )
@@ -214,7 +214,9 @@ def update_model_config_service(
         )
 
     # 2. 기존 config (DB 기준) 가져오기 → 파일 롤백용
-    previous_config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).first()
+    previous_config = (
+        db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
+    )
 
     if not previous_config:
         raise CustomHTTPException(
@@ -246,8 +248,8 @@ def update_model_config_service(
     # STEP 2: DB 업데이트 (여기서 실패하면 파일 롤백 + DB rollback)
     try:
         # 기존 최신 버전 inactive
-        db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).update(
-            {"is_current": False}
+        db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).update(
+            {"is_current": False}, synchronize_session=False
         )
 
         latest_version = db.query(func.max(ModelConfig.version)).filter(ModelConfig.model_id == model_id).scalar() or 0
