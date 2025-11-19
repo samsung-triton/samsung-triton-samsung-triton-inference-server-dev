@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter/services.dart';
 
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/dashboard/common_info_card_base.dart';
 import 'package:triton/controller/dashboard/model_dashboard_controller.dart';
-import 'package:triton/widgets/dashboard/model_metrics.dart';
+import 'package:triton/utils/show_alert.dart'; // 🔥 ModalAlert 사용을 위한 import 추가
 
 class ModelNotificationPanel extends StatelessWidget {
   const ModelNotificationPanel({super.key});
@@ -14,57 +15,86 @@ class ModelNotificationPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.find<ModelDashboardController>();
 
+    const double itemHeight = 78;
+    const double maxHeight = itemHeight * 10;
+
     return CommonInfoCardBase(
-      title: "Notification",
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Scrollbar(
-          thumbVisibility: true,
+      title: "Server Notifications",
+      child: SizedBox(
+        height: maxHeight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Obx(() {
-            final List<NotificationLog> data = c.notifications;
+            final data = c.serverNotifications;
 
             if (data.isEmpty) {
               return const Center(child: Text("No notifications available"));
             }
 
-            return ListView.separated(
-              itemCount: data.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 6),
-              itemBuilder: (context, index) {
-                final log = data[index];
-                final color = _levelColor(log.level);
+            return Scrollbar(
+              thumbVisibility: true,
+              child: ListView.separated(
+                itemCount: data.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 6),
+                itemBuilder: (_, index) {
+                  final log = data[index];
 
-                return Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.08),
-                    border: Border(left: BorderSide(color: color, width: 3)),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // LEVEL (INFO / WARN / ERROR)
-                      Text(log.level, style: T.t12(color: color, bold: true)),
-                      const SizedBox(height: 4),
+                  // ANSI escape 제거
+                  final cleanMessage = log.message.replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '');
 
-                      // MESSAGE
-                      Text(log.message, style: T.t12(color: black)),
+                  final color = _levelColor(log.level);
+                  final ts = _formatDateTime(log.ts);
 
-                      const SizedBox(height: 4),
+                  return Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.08),
+                      border: Border(left: BorderSide(color: color, width: 3)),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// LEVEL
+                        Text(log.level, style: T.t12(color: color, bold: true)),
+                        const SizedBox(height: 4),
 
-                      // Timestamp (optional)
-                      Text(_formatTimeAgo(log.timestamp), style: T.t12(color: gray)),
-                    ],
-                  ),
-                );
-              },
+                        /// MESSAGE (2줄 제한 + 클릭 시 ModalAlert 상세 표시)
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () {
+                              // 🔥 ModalAlert 직접 띄움 (전역 사용)
+                              ShowAlert.show(title: log.level, message: cleanMessage);
+                            },
+                            child: Text(
+                              cleanMessage,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: T.t12(color: black),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        /// TIMESTAMP
+                        Text(ts, style: T.t12(color: gray)),
+                      ],
+                    ),
+                  );
+                },
+              ),
             );
           }),
         ),
       ),
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
   Color _levelColor(String level) {
     switch (level.toUpperCase()) {
@@ -78,17 +108,11 @@ class ModelNotificationPanel extends StatelessWidget {
     }
   }
 
-  String _formatTimeAgo(String isoString) {
-    if (isoString.isEmpty) return "-";
-
-    final time = DateTime.tryParse(isoString);
-    if (time == null) return "-";
-
-    final diff = DateTime.now().difference(time);
-
-    if (diff.inMinutes < 1) return "just now";
-    if (diff.inMinutes < 60) return "${diff.inMinutes} minutes ago";
-    if (diff.inHours < 24) return "${diff.inHours} hours ago";
-    return "${diff.inDays} days ago";
+  String _formatDateTime(DateTime ts) {
+    return "${ts.year}-${ts.month.toString().padLeft(2, '0')}"
+        "-${ts.day.toString().padLeft(2, '0')} "
+        "${ts.hour.toString().padLeft(2, '0')}:"
+        "${ts.minute.toString().padLeft(2, '0')}:"
+        "${ts.second.toString().padLeft(2, '0')}";
   }
 }
