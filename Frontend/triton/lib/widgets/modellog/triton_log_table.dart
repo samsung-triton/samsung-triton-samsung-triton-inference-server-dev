@@ -59,7 +59,8 @@ class _TritonLogTableState extends State<TritonLogTable> {
             child: Obx(() {
               final model = tritonInferController.modelName.value;
 
-              if (tritonController.isLoading.value && tritonController.filteredLogs.isEmpty) {
+              if (tritonController.isLoading.value && tritonController.filteredLogs.isEmpty ||
+                  modelController.isLoading.value && modelController.filteredLogs.isEmpty) {
                 return Center(
                   child: Text("Loading...", style: T.t12(color: gray, bold: false)),
                 );
