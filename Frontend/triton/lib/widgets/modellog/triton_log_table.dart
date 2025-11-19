@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
-import 'package:triton/controller/model_log/triton_infer_log_controller.dart';
+import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
@@ -27,10 +27,10 @@ class _TritonLogTableState extends State<TritonLogTable> {
       final tritonServerLogController = Get.find<TritonServerLogController>();
       final modelController = Get.find<ModelLogController>();
 
-      final tritonInferController = Get.find<TritonInferLogController>();
+      final tritonController = Get.find<TritonLogController>();
 
       if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
-        final model = tritonInferController.modelName.value;
+        final model = tritonController.modelName.value;
 
         if (model == 'Triton Server') {
           tritonServerLogController.fetchMoreLogs();
@@ -46,7 +46,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
     final tritonServerLogController = Get.find<TritonServerLogController>();
     final modelController = Get.find<ModelLogController>();
 
-    final tritonInferController = Get.find<TritonInferLogController>();
+    final tritonInferController = Get.find<TritonLogController>();
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -72,7 +72,6 @@ class _TritonLogTableState extends State<TritonLogTable> {
                 );
               }
 
-              // 🔥 로그 분기
               final logs = (model == 'Triton Server')
                   ? tritonServerLogController.filteredLogs
                   : modelController.filteredLogs;

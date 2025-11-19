@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/show_alert.dart';
 
-class TritonInferLogController extends GetxController {
+class TritonLogController extends GetxController {
   final ApiClient _api = Get.find<ApiClient>();
 
   final RxList<String> modelList = <String>[].obs;
