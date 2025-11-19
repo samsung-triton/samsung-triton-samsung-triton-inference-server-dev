@@ -26,11 +26,7 @@ class TritonInferLogController extends GetxController {
 
       final List<String> fetched = (data['models'] as List).map((e) => e.toString()).toList();
 
-      modelList.assignAll(fetched);
-
-      if (!modelList.contains('triton')) {
-        modelList.add('triton');
-      }
+      modelList.assignAll(['Triton Server', ...fetched]);
     } catch (e) {
       ShowAlert.show(message: "Failed to retrieve model list.");
     }
