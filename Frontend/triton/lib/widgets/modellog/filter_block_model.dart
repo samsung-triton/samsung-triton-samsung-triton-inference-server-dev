@@ -12,10 +12,10 @@ class FilterBlockModel extends StatefulWidget {
   const FilterBlockModel({super.key});
 
   @override
-  State<FilterBlockModel> createState() => _FilterBlockTritonState();
+  State<FilterBlockModel> createState() => _FilterBlockModelState();
 }
 
-class _FilterBlockTritonState extends State<FilterBlockModel> {
+class _FilterBlockModelState extends State<FilterBlockModel> {
   final keywordCtrl = TextEditingController();
 
   @override
