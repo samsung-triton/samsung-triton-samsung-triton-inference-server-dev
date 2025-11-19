@@ -1,5 +1,4 @@
-//전체 컨트롤러
-
+//Triton Log 드롭다운 컨트롤러
 import 'package:get/get.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/show_alert.dart';
@@ -7,7 +6,8 @@ import 'package:triton/utils/show_alert.dart';
 class TritonInferLogController extends GetxController {
   final ApiClient _api = Get.find<ApiClient>();
 
-  final modelList = <String>[].obs; // 드롭다운 표시용 모델 리스트
+  final RxList<String> modelList = <String>[].obs;
+  final RxString modelName = ''.obs;
 
   @override
   void onInit() {
@@ -21,8 +21,7 @@ class TritonInferLogController extends GetxController {
       final data = await _api.getLogModelList();
 
       if (data is String) {
-        // Alert 테스트 해야함
-        ShowAlert.show(message: data);
+        ShowAlert.show(message: "Failed to retrieve model list.");
       }
 
       final List<String> fetched = (data['models'] as List).map((e) => e.toString()).toList();
@@ -33,7 +32,7 @@ class TritonInferLogController extends GetxController {
         modelList.add('triton');
       }
     } catch (e) {
-      //print("❌ getLogModelList() 에러: $e");
+      ShowAlert.show(message: "Failed to retrieve model list.");
     }
   }
 }
