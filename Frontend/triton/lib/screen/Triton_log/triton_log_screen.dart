@@ -7,14 +7,14 @@ import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/widgets/modellog/triton_log_table.dart';
 import 'package:triton/widgets/modellog/triton_log_header.dart';
 
-class ModelLogScreen extends StatefulWidget {
-  const ModelLogScreen({super.key});
+class TritonLogScreen extends StatefulWidget {
+  const TritonLogScreen({super.key});
 
   @override
-  State<ModelLogScreen> createState() => _ModelLogScreenState();
+  State<TritonLogScreen> createState() => _TritonLogScreenState();
 }
 
-class _ModelLogScreenState extends State<ModelLogScreen> {
+class _TritonLogScreenState extends State<TritonLogScreen> {
   late final ModelLogController modelLogController;
   late final TritonServerLogController tritonServerLogController;
   late final TritonLogController tritonLogController;
