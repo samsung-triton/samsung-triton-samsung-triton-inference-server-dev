@@ -1,4 +1,4 @@
-// 모델 로그 화면 위젯
+// Triton Log Screen
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
@@ -18,6 +18,8 @@ class _ModelLogScreenState extends State<ModelLogScreen> {
   late final ModelLogController modelLogController;
   late final TritonLogController tritonLogController;
   late final TritonInferLogController tritonInferLogController;
+
+  final scrollController = ScrollController();
 
   @override
   void initState() {
