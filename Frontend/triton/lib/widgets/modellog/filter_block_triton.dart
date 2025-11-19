@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:triton/controller/model_log/triton_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/widgets/button/button_small.dart';
 import 'package:triton/widgets/input/input_small.dart';
 import 'package:triton/widgets/modellog/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
-import 'package:triton/controller/model_log/model_log_controller.dart';
 
-class FilterBlockTriton extends StatelessWidget {
+class FilterBlockTriton extends StatefulWidget {
   const FilterBlockTriton({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<ModelLogController>();
+  State<FilterBlockTriton> createState() => _FilterBlockTritonState();
+}
 
-    final keywordCtrl = TextEditingController();
+class _FilterBlockTritonState extends State<FilterBlockTriton> {
+  final keywordCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    keywordCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<TritonLogController>();
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -34,27 +45,40 @@ class FilterBlockTriton extends StatelessWidget {
             children: [
               FilterText(label: 'period'),
               SizedBox(width: 8),
-              MiniDatePicker(
-                onDateSelected: (date) {
-                  controller.startDate.value = date;
+              Obx(
+                () => MiniDatePicker(
+                  initialDate: controller.startDate.value,
+                  onDateSelected: (date) {
+                    controller.startDate.value = date;
 
-                  // 만약 종료 날짜가 시작보다 전이면 null로 리셋
-                  if (controller.endDate.value != null && controller.endDate.value!.isBefore(date)) {
-                    controller.endDate.value = null;
-                  }
-                },
+                    if (controller.endDate.value != null && controller.endDate.value!.isBefore(date)) {
+                      controller.endDate.value = null;
+                    }
+                  },
+                ),
               ),
+
               SizedBox(width: 8),
               Text('~', style: TextStyle(color: black)),
               SizedBox(width: 8),
               Obx(
                 () => MiniDatePicker(
-                  onDateSelected: (date) {
-                    controller.endDate.value = date;
-                  },
-                  // 시작 날짜 이후로만 선택 가능하게 제한
-                  firstDate: controller.startDate.value ?? DateTime(2000),
+                  initialDate: controller.endDate.value,
+                  firstDate: controller.startDate.value,
+                  onDateSelected: (date) => controller.endDate.value = date,
                 ),
+              ),
+              const Spacer(), // 오른쪽으로 밀기
+
+              ButtonSmall(
+                text: 'reset',
+                backgroundColor: primaryNormal,
+                textColor: white,
+                borderColor: Colors.transparent,
+                onPressed: () {
+                  controller.resetFilter();
+                  keywordCtrl.clear();
+                },
               ),
             ],
           ),
@@ -64,13 +88,17 @@ class FilterBlockTriton extends StatelessWidget {
             children: [
               FilterText(label: 'log level'),
               SizedBox(width: 8),
-              Dropdown(
-                items: ['INFO', 'DEBUG', 'WARN', 'ERROR'],
-                width: 200,
-                hintText: 'select loglevel',
-                onChanged: (value) {
-                  controller.logLevel.value = value ?? '';
-                },
+              Obx(
+                () => Dropdown(
+                  key: ValueKey(controller.logLevel.value),
+                  items: ['INFO', 'WARN', 'ERROR'],
+                  value: controller.logLevel.value,
+                  width: 200,
+                  hintText: 'select loglevel',
+                  onChanged: (value) {
+                    controller.logLevel.value = value;
+                  },
+                ),
               ),
             ],
           ),
@@ -90,10 +118,9 @@ class FilterBlockTriton extends StatelessWidget {
                 textColor: white,
                 borderColor: Colors.transparent,
                 onPressed: () {
-                  final keyword = keywordCtrl.text.trim();
-                  controller.keyword.value = keyword;
+                  controller.keyword.value = keywordCtrl.text.trim();
 
-                  controller.applyFilter();
+                  controller.applyFilter(); // Triton 로그 API 호출
                 },
               ),
             ],
