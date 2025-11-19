@@ -7,7 +7,7 @@ import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/modellog/model_log_table_row.dart';
 import 'package:triton/widgets/modellog/triton_log_table_header.dart';
-import 'package:triton/widgets/modellog/triton_log_table_row.dart';
+import 'package:triton/widgets/modellog/triton_server_log_table_row.dart';
 
 class TritonLogTable extends StatefulWidget {
   const TritonLogTable({super.key});
@@ -97,7 +97,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
                       controller: scrollController,
                       itemCount: logs.length,
                       itemBuilder: (context, i) {
-                        return TritonLogTableRow(log: logs[i]);
+                        return TritonServerLogTableRow(log: logs[i]);
                       },
                     );
                   } else {
