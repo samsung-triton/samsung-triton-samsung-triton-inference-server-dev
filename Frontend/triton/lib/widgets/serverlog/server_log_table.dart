@@ -6,14 +6,14 @@ import 'package:triton/widgets/serverlog/server_log_table_row.dart';
 import 'package:triton/widgets/serverlog/server_log_table_header.dart';
 import 'package:triton/controller/server_log/server_log_controller.dart';
 
-class ServerLogTableServer extends StatefulWidget {
-  const ServerLogTableServer({super.key});
+class ServerLogTable extends StatefulWidget {
+  const ServerLogTable({super.key});
 
   @override
-  State<ServerLogTableServer> createState() => _ServerLogTableServerState();
+  State<ServerLogTable> createState() => _ServerLogTableState();
 }
 
-class _ServerLogTableServerState extends State<ServerLogTableServer> {
+class _ServerLogTableState extends State<ServerLogTable> {
   final ScrollController scrollController = ScrollController();
 
   @override

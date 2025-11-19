@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:triton/controller/model_log/triton_log_controller.dart';
+import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/widgets/button/button_small.dart';
 import 'package:triton/widgets/input/input_small.dart';
-import 'package:triton/widgets/modellog/dropdown.dart';
+import 'package:triton/widgets/input/dropdown.dart';
 import 'package:triton/widgets/modellog/filter_text.dart';
 import 'package:triton/widgets/modellog/MiniDatePicker.dart';
 
-class FilterBlockTriton extends StatefulWidget {
-  const FilterBlockTriton({super.key});
+class FilterBlockTritonServer extends StatefulWidget {
+  const FilterBlockTritonServer({super.key});
 
   @override
-  State<FilterBlockTriton> createState() => _FilterBlockTritonState();
+  State<FilterBlockTritonServer> createState() => _FilterBlockTritonServerState();
 }
 
-class _FilterBlockTritonState extends State<FilterBlockTriton> {
+class _FilterBlockTritonServerState extends State<FilterBlockTritonServer> {
   final keywordCtrl = TextEditingController();
 
   @override
@@ -26,7 +26,7 @@ class _FilterBlockTritonState extends State<FilterBlockTriton> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<TritonLogController>();
+    final controller = Get.find<TritonServerLogController>();
 
     return Container(
       padding: const EdgeInsets.all(8),
