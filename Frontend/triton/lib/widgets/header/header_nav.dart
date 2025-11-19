@@ -21,7 +21,7 @@ class HeaderNav extends StatelessWidget {
         children: [
           MenuText(label: 'Dashboard', to: Routes.dashboard, selected: loc.startsWith(Routes.dashboard)),
           MenuText(label: 'Model Manage', to: Routes.modelManage, selected: loc.startsWith(Routes.modelManage)),
-          MenuText(label: 'Model Log', to: Routes.modelLog, selected: loc.startsWith(Routes.modelLog)),
+          MenuText(label: 'Triton Log', to: Routes.modelLog, selected: loc.startsWith(Routes.modelLog)),
           MenuText(label: 'Server Log', to: Routes.serverLog, selected: loc.startsWith(Routes.serverLog)),
         ],
       ),
