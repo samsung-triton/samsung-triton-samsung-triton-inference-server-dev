@@ -199,6 +199,9 @@ def register_model_service(
     db: Session,
 ) -> Dict[str, Any]:
     """단일 모델 등록 서비스"""
+
+    user = get_user_or_404(db, req.LoginId)
+
     # 모델명 확인
     model_name = safe_name(req.modelName)
     if not model_name:
@@ -241,7 +244,6 @@ def register_model_service(
         )
 
     # 3) DB 기록
-    user = get_user_or_404(db, req.LoginId)
     cfg_dict = next((f for f in saved_config_files if f["fileName"].endswith("config.pbtxt")), None)
     cfg_entry: Path | None = Path(cfg_dict["filePath"]) if cfg_dict else None
 
