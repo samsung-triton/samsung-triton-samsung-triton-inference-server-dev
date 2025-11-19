@@ -41,7 +41,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text("Model Log", style: T.t16(color: black, bold: true)),
+                  Text("Triton Log", style: T.t16(color: black, bold: true)),
                   const SizedBox(width: 12),
                   Obx(() {
                     return Dropdown(

@@ -4,7 +4,7 @@ import 'package:get_storage/get_storage.dart';
 
 import 'package:triton/screen/dashboard/dashboard_screen.dart';
 import 'package:triton/screen/login/login_Screen.dart';
-import 'package:triton/screen/model_log/model_log_screen.dart';
+import 'package:triton/screen/Triton_log/triton_log_screen.dart';
 import 'package:triton/screen/model_manage/model_manage_screen.dart';
 import 'package:triton/screen/server_log/server_log_screen.dart';
 
@@ -15,7 +15,7 @@ class Routes {
   static const login = '/login';
   static const dashboard = '/dashboard';
   static const modelManage = '/model_manage';
-  static const modelLog = '/model_log';
+  static const tritonLog = '/triton_log';
   static const serverLog = '/server_log';
 }
 
@@ -53,7 +53,7 @@ final appRouter = GoRouter(
     // 2) role에 따른 접근 제어: DEVEL
     if (role == 'DEVEL') {
       // 로그인 제외 모든 페이지 허용
-      const allowedForDevel = {Routes.dashboard, Routes.modelManage, Routes.modelLog, Routes.serverLog};
+      const allowedForDevel = {Routes.dashboard, Routes.modelManage, Routes.tritonLog, Routes.serverLog};
       if (!allowedForDevel.contains(loc)) {
         return Routes.dashboard;
       }
@@ -72,7 +72,7 @@ final appRouter = GoRouter(
         GoRoute(path: Routes.login, name: 'login', builder: (_, __) => const LoginScreen()),
         GoRoute(path: Routes.dashboard, name: 'dashboard', builder: (_, __) => const DashboardScreen()),
         GoRoute(path: Routes.modelManage, name: 'model_manage', builder: (_, __) => const ModelManageScreen()),
-        GoRoute(path: Routes.modelLog, name: 'model_log', builder: (_, __) => const ModelLogScreen()),
+        GoRoute(path: Routes.tritonLog, name: 'triton_log', builder: (_, __) => const TritonLogScreen()),
         GoRoute(path: Routes.serverLog, name: 'server_log', builder: (_, __) => const ServerLogScreen()),
       ],
     ),
