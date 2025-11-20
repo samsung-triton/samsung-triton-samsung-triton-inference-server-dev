@@ -23,6 +23,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.json
 
 # PyInstaller
 *.manifest
@@ -107,9 +108,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-env/
-venv/
-ENV/
 .envrc
 
 # =========================================
@@ -168,3 +166,13 @@ htmlcov/
 .tox/
 .nox/
 .cache/
+
+# =========================================
+# GPU / Monitoring
+# =========================================
+alloy/
+prometheus_data/
+grafana_data/
+metrics/
+*.prom
+*.jsonl
