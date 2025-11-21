@@ -12,6 +12,8 @@ from app.services.log_service import (
 )
 from app.schemas.base_schema import BaseResponse
 from app.schemas.log_schema import LogRequest, ModelLogRequest, ServerLogRequest
+from app.services.log_service import subscribe_infer_log
+from fastapi.responses import StreamingResponse
 
 log_router = APIRouter(prefix="/logs", tags=["Log"])
 
@@ -72,4 +74,14 @@ def get_system_logs(
         cursor=request.cursor,
         global_search=request.global_search,
         limit=request.limit,
+    )
+
+@log_router.get("/infer/stream")
+async def stream_infer_logs():
+    """
+    실시간 추론 로그 SSE 스트림
+    """
+    return StreamingResponse(
+        subscribe_infer_log(),
+        media_type="text/event-stream"
     )

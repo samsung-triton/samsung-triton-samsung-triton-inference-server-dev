@@ -1,5 +1,4 @@
 from fastapi import status
-from sqlalchemy.orm import Session
 from datetime import datetime
 from sqlalchemy import text
 
@@ -11,6 +10,10 @@ from app.models.server import Server
 from app.models.model import ModelRelease
 from app.models.user import User
 from app.core.customException import CustomHTTPException
+
+import asyncio
+from sqlalchemy.orm import Session
+from app.common.log_sse import SSEChannel
 
 
 def get_api_log_service(
@@ -286,3 +289,65 @@ def get_server_logs_service(db, start, end, level, cursor, global_search, limit)
             "next_cursor": next_cursor,
         },
     )
+
+
+#실시간 SSE Poller 추가
+infer_log_channel = SSEChannel()
+_last_ts = None
+
+
+async def run_infer_log_poller(get_clickhouse_db):
+    """ClickHouse에서 최신 추론 로그를 polling하여 SSE로 push"""
+    global _last_ts
+
+    while True:
+        try:
+            db: Session = next(get_clickhouse_db())
+
+            sql = text("""
+                SELECT ts, level, message, model_name, uid
+                FROM logs.triton_infer_logs
+                ORDER BY ts DESC
+                LIMIT 50
+            """)
+
+            rows = db.execute(sql).fetchall()
+
+            if not rows:
+                await asyncio.sleep(1)
+                continue
+
+            newest_ts = rows[0][0]
+
+            if _last_ts is None:
+                _last_ts = newest_ts
+                await asyncio.sleep(1)
+                continue
+
+            new_logs = [r for r in rows if r[0] > _last_ts]
+
+            if new_logs:
+                _last_ts = new_logs[0][0]
+
+            for r in reversed(new_logs):
+                await infer_log_channel.publish({
+                    "ts": str(r[0]),
+                    "level": r[1],
+                    "message": r[2],
+                    "model_name": r[3],
+                    "uid": r[4],
+                })
+
+            await asyncio.sleep(1)
+
+        except Exception as e:
+            print(f"[SSE Poller Error]: {e}")
+            await asyncio.sleep(3)
+
+async def subscribe_infer_log():
+    queue = infer_log_channel.subscribe()
+    try:
+        async for event in infer_log_channel.generator(queue):
+            yield event
+    except asyncio.CancelledError:
+        infer_log_channel.unsubscribe(queue)
