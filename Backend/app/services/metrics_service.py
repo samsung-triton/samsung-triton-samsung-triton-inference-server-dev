@@ -497,7 +497,6 @@ async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
 
     base_time_str = current_standard_time()
     start_time, end_time = get_aggregation_window_from_str(base_time_str)
-
     for m in db_models:
         q = (
             db.query(

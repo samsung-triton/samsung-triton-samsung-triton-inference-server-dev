@@ -15,7 +15,7 @@ from app.services.metrics_service import (
     get_model_per_inference_latency_service,
     get_dashboard_models_list_service,
 )
-from app.common.sse import SSEChannel
+from app.common.metric_sse import SSEChannel
 from fastapi.concurrency import run_in_threadpool  # 모델 stats용 (sync -> threadpool)
 
 
