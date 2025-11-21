@@ -117,29 +117,6 @@ async def stream_server_timeseries():
 
 
 # ============================================================
-# 3. 모델 목록 / 모델 통계
-# ============================================================
-
-
-# @metrics_router.get("/models")
-# async def get_dashboard_models_list(db: Session = Depends(get_db)):
-#     """대시보드에 노출할 Triton READY 모델 목록 + 간단 통계."""
-#     return await get_dashboard_models_list_service(db)
-
-
-# @metrics_router.get(
-#     "/model/{model_id}/stats",
-#     response_model=BaseResponse,
-#     status_code=status.HTTP_200_OK,
-# )
-# def get_model_per_inference_stats(
-#     model_id: int = Path(...),
-#     db: Session = Depends(get_db),
-# ):
-#     """특정 모델의 요청/추론 성공률, 에러 수, 평균 지연시간 등 통계 (HTTP)."""
-#     return get_model_per_inference_stats_service(model_id, db)
-
-# ============================================================
 # 3. 모델 목록 - SSE
 # ============================================================
 
@@ -267,7 +244,7 @@ async def stream_model_latency(model_id: int = Path(...)):
 
 
 # ============================================================
-# 4. 모델 통계 - SSE (모델별 채널)
+# 5. 모델 통계 - SSE (모델별 채널)
 # ============================================================
 
 MODEL_STATS_POLL_INTERVAL_SEC = 10
