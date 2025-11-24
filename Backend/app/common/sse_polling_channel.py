@@ -5,11 +5,11 @@ import json
 from typing import Optional, AsyncGenerator
 from fastapi.encoders import jsonable_encoder
 
-from app.common.base_sse import SSEBase
+from Backend.app.common.sse_base import SSEBase
 from app.core.customException import CustomHTTPException
 
 
-class SSEChannel(SSEBase):
+class PollingSSEChannel(SSEBase):
     """
     - fetch_fn: async () -> dict (jsonable_encoder로 인코딩 가능한 객체)
     - interval_sec: polling 주기
@@ -77,8 +77,8 @@ class SSEChannel(SSEBase):
                 self.unsubscribe(q)
 
 
-# 🔹 공통 SSE event generator
-async def sse_event_stream(channel: SSEChannel) -> AsyncGenerator[str, None]:
+# 공통 SSE event generator
+async def sse_event_stream(channel: PollingSSEChannel) -> AsyncGenerator[str, None]:
     """
     - 채널에 subscribe 하고
     - 필요 시 polling 태스크 시작하고

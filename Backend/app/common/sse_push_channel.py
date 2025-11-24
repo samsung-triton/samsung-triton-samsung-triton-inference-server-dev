@@ -1,13 +1,15 @@
 # common/sse_push_channel.py
 import asyncio
 import json
-from app.common.base_sse import SSEBase
+from Backend.app.common.sse_base import SSEBase
+
 
 class PushSSEChannel(SSEBase):
     """
     Vector → FastAPI → Frontend
     공통 PUSH SSE 채널
     """
+
     def __init__(self):
         super().__init__()
 

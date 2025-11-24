@@ -1,11 +1,7 @@
 # app/api/v1/metrics_router.py
 
 from typing import Dict
-
-from fastapi import (
-    APIRouter,
-    Path,
-)
+from fastapi import APIRouter, Path
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -17,7 +13,7 @@ from app.services.metrics_service import (
     get_model_per_inference_latency_service,
     get_dashboard_models_list_service,
 )
-from app.common.metric_sse import SSEChannel, sse_event_stream
+from Backend.app.common.sse_polling_channel import PollingSSEChannel, sse_event_stream
 from fastapi.concurrency import run_in_threadpool  # 모델 stats용 (sync -> threadpool)
 
 
@@ -35,7 +31,7 @@ async def _fetch_server_metrics():
     return await get_server_metrics_service()
 
 
-server_metrics_channel = SSEChannel(
+server_metrics_channel = PollingSSEChannel(
     fetch_fn=_fetch_server_metrics,
     interval_sec=SERVER_METRICS_POLL_INTERVAL_SEC,
 )
@@ -70,7 +66,7 @@ async def _fetch_server_timeseries():
     return await get_timeseries_service(end_iso=None)
 
 
-server_timeseries_channel = SSEChannel(
+server_timeseries_channel = PollingSSEChannel(
     fetch_fn=_fetch_server_timeseries,
     interval_sec=TIMESERIES_POLL_INTERVAL_SEC,
 )
@@ -115,7 +111,7 @@ async def _fetch_models_list():
             pass
 
 
-models_list_channel = SSEChannel(
+models_list_channel = PollingSSEChannel(
     fetch_fn=_fetch_models_list,
     interval_sec=MODELS_POLL_INTERVAL_SEC,
 )
@@ -144,10 +140,10 @@ async def stream_dashboard_models_list():
 
 MODEL_LATENCY_POLL_INTERVAL_SEC = 5
 
-_model_latency_channels: Dict[int, SSEChannel] = {}
+_model_latency_channels: Dict[int, PollingSSEChannel] = {}
 
 
-def _get_model_latency_channel(model_id: int) -> SSEChannel:
+def _get_model_latency_channel(model_id: int) -> PollingSSEChannel:
     """
     model_id 별로 SSEChannel을 lazily 생성/재사용.
     """
@@ -170,7 +166,7 @@ def _get_model_latency_channel(model_id: int) -> SSEChannel:
             except Exception:
                 pass
 
-    channel = SSEChannel(
+    channel = PollingSSEChannel(
         fetch_fn=fetch_model_latency,
         interval_sec=MODEL_LATENCY_POLL_INTERVAL_SEC,
     )
@@ -202,10 +198,10 @@ async def stream_model_latency(model_id: int = Path(...)):
 
 MODEL_STATS_POLL_INTERVAL_SEC = 10
 
-_model_stats_channels: Dict[int, SSEChannel] = {}
+_model_stats_channels: Dict[int, PollingSSEChannel] = {}
 
 
-def _get_model_stats_channel(model_id: int) -> SSEChannel:
+def _get_model_stats_channel(model_id: int) -> PollingSSEChannel:
     """
     model_id 별로 SSEChannel을 lazily 생성/재사용.
     """
@@ -229,7 +225,7 @@ def _get_model_stats_channel(model_id: int) -> SSEChannel:
             except Exception:
                 pass
 
-    channel = SSEChannel(
+    channel = PollingSSEChannel(
         fetch_fn=fetch_model_stats,
         interval_sec=MODEL_STATS_POLL_INTERVAL_SEC,
     )
