@@ -52,8 +52,8 @@ async def stream_server_metrics():
     async def event_generator():
         try:
             # 캐시가 있다면 바로 한 번 쏴주기
-            if server_metrics_channel.latest_payload is not None:
-                yield f"data: {server_metrics_channel.latest_payload}\n\n"
+            if server_metrics_channel._latest_payload is not None:
+                yield f"data: {server_metrics_channel._latest_payload}\n\n"
 
             while True:
                 data_str = await queue.get()
@@ -100,8 +100,8 @@ async def stream_server_timeseries():
 
     async def event_generator():
         try:
-            if server_timeseries_channel.latest_payload is not None:
-                yield f"data: {server_timeseries_channel.latest_payload}\n\n"
+            if server_timeseries_channel._latest_payload is not None:
+                yield f"data: {server_timeseries_channel._latest_payload}\n\n"
 
             while True:
                 data_str = await queue.get()
@@ -158,8 +158,8 @@ async def stream_dashboard_models_list():
     async def event_generator():
         try:
             # 캐시된 마지막 모델 목록이 있으면 먼저 한 번 쏴주기
-            if models_list_channel.latest_payload is not None:
-                yield f"data: {models_list_channel.latest_payload}\n\n"
+            if models_list_channel._latest_payload is not None:
+                yield f"data: {models_list_channel._latest_payload}\n\n"
 
             while True:
                 data_str = await queue.get()
@@ -227,8 +227,8 @@ async def stream_model_latency(model_id: int = Path(...)):
 
     async def event_generator():
         try:
-            if channel.latest_payload is not None:
-                yield f"data: {channel.latest_payload}\n\n"
+            if channel._latest_payload is not None:
+                yield f"data: {channel._latest_payload}\n\n"
 
             while True:
                 data_str = await queue.get()
@@ -298,8 +298,8 @@ async def stream_model_stats(model_id: int = Path(...)):
     async def event_generator():
         try:
             # 캐시된 마지막 통계가 있으면 먼저 쏴주기
-            if channel.latest_payload is not None:
-                yield f"data: {channel.latest_payload}\n\n"
+            if channel._latest_payload is not None:
+                yield f"data: {channel._latest_payload}\n\n"
 
             while True:
                 data_str = await queue.get()
