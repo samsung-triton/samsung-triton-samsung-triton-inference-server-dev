@@ -69,11 +69,31 @@ final appRouter = GoRouter(
     ShellRoute(
       builder: (_, __, child) => AppFrame(child: child),
       routes: [
-        GoRoute(path: Routes.login, name: 'login', builder: (_, __) => const LoginScreen()),
-        GoRoute(path: Routes.dashboard, name: 'dashboard', builder: (_, __) => const DashboardScreen()),
-        GoRoute(path: Routes.modelManage, name: 'model_manage', builder: (_, __) => const ModelManageScreen()),
-        GoRoute(path: Routes.tritonLog, name: 'triton_log', builder: (_, __) => const TritonLogScreen()),
-        GoRoute(path: Routes.serverLog, name: 'server_log', builder: (_, __) => const ServerLogScreen()),
+        GoRoute(
+          path: Routes.login,
+          name: 'login',
+          pageBuilder: (_, state) => const NoTransitionPage(child: LoginScreen()),
+        ),
+        GoRoute(
+          path: Routes.dashboard,
+          name: 'dashboard',
+          pageBuilder: (_, state) => const NoTransitionPage(child: DashboardScreen()),
+        ),
+        GoRoute(
+          path: Routes.modelManage,
+          name: 'model_manage',
+          pageBuilder: (_, state) => const NoTransitionPage(child: ModelManageScreen()),
+        ),
+        GoRoute(
+          path: Routes.tritonLog,
+          name: 'triton_log',
+          pageBuilder: (_, state) => const NoTransitionPage(child: TritonLogScreen()),
+        ),
+        GoRoute(
+          path: Routes.serverLog,
+          name: 'server_log',
+          pageBuilder: (_, state) => const NoTransitionPage(child: ServerLogScreen()),
+        ),
       ],
     ),
   ],
