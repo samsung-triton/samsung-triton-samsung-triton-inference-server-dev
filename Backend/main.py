@@ -3,11 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from clickhouse_sqlalchemy import make_session
+from fastapi.middleware.gzip import GZipMiddleware
 
 from app.core.DB.database import SessionLocal
 from app.core.DB.clickhouse import ch_engine
-from app.common.codes import CustomCode
-from app.common.messages import Messages
 from app.core.customException import CustomHTTPException
 from app.core.config import settings
 
@@ -38,6 +37,11 @@ def create_app():
     # 라우터 등록
     # =====================
     app.include_router(api_router)
+
+    # =====================
+    # gzip 미들웨어
+    # =====================
+    app.add_middleware(GZipMiddleware, minimum_size=3000)
 
     # =====================
     # Startup Event
