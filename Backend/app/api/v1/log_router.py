@@ -17,6 +17,7 @@ from app.services.log_service import (
 )
 
 from app.common.log_sse import infer_log_channel
+from app.common.server_log_sse import server_log_channel
 
 
 log_router = APIRouter(prefix="/logs", tags=["Log"])
@@ -100,3 +101,18 @@ async def stream_infer_logs():
         infer_log_channel.generator(queue),
         media_type="text/event-stream",
     )
+
+@log_router.post("/server-event")
+async def receive_server_event(request: Request):
+    payload = await request.json()
+    await server_log_channel.publish(payload)
+    return {"ok": True}
+
+@log_router.get("/server/stream")
+async def stream_server_logs():
+    queue = server_log_channel.subscribe()
+    return StreamingResponse(
+        server_log_channel.generator(queue),
+        media_type="text/event-stream",
+    )
+
