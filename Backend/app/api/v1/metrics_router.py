@@ -1,3 +1,5 @@
+# app/api/v1/metrics_router.py
+
 from typing import Dict
 
 from fastapi import (
@@ -15,7 +17,7 @@ from app.services.metrics_service import (
     get_model_per_inference_latency_service,
     get_dashboard_models_list_service,
 )
-from app.common.metric_sse import SSEChannel
+from app.common.metric_sse import SSEChannel, sse_event_stream
 from fastapi.concurrency import run_in_threadpool  # 모델 stats용 (sync -> threadpool)
 
 
@@ -46,23 +48,8 @@ async def stream_server_metrics():
     - 클라이언트: GET /api/v1/dashboard/server/metrics/stream
     - 응답: text/event-stream
     """
-    queue = server_metrics_channel.subscribe()
-    await server_metrics_channel.ensure_polling()
-
-    async def event_generator():
-        try:
-            # 캐시가 있다면 바로 한 번 쏴주기
-            if server_metrics_channel._latest_payload is not None:
-                yield f"data: {server_metrics_channel._latest_payload}\n\n"
-
-            while True:
-                data_str = await queue.get()
-                yield f"data: {data_str}\n\n"
-        finally:
-            server_metrics_channel.unsubscribe(queue)
-
     return StreamingResponse(
-        event_generator(),
+        sse_event_stream(server_metrics_channel),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -95,24 +82,13 @@ async def stream_server_timeseries():
     서버 리소스 시계열 메트릭 SSE 스트림.
     - 클라이언트: GET /api/v1/dashboard/server/timeseries/stream
     """
-    queue = server_timeseries_channel.subscribe()
-    await server_timeseries_channel.ensure_polling()
-
-    async def event_generator():
-        try:
-            if server_timeseries_channel._latest_payload is not None:
-                yield f"data: {server_timeseries_channel._latest_payload}\n\n"
-
-            while True:
-                data_str = await queue.get()
-                yield f"data: {data_str}\n\n"
-        finally:
-            server_timeseries_channel.unsubscribe(queue)
-
     return StreamingResponse(
-        event_generator(),
+        sse_event_stream(server_timeseries_channel),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -152,25 +128,13 @@ async def stream_dashboard_models_list():
     - 클라이언트: GET /api/v1/dashboard/models/stream
     - 응답: text/event-stream
     """
-    queue = models_list_channel.subscribe()
-    await models_list_channel.ensure_polling()
-
-    async def event_generator():
-        try:
-            # 캐시된 마지막 모델 목록이 있으면 먼저 한 번 쏴주기
-            if models_list_channel._latest_payload is not None:
-                yield f"data: {models_list_channel._latest_payload}\n\n"
-
-            while True:
-                data_str = await queue.get()
-                yield f"data: {data_str}\n\n"
-        finally:
-            models_list_channel.unsubscribe(queue)
-
     return StreamingResponse(
-        event_generator(),
+        sse_event_stream(models_list_channel),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -222,24 +186,13 @@ async def stream_model_latency(model_id: int = Path(...)):
     - 응답: text/event-stream
     """
     channel = _get_model_latency_channel(model_id)
-    queue = channel.subscribe()
-    await channel.ensure_polling()
-
-    async def event_generator():
-        try:
-            if channel._latest_payload is not None:
-                yield f"data: {channel._latest_payload}\n\n"
-
-            while True:
-                data_str = await queue.get()
-                yield f"data: {data_str}\n\n"
-        finally:
-            channel.unsubscribe(queue)
-
     return StreamingResponse(
-        event_generator(),
+        sse_event_stream(channel),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -292,23 +245,11 @@ async def stream_model_stats(model_id: int = Path(...)):
     - 응답: text/event-stream
     """
     channel = _get_model_stats_channel(model_id)
-    queue = channel.subscribe()
-    await channel.ensure_polling()
-
-    async def event_generator():
-        try:
-            # 캐시된 마지막 통계가 있으면 먼저 쏴주기
-            if channel._latest_payload is not None:
-                yield f"data: {channel._latest_payload}\n\n"
-
-            while True:
-                data_str = await queue.get()
-                yield f"data: {data_str}\n\n"
-        finally:
-            channel.unsubscribe(queue)
-
     return StreamingResponse(
-        event_generator(),
+        sse_event_stream(channel),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
