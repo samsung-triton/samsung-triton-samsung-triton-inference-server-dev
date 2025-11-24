@@ -13,10 +13,8 @@ from app.services.log_service import (
     get_model_name_list_service,
     get_model_logs_service,
     get_server_logs_service,
-    handle_infer_log_event,
 )
-from app.common.sse_push_channel import infer_log_channel, server_log_channel
-
+from app.common.sse_channels import infer_log_channel, server_log_channel
 
 
 log_router = APIRouter(prefix="/logs", tags=["Log"])
@@ -87,7 +85,15 @@ def get_system_logs(
 @log_router.post("/infer-event")
 async def receive_infer_event(request: Request):
     payload = await request.json()
-    return await handle_infer_log_event(payload)
+    await infer_log_channel.publish(payload)
+    return {"ok": True}
+
+
+@log_router.post("/server-event")
+async def receive_server_event(request: Request):
+    payload = await request.json()
+    await server_log_channel.publish(payload)
+    return {"ok": True}
 
 
 # ==============================
@@ -101,11 +107,6 @@ async def stream_infer_logs():
         media_type="text/event-stream",
     )
 
-@log_router.post("/server-event")
-async def receive_server_event(request: Request):
-    payload = await request.json()
-    await server_log_channel.publish(payload)
-    return {"ok": True}
 
 @log_router.get("/server/stream")
 async def stream_server_logs():
@@ -114,4 +115,3 @@ async def stream_server_logs():
         server_log_channel.generator(queue),
         media_type="text/event-stream",
     )
-

@@ -6,7 +6,7 @@ from app.schemas.base_schema import BaseResponse
 from app.schemas.server_schema import ServerActorRequest
 from fastapi.responses import StreamingResponse
 import asyncio
-from app.common.docker_sse import subscribers
+from app.common.sse_docker import subscribers
 
 from app.services.server_service import (
     get_server_status_service,
@@ -40,7 +40,6 @@ async def stop_server(request: ServerActorRequest, db: Session = Depends(get_db)
 @server_router.post("/restart", response_model=BaseResponse)
 async def restart_server(request: ServerActorRequest, db: Session = Depends(get_db)):
     return await restart_server_service(db, actor_login_id=request.user_login_id, description=request.description)
-
 
 
 @server_router.get("/status/stream")
