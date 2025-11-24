@@ -13,7 +13,7 @@ from app.core.customException import CustomHTTPException
 
 import asyncio
 from sqlalchemy.orm import Session
-from app.common.log_sse import infer_log_channel
+from app.common.sse_push_channel import infer_log_channel, server_log_channel
 
 def get_api_log_service(
     start_date, end_date, username, type, description, global_search, page: int, size: int, db: Session

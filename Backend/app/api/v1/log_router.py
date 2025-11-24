@@ -15,9 +15,8 @@ from app.services.log_service import (
     get_server_logs_service,
     handle_infer_log_event,
 )
+from app.common.sse_push_channel import infer_log_channel, server_log_channel
 
-from app.common.log_sse import infer_log_channel
-from app.common.server_log_sse import server_log_channel
 
 
 log_router = APIRouter(prefix="/logs", tags=["Log"])
