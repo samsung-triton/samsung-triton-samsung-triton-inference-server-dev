@@ -17,9 +17,6 @@ import logging
 from app.api.v1.router import api_router
 from app.common.docker_sse import docker_event_watcher
 
-from app.services.log_service import run_infer_log_poller
-
-
 logger = logging.getLogger("uvicorn")
 
 
@@ -70,11 +67,6 @@ def create_app():
         # Docker 이벤트 스트림 실행
         asyncio.create_task(docker_event_watcher(settings.TRITON_CONTAINER_NAME))
         logger.info("Docker 이벤트 감시 시작")
-
-        # 실시간 추론 로그 SSE poller 실행
-        from app.core.DB.clickhouse import get_clickhouse_db
-        asyncio.create_task(run_infer_log_poller(get_clickhouse_db))
-        logger.info("Infer Log SSE Poller 시작")
 
     # =====================
     # 예외 핸들러
