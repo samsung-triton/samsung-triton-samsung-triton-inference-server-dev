@@ -25,18 +25,10 @@ def create_app():
     # =====================
     # CORS 설정
     # =====================
-    # 프론트가 뜨는 오리진들을 정확히 지정해주는 게 좋아
-    # (VSCode Live Server + 필요하면 localhost:9001에서 직접 열 때)
-    origins = [
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://localhost:9001",
-    ]
-
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,  # 개발 중이면 ["*"] 도 가능하지만, 명시적으로 두는 게 더 안전
-        allow_credentials=False,  # EventSource는 보통 credentials 안 씀
+        allow_origins=["*"],  # 개발 중이면 ["*"] 도 가능하지만, 명시적으로 두는 게 더 안전
+        allow_credentials=True,  # EventSource는 보통 credentials 안 씀
         allow_methods=["*"],
         allow_headers=["*"],
     )
