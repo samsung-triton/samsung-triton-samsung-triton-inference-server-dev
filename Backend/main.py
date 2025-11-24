@@ -1,41 +1,54 @@
-from fastapi.exceptions import RequestValidationError
-from fastapi import FastAPI, Request, status, HTTPException
-from sqlalchemy import text
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from clickhouse_sqlalchemy import make_session
+from fastapi.middleware.gzip import GZipMiddleware
 
 from app.core.DB.database import SessionLocal
 from app.core.DB.clickhouse import ch_engine
-from clickhouse_sqlalchemy import make_session
-from app.common.codes import CustomCode
-from app.common.messages import Messages
 from app.core.customException import CustomHTTPException
+from app.core.config import settings
 
-
+import asyncio
 import logging
+
 from app.api.v1.router import api_router
+from app.common.docker_sse import docker_event_watcher
 
 logger = logging.getLogger("uvicorn")
 
 
-def create_app() -> FastAPI:
+def create_app():
     app = FastAPI(title="Triton Gateway")
 
+    # =====================
+    # CORS 설정
+    # =====================
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_origins=["*"],  # 개발 중이면 ["*"] 도 가능하지만, 명시적으로 두는 게 더 안전
+        allow_credentials=True,  # EventSource는 보통 credentials 안 씀
+        allow_methods=["*"],
         allow_headers=["*"],
     )
 
+    # =====================
+    # 라우터 등록
+    # =====================
     app.include_router(api_router)
 
+    # =====================
+    # gzip 미들웨어
+    # =====================
+    app.add_middleware(GZipMiddleware, minimum_size=3000)
+
+    # =====================
+    # Startup Event
+    # =====================
     @app.on_event("startup")
     async def startup_event():
-        # =====================
         # PostgreSQL 연결 테스트
-        # =====================
         try:
             db = SessionLocal()
             db.execute(text("SELECT 1"))
@@ -45,25 +58,23 @@ def create_app() -> FastAPI:
         finally:
             db.close()
 
-        # =====================
         # ClickHouse 연결 테스트
-        # =====================
         try:
-            ch_db = make_session(ch_engine)
-            ch_db.execute(text("SELECT 1"))
+            ch = make_session(ch_engine)
+            ch.execute(text("SELECT 1"))
             logger.info("ClickHouse DB 연결 성공")
         except Exception as e:
             logger.error(f"ClickHouse DB 연결 실패: {e}")
         finally:
-            ch_db.close()
+            ch.close()
 
-    @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request: Request, exc: RequestValidationError):
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"code": CustomCode.ERR_400.value, "message": Messages.INVALID_PARAM.value, "data": None},
-        )
+        # Docker 이벤트 스트림 실행
+        asyncio.create_task(docker_event_watcher(settings.TRITON_CONTAINER_NAME))
+        logger.info("Docker 이벤트 감시 시작")
 
+    # =====================
+    # 예외 핸들러
+    # =====================
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
         if isinstance(exc, CustomHTTPException):
@@ -75,7 +86,7 @@ def create_app() -> FastAPI:
         else:
             content = {
                 "code": f"ERR-{exc.status_code}",
-                "message": str(exc.detail) if exc.detail else "서버 내부 오류가 발생했습니다.",
+                "message": str(exc.detail) or "서버 내부 오류가 발생했습니다.",
                 "data": None,
             }
 
