@@ -1,5 +1,4 @@
 from fastapi import status
-from sqlalchemy.orm import Session
 from datetime import datetime
 from sqlalchemy import text
 
@@ -12,6 +11,9 @@ from app.models.model import ModelRelease
 from app.models.user import User
 from app.core.customException import CustomHTTPException
 
+import asyncio
+from sqlalchemy.orm import Session
+from app.common.sse_push_channel import infer_log_channel, server_log_channel
 
 def get_api_log_service(
     start_date, end_date, username, type, description, global_search, page: int, size: int, db: Session
@@ -286,3 +288,11 @@ def get_server_logs_service(db, start, end, level, cursor, global_search, limit)
             "next_cursor": next_cursor,
         },
     )
+
+
+async def handle_infer_log_event(payload: dict):
+    """
+    Vector → FastAPI 로 들어온 infer 로그를 처리하고 SSE로 전송
+    """
+    await infer_log_channel.publish(payload)
+    return {"ok": True}

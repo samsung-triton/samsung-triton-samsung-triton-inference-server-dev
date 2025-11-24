@@ -1,17 +1,23 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 from fastapi import status
+from fastapi.responses import StreamingResponse
 
 from app.core.DB.database import get_db
 from app.core.DB.clickhouse import get_clickhouse_db
+from app.schemas.base_schema import BaseResponse
+from app.schemas.log_schema import LogRequest, ModelLogRequest, ServerLogRequest
+
 from app.services.log_service import (
     get_api_log_service,
     get_model_name_list_service,
     get_model_logs_service,
     get_server_logs_service,
+    handle_infer_log_event,
 )
-from app.schemas.base_schema import BaseResponse
-from app.schemas.log_schema import LogRequest, ModelLogRequest, ServerLogRequest
+from app.common.sse_push_channel import infer_log_channel, server_log_channel
+
+
 
 log_router = APIRouter(prefix="/logs", tags=["Log"])
 
@@ -19,8 +25,8 @@ log_router = APIRouter(prefix="/logs", tags=["Log"])
 @log_router.post("/api", response_model=BaseResponse, status_code=status.HTTP_200_OK)
 def get_api_log(
     request: LogRequest,
-    page: int = Query(1, ge=1, description="페이지 번호(1부터 시작)"),
-    size: int = Query(30, ge=1, le=200, description="페이지당 개수 최댓감 :200"),
+    page: int = Query(1, ge=1),
+    size: int = Query(30, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
     return get_api_log_service(
@@ -73,3 +79,39 @@ def get_system_logs(
         global_search=request.global_search,
         limit=request.limit,
     )
+
+
+# ==============================
+# (1) Vector → FastAPI (Push)
+# ==============================
+@log_router.post("/infer-event")
+async def receive_infer_event(request: Request):
+    payload = await request.json()
+    return await handle_infer_log_event(payload)
+
+
+# ==============================
+# (2) Frontend → SSE Stream
+# ==============================
+@log_router.get("/infer/stream")
+async def stream_infer_logs():
+    queue = infer_log_channel.subscribe()
+    return StreamingResponse(
+        infer_log_channel.generator(queue),
+        media_type="text/event-stream",
+    )
+
+@log_router.post("/server-event")
+async def receive_server_event(request: Request):
+    payload = await request.json()
+    await server_log_channel.publish(payload)
+    return {"ok": True}
+
+@log_router.get("/server/stream")
+async def stream_server_logs():
+    queue = server_log_channel.subscribe()
+    return StreamingResponse(
+        server_log_channel.generator(queue),
+        media_type="text/event-stream",
+    )
+

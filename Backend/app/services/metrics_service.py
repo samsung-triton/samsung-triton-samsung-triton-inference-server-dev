@@ -3,7 +3,7 @@ import httpx
 import math
 from fastapi import status
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -13,7 +13,13 @@ from app.core.customException import CustomHTTPException
 from app.core.standard_time_manager import current_standard_time
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-from app.schemas.timeseries_schema import ValueItem, SeriesItem, TimeWindow, MetricData, NoneGPUSeriesItem
+from app.schemas.timeseries_schema import (
+    ValueItem,
+    SeriesItem,
+    TimeWindow,
+    MetricData,
+    NoneGPUSeriesItem,
+)
 from app.schemas.base_schema import BaseResponse
 from app.models.model import Model
 from app.models.inference_logs import InferenceLogs
@@ -21,66 +27,69 @@ from app.clients.triton_client import triton_client
 
 
 # ============================================================
-# 1. 서버 실시간 메트릭
+# 공통 유틸
 # ============================================================
-async def get_server_metrics_service():
-    try:
-        queries = {
-            "cpu_util": "avg(nv_cpu_utilization)",
-            "gpu_util": "avg(nv_gpu_utilization) by (gpu_uuid, device)",
-        }
 
-        results = await asyncio.gather(*[prom_query(q) for q in queries.values()])
-        data_map = dict(zip(queries.keys(), results))
 
-        def gpu_key(m):
-            return (m.get("metric", {}).get("gpu_uuid", ""), m.get("metric", {}).get("device", ""))
+def parse_end_iso(end_iso: Optional[str]) -> datetime:
+    """
+    end_iso:
+      - None이면 "지금"
+      - 숫자 문자열이면 epoch seconds
+      - 그 외는 ISO8601 (Z → +00:00 치환 후 파싱)
+    """
+    if end_iso:
+        if end_iso.isdigit():
+            return datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
 
-        gpu_metrics = {}
-        for key in ["gpu_util"]:
-            for it in data_map.get(key, []):
-                uuid, dev = gpu_key(it)
-                val = it.get("value")
-                if not val or len(val) < 2:
-                    continue
-                gpu_metrics.setdefault((uuid, dev), {})[key] = float(val[1])
+        end_dt = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
+        if end_dt.tzinfo is None:
+            end_dt = end_dt.replace(tzinfo=TIMEZONE)
+        return end_dt
 
-        gpu_data = []
-        for (uuid, dev), vals in gpu_metrics.items():
-            gpu_data.append(
-                {
-                    "uuid": uuid,
-                    "gpu_util": round(vals.get("gpu_util", 0), 2),
-                }
-            )
+    return datetime.now(TIMEZONE)
 
-        cpu_util = 0
-        if data_map.get("cpu_util"):
-            val = data_map["cpu_util"][0].get("value")
-            if val and len(val) >= 2:
-                cpu_util = float(val[1])
 
-        data = {
-            "timestamp": datetime.now(TIMEZONE).isoformat(),
-            "cpu_utilization": round(cpu_util, 2),
-            "gpu": gpu_data,
-        }
+def get_aggregation_window_from_str(base_time_str: str) -> Tuple[datetime, datetime]:
+    """
+    "HH:MM" 기준 시간 문자열로부터 [base, now] 또는 [어제 base, base) 구간 계산.
+    """
+    now = datetime.now(TIMEZONE)
+    hh, mm = map(int, base_time_str.split(":"))
+    today_base = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    if now >= today_base:
+        return today_base, now
+    else:
+        return today_base - timedelta(days=1), today_base
 
-        return create_response(
-            code=CustomCode.DASH_001.value,
-            message=Messages.SERVER_METRICS_FETCH_SUCCESS.value,
-            data=data,
-        )
 
-    except CustomHTTPException:
-        raise
-    except Exception:
-        raise CustomHTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            code=CustomCode.ERR_500.value,
-            message=Messages.SERVER_METRIC_FAIL.value,
-            data=None,
-        )
+def parse_prometheus_values(series: dict, skip_invalid: bool = True) -> List[ValueItem]:
+    """
+    Prometheus 시계열 1개(series)에서 values/value를 파싱하여 ValueItem 리스트로 변환.
+    - skip_invalid=True면 NaN/Inf 값은 무시.
+    """
+    raw_values = series.get("values")
+    if raw_values is None:
+        v = series.get("value")
+        raw_values = [v] if v else []
+
+    points: List[ValueItem] = []
+    for ts, val in raw_values:
+        try:
+            ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
+            v = float(val)
+            if skip_invalid and (math.isnan(v) or math.isinf(v)):
+                continue
+            points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
+        except Exception:
+            continue
+
+    return points
+
+
+# ============================================================
+# Prometheus 쿼리 (단일/범위)
+# ============================================================
 
 
 async def prom_query(promql: str):
@@ -115,13 +124,10 @@ async def prom_query(promql: str):
 async def prom_query_range(promql: str, start: datetime, end: datetime, step: str = "600"):
     ep = f"{settings.PROM_URL.rstrip('/')}/api/v1/query_range"
 
-    def to_epoch(dt: datetime) -> float:
-        return dt.timestamp()
-
     params = {
         "query": promql,
-        "start": to_epoch(start),
-        "end": to_epoch(end),
+        "start": start.timestamp(),
+        "end": end.timestamp(),
         "step": step,  # "600"
     }
 
@@ -134,27 +140,83 @@ async def prom_query_range(promql: str, start: datetime, end: datetime, step: st
 
 
 # ============================================================
+# 1. 서버 실시간 메트릭
+# ============================================================
+
+
+async def get_server_metrics_service() -> BaseResponse:
+    try:
+        queries = {
+            "cpu_util": "avg(nv_cpu_utilization)",
+            "gpu_util": "avg(nv_gpu_utilization) by (gpu_uuid, device)",
+        }
+
+        results = await asyncio.gather(*[prom_query(q) for q in queries.values()])
+        data_map = dict(zip(queries.keys(), results))
+
+        def gpu_key(m):
+            metric = m.get("metric", {})
+            return metric.get("gpu_uuid", ""), metric.get("device", "")
+
+        gpu_metrics = {}
+        for it in data_map.get("gpu_util", []):
+            uuid, dev = gpu_key(it)
+            val = it.get("value")
+            if not val or len(val) < 2:
+                continue
+            gpu_metrics.setdefault((uuid, dev), {})["gpu_util"] = float(val[1])
+
+        gpu_data = []
+        for (uuid, dev), vals in gpu_metrics.items():
+            gpu_data.append(
+                {
+                    "uuid": uuid,
+                    "gpu_util": round(vals.get("gpu_util", 0), 2),
+                }
+            )
+
+        cpu_util = 0.0
+        if data_map.get("cpu_util"):
+            val = data_map["cpu_util"][0].get("value")
+            if val and len(val) >= 2:
+                cpu_util = float(val[1])
+
+        data = {
+            "timestamp": datetime.now(TIMEZONE).isoformat(),
+            "cpu_utilization": round(cpu_util, 2),
+            "gpu": gpu_data,
+        }
+
+        return create_response(
+            code=CustomCode.DASH_001.value,
+            message=Messages.SERVER_METRICS_FETCH_SUCCESS.value,
+            data=data,
+        )
+
+    except CustomHTTPException:
+        raise
+    except Exception:
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.SERVER_METRIC_FAIL.value,
+            data=None,
+        )
+
+
+# ============================================================
 # 2. GPU 메모리 / CPU 메모리 시계열
 # ============================================================
-async def get_timeseries_service(end_iso: Optional[str] = None) -> create_response:
+
+
+async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
     """
-    GPU 메모리 사용률(%) 시계열
+    GPU/CPU 메모리 사용률(%) 시계열
     - 구간: [end-1h, end]
     - 간격: 10분
-    - PromQL: 100 * used / total (gpu_uuid, device로 정렬)
     """
     try:
-        # 1) end 시각 파싱
-        if end_iso:
-            if end_iso.isdigit():
-                end_dt = datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
-            else:
-                end_dt = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
-                if end_dt.tzinfo is None:
-                    end_dt = end_dt.replace(tzinfo=TIMEZONE)
-        else:
-            end_dt = datetime.now(TIMEZONE)
-
+        end_dt = parse_end_iso(end_iso)
         start_dt = end_dt - timedelta(hours=1)
 
         vram_promql = (
@@ -166,51 +228,57 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
             "/ (sum(nv_cpu_memory_total_bytes) by (gpu_uuid, device))"
         )
 
-        vram_result: List[dict] = await prom_query_range(promql=vram_promql, start=start_dt, end=end_dt, step="10m")
-        ram_result: List[dict] = await prom_query_range(promql=ram_promql, start=start_dt, end=end_dt, step="10m")
+        vram_result: List[dict] = await prom_query_range(
+            promql=vram_promql,
+            start=start_dt,
+            end=end_dt,
+            step="10m",
+        )
+        ram_result: List[dict] = await prom_query_range(
+            promql=ram_promql,
+            start=start_dt,
+            end=end_dt,
+            step="10m",
+        )
 
-        # 3) 결과 변환 (NaN/Inf 방어)
         vram_series_list: List[SeriesItem] = []
         for s in vram_result:
             metric = s.get("metric", {})
-
-            points: List[ValueItem] = []
-            for ts, val in s.get("values", []):
-                try:
-                    ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
-                    v = float(val)
-                    if math.isnan(v) or math.isinf(v):
-                        continue
-                    points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
-                except Exception:
-                    continue
-
-            vram_series_list.append(SeriesItem(gpu_uuid=metric.get("gpu_uuid", "unknown"), values=points))
+            points = parse_prometheus_values(s, skip_invalid=True)
+            vram_series_list.append(
+                SeriesItem(
+                    gpu_uuid=metric.get("gpu_uuid", "unknown"),
+                    values=points,
+                )
+            )
 
         ram_series_list: List[SeriesItem] = []
         for s in ram_result:
             metric = s.get("metric", {})
+            points = parse_prometheus_values(s, skip_invalid=True)
+            ram_series_list.append(
+                SeriesItem(
+                    gpu_uuid=metric.get("gpu_uuid", "none"),
+                    values=points,
+                )
+            )
 
-            points: List[ValueItem] = []
-            for ts, val in s.get("values", []):
-                try:
-                    ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
-                    v = float(val)
-                    if math.isnan(v) or math.isinf(v):
-                        continue
-                    points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
-                except Exception:
-                    continue
+        time_window = TimeWindow(
+            start=start_dt.isoformat(),
+            end=end_dt.isoformat(),
+            step="10m",
+        )
 
-            ram_series_list.append(SeriesItem(gpu_uuid=metric.get("gpu_uuid", "none"), values=points))
-
-        # 4) TimeWindow 생성
-        time_window = TimeWindow(start=start_dt.isoformat(), end=end_dt.isoformat(), step="10m")
-
-        data = MetricData(window=time_window, vram=vram_series_list, ram=ram_series_list)
+        data = MetricData(
+            window=time_window,
+            vram=vram_series_list,
+            ram=ram_series_list,
+        )
 
         return create_response(
-            code=CustomCode.DASH_002.value, message=Messages.RESOURCE_TIMESERIES_FETCH_SUCCESS.value, data=data.dict()
+            code=CustomCode.DASH_002.value,
+            message=Messages.RESOURCE_TIMESERIES_FETCH_SUCCESS.value,
+            data=data.dict(),
         )
 
     except CustomHTTPException:
@@ -227,20 +295,16 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> create_respon
 # ============================================================
 # 3. model_id 기반 모델 통계
 # ============================================================
-def get_aggregation_window_from_str(base_time_str: str) -> tuple[datetime, datetime]:
-    now = datetime.now(TIMEZONE)
-    hh, mm = map(int, base_time_str.split(":"))
-    today_base = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
-    if now >= today_base:
-        return today_base, now
-    else:
-        return today_base - timedelta(days=1), today_base
 
 
 def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseResponse:
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
-        raise CustomHTTPException(status.HTTP_404_NOT_FOUND, CustomCode.ERR_404.value, Messages.MODEL_NOT_FOUND.value)
+        raise CustomHTTPException(
+            status.HTTP_404_NOT_FOUND,
+            CustomCode.ERR_404.value,
+            Messages.MODEL_NOT_FOUND.value,
+        )
 
     base_time_str = current_standard_time()  # "HH:MM"
     start_time, end_time = get_aggregation_window_from_str(base_time_str)
@@ -295,30 +359,26 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
 # ============================================================
 # 4. model_id 기반 모델 latency
 # ============================================================
+
+
 async def get_model_per_inference_latency_service(
-    model_id: int, end_iso: Optional[str], db: Session
-) -> create_response:
+    model_id: int,
+    end_iso: Optional[str],
+    db: Session,
+) -> BaseResponse:
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
-        raise CustomHTTPException(status.HTTP_404_NOT_FOUND, CustomCode.ERR_404.value, Messages.MODEL_NOT_FOUND.value)
+        raise CustomHTTPException(
+            status.HTTP_404_NOT_FOUND,
+            CustomCode.ERR_404.value,
+            Messages.MODEL_NOT_FOUND.value,
+        )
 
     model_name = model.name
 
     try:
-        if end_iso:
-            if end_iso.isdigit():
-                end_dt = datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
-            else:
-                end_dt = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
-                if end_dt.tzinfo is None:
-                    end_dt = end_dt.replace(tzinfo=TIMEZONE)
-        else:
-            end_dt = datetime.now(TIMEZONE)
-
+        end_dt = parse_end_iso(end_iso)
         start_dt = end_dt - timedelta(hours=1)
-
-        def to_epoch(dt: datetime) -> float:
-            return dt.timestamp()
 
         metric_keys = {
             "total": "nv_inference_request_duration_us",
@@ -332,43 +392,34 @@ async def get_model_per_inference_latency_service(
             return f'increase({metric_key}{{model="{model_name}"}}[10m])'
 
         latency_results = {}
-
         for key, metric_key in metric_keys.items():
             promql = build_query(metric_key)
-
-            result = await prom_query_range(promql=promql, start=start_dt, end=end_dt, step="600")
-
+            result = await prom_query_range(
+                promql=promql,
+                start=start_dt,
+                end=end_dt,
+                step="600",
+            )
             latency_results[key] = result
 
-        def convert_prometheus_series(result: List[dict]):
-            none_gpu_series_list = []
-
+        def convert(result: List[dict]) -> List[NoneGPUSeriesItem]:
+            series_list: List[NoneGPUSeriesItem] = []
             for s in result:
-                raw_values = s.get("values")
-                if raw_values is None:
-                    v = s.get("value")
-                    raw_values = [v] if v else []
+                points = parse_prometheus_values(s, skip_invalid=False)
+                series_list.append(NoneGPUSeriesItem(values=points))
+            return series_list
 
-                points = []
-                for ts, val in raw_values:
-                    try:
-                        ts_dt = datetime.fromtimestamp(float(ts), tz=TIMEZONE)
-                        v = float(val)
-                        points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
-                    except:  # noqa: E722
-                        continue
+        total_series = convert(latency_results["total"])
+        queue_series = convert(latency_results["queue"])
+        input_series = convert(latency_results["input"])
+        infer_series = convert(latency_results["infer"])
+        output_series = convert(latency_results["output"])
 
-                none_gpu_series_list.append(NoneGPUSeriesItem(values=points))
-
-            return none_gpu_series_list
-
-        total_series = convert_prometheus_series(latency_results["total"])
-        queue_series = convert_prometheus_series(latency_results["queue"])
-        input_series = convert_prometheus_series(latency_results["input"])
-        infer_series = convert_prometheus_series(latency_results["infer"])
-        output_series = convert_prometheus_series(latency_results["output"])
-
-        time_window = TimeWindow(start=start_dt.isoformat(), end=end_dt.isoformat(), step="10m")
+        time_window = TimeWindow(
+            start=start_dt.isoformat(),
+            end=end_dt.isoformat(),
+            step="10m",
+        )
 
         data = {
             "window": time_window.dict(),
@@ -381,8 +432,14 @@ async def get_model_per_inference_latency_service(
             },
         }
 
-        return create_response(code=CustomCode.DASH_003.value, message=f"{model.name} 레이턴시 조회 성공", data=data)
+        return create_response(
+            code=CustomCode.DASH_003.value,
+            message=f"{model.name} 레이턴시 조회 성공",
+            data=data,
+        )
 
+    except CustomHTTPException:
+        raise
     except Exception as e:
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -394,8 +451,10 @@ async def get_model_per_inference_latency_service(
 
 # ============================================================
 # 5. 대시보드 모델 목록 조회
-# ============================================================ㅋ
-async def get_dashboard_models_list_service(db: Session):
+# ============================================================
+
+
+async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
     # 1. 서버 상태 확인
     try:
         triton_alive = triton_client.is_server_ready()
@@ -438,7 +497,6 @@ async def get_dashboard_models_list_service(db: Session):
 
     base_time_str = current_standard_time()
     start_time, end_time = get_aggregation_window_from_str(base_time_str)
-
     for m in db_models:
         q = (
             db.query(
