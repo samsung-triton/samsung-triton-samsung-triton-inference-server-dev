@@ -1,7 +1,7 @@
 # common/sse_push_channel.py
 import asyncio
 import json
-from Backend.app.common.sse_base import SSEBase
+from app.common.sse_base import SSEBase
 
 
 class PushSSEChannel(SSEBase):

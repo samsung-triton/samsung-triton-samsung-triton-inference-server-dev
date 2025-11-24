@@ -14,7 +14,7 @@ import asyncio
 import logging
 
 from app.api.v1.router import api_router
-from Backend.app.common.sse_docker import docker_event_watcher
+from app.common.sse_docker import docker_event_watcher
 
 logger = logging.getLogger("uvicorn")
 

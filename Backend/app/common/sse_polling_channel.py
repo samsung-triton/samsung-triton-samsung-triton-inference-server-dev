@@ -5,7 +5,7 @@ import json
 from typing import Optional, AsyncGenerator
 from fastapi.encoders import jsonable_encoder
 
-from Backend.app.common.sse_base import SSEBase
+from app.common.sse_base import SSEBase
 from app.core.customException import CustomHTTPException
 
 

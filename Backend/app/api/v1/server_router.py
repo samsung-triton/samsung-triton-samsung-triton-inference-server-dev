@@ -6,7 +6,7 @@ from app.schemas.base_schema import BaseResponse
 from app.schemas.server_schema import ServerActorRequest
 from fastapi.responses import StreamingResponse
 import asyncio
-from Backend.app.common.sse_docker import subscribers
+from app.common.sse_docker import subscribers
 
 from app.services.server_service import (
     get_server_status_service,

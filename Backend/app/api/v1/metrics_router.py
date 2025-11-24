@@ -13,7 +13,7 @@ from app.services.metrics_service import (
     get_model_per_inference_latency_service,
     get_dashboard_models_list_service,
 )
-from Backend.app.common.sse_polling_channel import PollingSSEChannel, sse_event_stream
+from app.common.sse_polling_channel import PollingSSEChannel, sse_event_stream
 from fastapi.concurrency import run_in_threadpool  # 모델 stats용 (sync -> threadpool)
 
 
