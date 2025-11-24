@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Triton',
+      title: 'Triton Server Monitor',
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
       theme: ThemeData(scaffoldBackgroundColor: white),

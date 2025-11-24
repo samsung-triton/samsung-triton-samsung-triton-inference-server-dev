@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:triton/controller/model_log/triton_log_controller.dart';
+import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 
-class TritonLogTableRow extends StatelessWidget {
+class TritonServerLogTableRow extends StatelessWidget {
   final TritonLogItem log;
 
-  const TritonLogTableRow({super.key, required this.log});
+  const TritonServerLogTableRow({super.key, required this.log});
 
   @override
   Widget build(BuildContext context) {

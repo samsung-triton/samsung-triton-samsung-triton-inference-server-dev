@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
-import 'package:triton/controller/model_log/triton_infer_log_controller.dart';
 import 'package:triton/controller/model_log/triton_log_controller.dart';
+import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
-import 'package:triton/widgets/modellog/infer_log_table_row.dart';
+import 'package:triton/widgets/modellog/model_log_table_row.dart';
 import 'package:triton/widgets/modellog/triton_log_table_header.dart';
-import 'package:triton/widgets/modellog/triton_log_table_row.dart';
+import 'package:triton/widgets/modellog/triton_server_log_table_row.dart';
 
 class TritonLogTable extends StatefulWidget {
   const TritonLogTable({super.key});
@@ -24,16 +24,16 @@ class _TritonLogTableState extends State<TritonLogTable> {
     super.initState();
 
     scrollController.addListener(() {
-      final tritonController = Get.find<TritonLogController>();
+      final tritonServerLogController = Get.find<TritonServerLogController>();
       final modelController = Get.find<ModelLogController>();
 
-      final tritonInferController = Get.find<TritonInferLogController>();
+      final tritonController = Get.find<TritonLogController>();
 
       if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
-        final model = tritonInferController.modelName.value;
+        final model = tritonController.modelName.value;
 
-        if (model == 'triton') {
-          tritonController.fetchMoreLogs();
+        if (model == 'Triton Server') {
+          tritonServerLogController.fetchMoreLogs();
         } else {
           modelController.fetchMoreLogs();
         }
@@ -43,10 +43,10 @@ class _TritonLogTableState extends State<TritonLogTable> {
 
   @override
   Widget build(BuildContext context) {
-    final tritonController = Get.find<TritonLogController>();
+    final tritonServerLogController = Get.find<TritonServerLogController>();
     final modelController = Get.find<ModelLogController>();
 
-    final tritonInferController = Get.find<TritonInferLogController>();
+    final tritonInferController = Get.find<TritonLogController>();
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -59,14 +59,22 @@ class _TritonLogTableState extends State<TritonLogTable> {
             child: Obx(() {
               final model = tritonInferController.modelName.value;
 
+              if (tritonServerLogController.isLoading.value && tritonServerLogController.filteredLogs.isEmpty ||
+                  modelController.isLoading.value && modelController.filteredLogs.isEmpty) {
+                return Center(
+                  child: Text("Loading...", style: T.t12(color: gray, bold: false)),
+                );
+              }
+
               if (model.isEmpty) {
                 return Center(
                   child: Text('Please select a model.', style: T.t12(color: gray)),
                 );
               }
 
-              // 🔥 로그 분기
-              final logs = (model == 'triton') ? tritonController.filteredLogs : modelController.filteredLogs;
+              final logs = (model == 'Triton Server')
+                  ? tritonServerLogController.filteredLogs
+                  : modelController.filteredLogs;
 
               if (logs.isEmpty) {
                 return Center(
@@ -82,14 +90,14 @@ class _TritonLogTableState extends State<TritonLogTable> {
                 child: Obx(() {
                   final model = tritonInferController.modelName.value;
 
-                  if (model == 'triton') {
-                    final logs = tritonController.filteredLogs;
+                  if (model == 'Triton Server') {
+                    final logs = tritonServerLogController.filteredLogs;
 
                     return ListView.builder(
                       controller: scrollController,
                       itemCount: logs.length,
                       itemBuilder: (context, i) {
-                        return TritonLogTableRow(log: logs[i]);
+                        return TritonServerLogTableRow(log: logs[i]);
                       },
                     );
                   } else {
@@ -99,7 +107,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
                       controller: scrollController,
                       itemCount: logs.length,
                       itemBuilder: (context, i) {
-                        return InferLogTableRow(log: logs[i]);
+                        return ModelLogTableRow(log: logs[i]);
                       },
                     );
                   }

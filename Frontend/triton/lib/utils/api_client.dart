@@ -139,6 +139,11 @@ class ApiClient extends GetConnect {
     return _get('/api/v1/dashboard/model/$modelId/latency', apiName: 'getDashboardModelLatency');
   }
 
+  // 서버 알람 (Server Notifications)
+  Future<dynamic> getServerNotifications({required int page, required int size}) {
+    return _get('/api/v1/noti?page=$page&size=$size', apiName: 'getServerNotifications');
+  }
+
   // ---------------------------------------------------------------------------
   // 모델 관리
   // ---------------------------------------------------------------------------

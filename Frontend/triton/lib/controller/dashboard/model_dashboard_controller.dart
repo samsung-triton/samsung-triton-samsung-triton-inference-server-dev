@@ -28,13 +28,17 @@ class ModelDashboardController extends GetxController {
   RxList<double> inferLatency = <double>[].obs;
   RxList<double> outputLatency = <double>[].obs;
 
-  // 타임스탬프 (원하면 ModelLatencyChart에서 활용 가능)
+  // 타임스탬프
   RxList<DateTime> latencyTimestamps = <DateTime>[].obs;
 
   // ============================================================
-  // 🔹 3) Notifications (dummy 유지 → 다음 브랜치)
+  // 🔹 3) Server Notifications
   // ============================================================
-  RxList<NotificationLog> notifications = <NotificationLog>[].obs;
+  RxList<ServerNotificationItem> serverNotifications = <ServerNotificationItem>[].obs;
+
+  RxInt notiPage = 1.obs;
+  RxInt notiSize = 10.obs; // 항상 10개만
+  RxInt notiTotalPages = 1.obs;
 
   final loading = false.obs;
 
@@ -47,17 +51,10 @@ class ModelDashboardController extends GetxController {
   // ============================================================
   // 🔥 fetchAll(modelId)
   // ============================================================
-  // ============================================================
-  // 🔥 fetchAll(modelId)
-  // ============================================================
   Future<void> fetchAll(int modelId) async {
     loading.value = true;
 
-    await Future.wait([
-      _fetchInference(modelId),
-      _fetchLatency(modelId),
-      _fetchNotifications(modelId), // 아직 dummy
-    ]);
+    await Future.wait([_fetchInference(modelId), _fetchLatency(modelId), fetchServerNotifications()]);
 
     loading.value = false;
   }
@@ -126,13 +123,38 @@ class ModelDashboardController extends GetxController {
   }
 
   // ============================================================
-  // 🔹 Notifications (dummy)
+  // 🔥 Server Notifications API 연동
   // ============================================================
-  Future<void> _fetchNotifications(int modelId) async {
-    await Future.delayed(const Duration(milliseconds: 120));
+  Future<void> fetchServerNotifications() async {
+    try {
+      final data = await _api.getServerNotifications(page: notiPage.value, size: notiSize.value);
 
-    notifications.value = [
-      NotificationLog(level: "INFO", message: "Dummy notification", timestamp: DateTime.now().toIso8601String()),
-    ];
+      final items = data['items'] as List;
+
+      serverNotifications.assignAll(items.map((e) => ServerNotificationItem.fromJson(e)).toList());
+
+      notiTotalPages.value = data['total_pages'] ?? 1;
+    } catch (e) {
+      print("❌ Server Notification API 실패: $e");
+    }
+  }
+}
+
+// ============================================================
+// DTO (Inline Class) - Server Notification Item
+// ============================================================
+class ServerNotificationItem {
+  final DateTime ts;
+  final String level;
+  final String message;
+
+  ServerNotificationItem({required this.ts, required this.level, required this.message});
+
+  factory ServerNotificationItem.fromJson(Map<String, dynamic> json) {
+    return ServerNotificationItem(
+      ts: DateTime.parse(json['ts']),
+      level: json['level'],
+      message: json['error_message'] ?? '',
+    );
   }
 }
