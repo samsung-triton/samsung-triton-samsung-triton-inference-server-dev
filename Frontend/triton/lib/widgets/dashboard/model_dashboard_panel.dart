@@ -1,3 +1,5 @@
+// lib/widgets/dashboard/model_dashboard_panel.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -6,13 +8,9 @@ import 'package:triton/widgets/dashboard/model_inference_stats_card.dart';
 import 'package:triton/widgets/dashboard/model_latency_chart.dart';
 import 'package:triton/widgets/dashboard/model_notification_panel.dart';
 
-// Controllers
 import 'package:triton/controller/dashboard/dashboard_controller.dart';
 import 'package:triton/controller/dashboard/model_dashboard_controller.dart';
 
-/// 🔹 Model Dashboard Panel
-/// - Inference Stats, Latency Chart, Notifications
-/// - Controller와 연결되어 reactive UI로 동작
 class ModelDashboardPanel extends StatelessWidget {
   const ModelDashboardPanel({super.key});
 
@@ -29,31 +27,29 @@ class ModelDashboardPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // ① Header
+          /// Header
           CommonMetricHeaderBar(
             onRefresh: () {
               final id = dashCtrl.selectedModelId.value;
               if (id != null) {
-                modelCtrl.fetchAll(id);
+                modelCtrl.restartSse(id);
               }
             },
           ),
 
           const SizedBox(height: gap),
 
-          // ② Main Body
+          /// Main Body
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left: Inference Stats + Latency
+                /// Left (Inference Stats + Latency Chart)
                 Expanded(
                   child: Column(
                     children: [
                       const Expanded(child: ModelInferenceStatsCard()),
                       const SizedBox(height: gap),
-
-                      // 🔹 Latency Chart: 남는 세로 공간을 전부 사용
                       const Expanded(child: ModelLatencyChart()),
                     ],
                   ),
@@ -61,7 +57,7 @@ class ModelDashboardPanel extends StatelessWidget {
 
                 const SizedBox(width: gap),
 
-                // Right: Notifications
+                /// Right (Notifications Panel)
                 const SizedBox(width: rightPanelW, child: ModelNotificationPanel()),
               ],
             ),

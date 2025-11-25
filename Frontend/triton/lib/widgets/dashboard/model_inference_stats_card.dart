@@ -1,3 +1,5 @@
+// lib/widgets/dashboard/model_inference_stats_card.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/widgets/dashboard/common_info_card_base.dart';
@@ -18,7 +20,6 @@ class ModelInferenceStatsCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             children: [
-              // ---- Requests ----
               Expanded(
                 child: ModelGaugeCard(
                   title: "Requests",
@@ -29,7 +30,6 @@ class ModelInferenceStatsCard extends StatelessWidget {
                 ),
               ),
 
-              // ---- Inference ----
               Expanded(
                 child: ModelGaugeCard(
                   title: "Inference",

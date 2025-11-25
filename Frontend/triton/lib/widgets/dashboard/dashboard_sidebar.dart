@@ -1,3 +1,4 @@
+// lib/widgets/dashboard/dashboard_sidebar.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/widgets/sidebar/sidebar_base.dart';
@@ -14,9 +15,7 @@ class DashboardSidebar extends StatelessWidget {
     return Obx(() {
       return SidebarBase(
         children: [
-          // ───────────────────────────────
-          // Triton Server Header
-          // ───────────────────────────────
+          /// Triton Server Header
           CommonSidebarCard(
             type: SidebarCardType.header,
             title: 'Triton Server',
@@ -24,9 +23,7 @@ class DashboardSidebar extends StatelessWidget {
             onTap: () => controller.changeType(DashboardType.server),
           ),
 
-          // ───────────────────────────────
-          // 모델 목록 (대시보드 모델 리스트 API 기반)
-          // ───────────────────────────────
+          /// Model List (SSE 실시간 모델 목록)
           ...controller.modelList.map((m) {
             return CommonSidebarCard(
               type: SidebarCardType.normal,

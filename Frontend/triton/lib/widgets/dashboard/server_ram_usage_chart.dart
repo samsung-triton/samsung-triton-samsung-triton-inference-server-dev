@@ -1,3 +1,5 @@
+// lib/widgets/dashboard/server_ram_usage_chart.dart
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:get/get.dart';
@@ -47,7 +49,7 @@ class ServerRamUsageChart extends StatelessWidget {
 
             lineTouchData: LineTouchData(
               enabled: true,
-              getTouchedSpotIndicator: (barData, idx) => idx.map((index) {
+              getTouchedSpotIndicator: (barData, indexes) => indexes.map((index) {
                 return TouchedSpotIndicatorData(FlLine(color: primaryNormal, dashArray: [3, 3]), FlDotData(show: true));
               }).toList(),
               touchTooltipData: LineTouchTooltipData(
@@ -70,12 +72,12 @@ class ServerRamUsageChart extends StatelessWidget {
                   showTitles: true,
                   interval: 1,
                   getTitlesWidget: (value, _) {
-                    final index = value.toInt();
-                    if (index < 0 || index >= timestamps.length) {
+                    final idx = value.toInt();
+                    if (idx < 0 || idx >= timestamps.length) {
                       return const SizedBox.shrink();
                     }
 
-                    final t = timestamps[index].toLocal();
+                    final t = timestamps[idx].toLocal();
                     return Text(DateFormat("HH:mm").format(t), style: T.t8(color: darkGray));
                   },
                 ),

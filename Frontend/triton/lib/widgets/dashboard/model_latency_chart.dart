@@ -1,3 +1,5 @@
+// lib/widgets/dashboard/model_latency_chart.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -19,7 +21,6 @@ class ModelLatencyChart extends StatefulWidget {
 class _ModelLatencyChartState extends State<ModelLatencyChart> {
   int? touchedIndex;
 
-  // Y축 최소 범위
   static const double minYAxisRange = 100;
 
   @override
@@ -32,27 +33,18 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
       final infer = c.inferLatency;
       final output = c.outputLatency;
 
-      final int len = queue.length;
+      final len = queue.length;
+
       if (len == 0) {
         return const CommonInfoCardBase(
           title: 'Model Latency',
-          child: Center(child: Text('No latency data')),
+          child: Center(child: CircularProgressIndicator()),
         );
       }
 
-      // Time Labels
-      final timeLabels = List.generate(len, (i) => "T${i + 1}");
+      final totalLatencies = List.generate(len, (i) => queue[i] + input[i] + infer[i] + output[i]);
 
-      // Total Latency (cap 제거)
-      final totalLatencies = List.generate(len, (i) {
-        final raw = queue[i] + input[i] + infer[i] + output[i];
-        return raw;
-      });
-
-      // max값 계산
       final maxVal = totalLatencies.reduce(math.max);
-
-      // Y축 최대/간격을 데이터 기반으로 동적으로 계산
       final niceMaxY = _calcNiceMaxY(maxVal);
       final intervalY = _calcNiceInterval(niceMaxY);
 
@@ -63,7 +55,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ① Line Chart
               Expanded(
                 flex: 7,
                 child: Padding(
@@ -72,30 +63,26 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                     LineChartData(
                       minY: 0,
                       maxY: niceMaxY,
-
                       minX: 0,
                       maxX: (len - 1).toDouble(),
 
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
-                        horizontalInterval: intervalY, // 동적 interval
+                        horizontalInterval: intervalY,
                         getDrawingHorizontalLine: (v) => FlLine(color: lightGray.withOpacity(0.4), strokeWidth: 1),
                       ),
 
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 36,
-                            interval: intervalY, // 동적 interval
-                            getTitlesWidget: (val, meta) {
-                              if (intervalY <= 0) {
-                                return const SizedBox.shrink(); // 방어 코드
-                              }
-                              // ✅ 변경: intervalY 기준으로 라벨 표시
+                            interval: intervalY,
+                            getTitlesWidget: (val, _) {
                               if ((val % intervalY).abs() > 0.001) {
                                 return const SizedBox.shrink();
                               }
@@ -104,15 +91,19 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                           ),
                         ),
 
-                        // 🔥 bottom time axis (그대로)
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 28,
                             interval: 1,
-                            getTitlesWidget: (value, meta) {
+                            getTitlesWidget: (value, _) {
                               final idx = value.toInt();
                               if (idx < 0 || idx >= len) return const SizedBox.shrink();
+
+                              if (c.latencyTimestamps.isEmpty) {
+                                return Text("T${idx + 1}", style: T.t12(color: gray));
+                              }
+
                               final dt = c.latencyTimestamps[idx].toLocal();
                               return Text(DateFormat('HH:mm').format(dt), style: T.t12(color: gray));
                             },
@@ -129,8 +120,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                           barWidth: 3,
                           dotData: FlDotData(
                             show: true,
-                            getDotPainter: (spot, percent, bar, index) =>
-                                FlDotCirclePainter(radius: 4, color: primaryNormal),
+                            getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(radius: 4, color: primaryNormal),
                           ),
                           spots: List.generate(len, (i) => FlSpot(i.toDouble(), totalLatencies[i])),
                         ),
@@ -141,9 +131,8 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                         handleBuiltInTouches: true,
                         touchCallback: (event, response) {
                           if (!event.isInterestedForInteractions ||
-                              response == null ||
-                              response.lineBarSpots == null ||
-                              response.lineBarSpots!.isEmpty) {
+                              response?.lineBarSpots == null ||
+                              response!.lineBarSpots!.isEmpty) {
                             setState(() => touchedIndex = null);
                             return;
                           }
@@ -153,8 +142,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                             setState(() => touchedIndex = idx);
                           }
                         },
-
-                        // ↓ 이하 tooltip 쪽은 그대로
                         touchTooltipData: LineTouchTooltipData(
                           getTooltipColor: (_) => primaryNormal.withOpacity(0.85),
                           tooltipMargin: 8,
@@ -164,8 +151,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                             if (spots.isEmpty) return [];
 
                             final idx = spots.first.x.toInt();
-
-                            // RAW 값으로 다시 계산
                             final rawTotal = queue[idx] + input[idx] + infer[idx] + output[idx];
 
                             return [LineTooltipItem(rawTotal.toStringAsFixed(0), T.t12(color: white, bold: true))];
@@ -179,7 +164,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
 
               const SizedBox(width: 12),
 
-              // ② 오른쪽 상세 박스 (그대로)
               Expanded(
                 flex: 3,
                 child: Container(
@@ -191,7 +175,6 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                   ),
                   child: touchedIndex != null
                       ? _buildTooltip(
-                          time: timeLabels[touchedIndex!],
                           queue: queue[touchedIndex!],
                           input: input[touchedIndex!],
                           infer: infer[touchedIndex!],
@@ -209,40 +192,8 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
     });
   }
 
-  // Y축 최대값을 데이터 기반 + 최소 100으로 보장
   double _calcNiceMaxY(double maxVal) {
-    // 최소 범위 100 보장
     final effectiveMax = maxVal < minYAxisRange ? minYAxisRange : maxVal;
-
-    if (effectiveMax <= 0) return minYAxisRange;
-
-    const targetLines = 6; // 대략 5~7개 정도의 눈금
-    final rawStep = effectiveMax / targetLines;
-
-    final magnitude = math.pow(10, (math.log(rawStep) / math.ln10).floor()).toDouble();
-    final residual = rawStep / magnitude;
-
-    double niceStep;
-    if (residual <= 1) {
-      niceStep = 1 * magnitude;
-    } else if (residual <= 2) {
-      niceStep = 2 * magnitude;
-    } else if (residual <= 5) {
-      niceStep = 5 * magnitude;
-    } else {
-      niceStep = 10 * magnitude;
-    }
-
-    final steps = (effectiveMax / niceStep).ceil();
-    final maxY = (steps * niceStep).toDouble();
-    return maxY < minYAxisRange ? minYAxisRange : maxY;
-  }
-
-  // Y축 눈금 간격도 최소 100 범위 기준으로 계산
-  double _calcNiceInterval(double maxY) {
-    // 최소 범위 100 보장
-    final effectiveMax = maxY < minYAxisRange ? minYAxisRange : maxY;
-    if (effectiveMax <= 0) return minYAxisRange / 5;
 
     const targetLines = 6;
     final rawStep = effectiveMax / targetLines;
@@ -250,28 +201,36 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
     final magnitude = math.pow(10, (math.log(rawStep) / math.ln10).floor()).toDouble();
     final residual = rawStep / magnitude;
 
-    double niceStep;
-    if (residual <= 1) {
-      niceStep = 1 * magnitude;
-    } else if (residual <= 2) {
-      niceStep = 2 * magnitude;
-    } else if (residual <= 5) {
-      niceStep = 5 * magnitude;
-    } else {
-      niceStep = 10 * magnitude;
-    }
+    double step;
+    if (residual <= 1)
+      step = magnitude;
+    else if (residual <= 2)
+      step = 2 * magnitude;
+    else if (residual <= 5)
+      step = 5 * magnitude;
+    else
+      step = 10 * magnitude;
 
-    return niceStep.toDouble();
+    final maxY = (effectiveMax / step).ceil() * step;
+    return maxY < minYAxisRange ? minYAxisRange : maxY;
   }
 
-  // ---- 오른쪽 상세 박스 ----
-  Widget _buildTooltip({
-    required String time,
-    required double queue,
-    required double input,
-    required double infer,
-    required double output,
-  }) {
+  double _calcNiceInterval(double maxY) {
+    final effectiveMax = maxY < minYAxisRange ? minYAxisRange : maxY;
+
+    const targetLines = 6;
+    final rawStep = effectiveMax / targetLines;
+
+    final magnitude = math.pow(10, (math.log(rawStep) / math.ln10).floor()).toDouble();
+    final residual = rawStep / magnitude;
+
+    if (residual <= 1) return magnitude;
+    if (residual <= 2) return 2 * magnitude;
+    if (residual <= 5) return 5 * magnitude;
+    return 10 * magnitude;
+  }
+
+  Widget _buildTooltip({required double queue, required double input, required double infer, required double output}) {
     final total = queue + input + infer + output;
 
     return Column(

@@ -1,3 +1,4 @@
+// lib/widgets/dashboard/model_gauge_card.dart
 import 'package:flutter/material.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
@@ -30,47 +31,36 @@ class ModelGaugeCard extends StatelessWidget {
         border: Border.all(color: lightGray),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ✅ 왼쪽 텍스트 영역
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(title, style: T.t16(bold: true)),
-              Text("Total : $total", style: T.t12(color: gray)),
-              const SizedBox(height: 8),
-              // 회색 실선
-              Container(height: 1, width: 450, color: lightGray),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: statusGreen.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text("Success: $success", style: T.t12(color: statusGreen)),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: statusRed.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text("Fail: $fail", style: T.t12(color: statusRed)),
-                  ),
-                ],
-              ),
-            ],
+          /// ------------------------------
+          /// Left Text Column
+          /// ------------------------------
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(title, style: T.t16(bold: true)),
+                Text("Total : $total", style: T.t12(color: gray)),
+                const SizedBox(height: 8),
+
+                Container(height: 1, width: double.infinity, color: lightGray),
+                const SizedBox(height: 8),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _tag("Success: $success", statusGreen),
+                    const SizedBox(width: 8),
+                    _tag("Fail: $fail", statusRed),
+                  ],
+                ),
+              ],
+            ),
           ),
 
-          // ✅ 오른쪽 반원 게이지 (CustomPaint)
+          /// ------------------------------
+          /// Right Gauge
+          /// ------------------------------
           SizedBox(
             width: 160,
             height: 70,
@@ -86,12 +76,18 @@ class ModelGaugeCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _tag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+      child: Text(text, style: T.t12(color: color)),
+    );
+  }
 }
 
-/// ✅ 정확한 반원 게이지 Painter
 class _HalfGaugePainter extends CustomPainter {
   final double percent;
-
   _HalfGaugePainter(this.percent);
 
   @override
@@ -111,16 +107,10 @@ class _HalfGaugePainter extends CustomPainter {
       ..strokeWidth = 14
       ..strokeCap = StrokeCap.round;
 
-    // 전체 반원 (배경)
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      math.pi, // 시작 각도 (180도)
-      math.pi, // 전체 180도
-      false,
-      backgroundPaint,
-    );
+    // 배경 반원
+    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), math.pi, math.pi, false, backgroundPaint);
 
-    // 채워지는 부분 (퍼센트)
+    // 퍼센트 반원
     final sweep = math.pi * (percent / 100);
     canvas.drawArc(Rect.fromCircle(center: center, radius: radius), math.pi, sweep, false, foregroundPaint);
   }

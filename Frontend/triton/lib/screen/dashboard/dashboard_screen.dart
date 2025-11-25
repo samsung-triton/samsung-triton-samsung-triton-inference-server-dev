@@ -1,9 +1,14 @@
+// lib/screens/dashboard/dashboard_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:triton/controller/dashboard/dashboard_controller.dart';
 import 'package:triton/widgets/dashboard/dashboard_sidebar.dart';
 import 'package:triton/widgets/dashboard/model_dashboard_panel.dart';
 import 'package:triton/widgets/dashboard/server_dashboard_panel.dart';
+import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
+import 'package:triton/controller/dashboard/model_dashboard_controller.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,24 +24,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
 
-    // 이전 컨트롤러가 살아있으면 제거
+    // 기존 컨트롤러 제거 후 재등록
     if (Get.isRegistered<DashboardController>()) {
       Get.delete<DashboardController>(force: true);
     }
-
-    // 🔥 Controller 등록
     dashboardController = Get.put(DashboardController());
 
-    // 🔥 Dashboard 화면 들어오면 polling 시작
-    dashboardController.startPolling();
-  }
+    // 진입 시 SSE 재연결
+    Get.find<ServerDashboardController>().restartSse();
 
-  @override
-  void dispose() {
-    // 🔥 Dashboard 화면 벗어나면 polling 중단
-    dashboardController.stopPolling();
-
-    super.dispose();
+    final modelId = dashboardController.selectedModelId.value;
+    if (modelId != null) {
+      Get.find<ModelDashboardController>().restartSse(modelId);
+    }
   }
 
   @override
