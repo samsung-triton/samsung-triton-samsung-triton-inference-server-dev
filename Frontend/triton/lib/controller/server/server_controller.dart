@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:triton/utils/show_alert.dart';
+import 'dart:convert';
 
 // 서버 상태
 class ServerStatus {
@@ -15,13 +16,14 @@ class ServerStatus {
 class ServerController extends GetxController {
   // 상태
   final Rx<ServerStatus?> serverStatus = Rx<ServerStatus?>(null);
+  final RxString uptimeHms = '00:00:00'.obs;
   final RxBool isBusy = false.obs;
   final RxString lastError = ''.obs;
-  final RxString uptimeHms = '00:00:00'.obs;
 
   late final ApiClient _api;
 
   Timer? _tick;
+  StreamSubscription<String>? _sseSub;
 
   @override
   void onInit() {
@@ -29,6 +31,7 @@ class ServerController extends GetxController {
     _api = Get.find<ApiClient>();
     _startUptimeTicker();
     refreshStatus();
+    _listenServerStatus();
   }
 
   @override
@@ -60,7 +63,20 @@ class ServerController extends GetxController {
     if (uptimeHms.value != time) uptimeHms.value = time;
   }
 
-  // 상태 조회
+  void _listenServerStatus() {
+    _sseSub = _api.listenServerStatus().listen((data) {
+      final json = jsonDecode(data);
+
+      final status = json['status'];
+      final startedAt = json['started_at'];
+
+      serverStatus.value = ServerStatus(
+        status: status == 'ready' ? 'running' : 'stopped',
+        startedAt: startedAt != null ? DateTime.tryParse(startedAt) : null,
+      );
+    });
+  }
+
   Future<void> refreshStatus() async {
     try {
       isBusy.value = true;
