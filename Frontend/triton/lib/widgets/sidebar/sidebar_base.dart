@@ -12,6 +12,8 @@ class SidebarBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scrollController = ScrollController();
+
     // children 사이 gap 추가
     final content = <Widget>[];
     for (int i = 0; i < children.length; i++) {
@@ -26,8 +28,10 @@ class SidebarBase extends StatelessWidget {
       height: double.infinity, // 높이도 화면에 맞춰주기
       color: primaryLightest,
       child: Scrollbar(
+        controller: scrollController,
         thumbVisibility: true,
         child: SingleChildScrollView(
+          controller: scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: content),
         ),

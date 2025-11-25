@@ -1,3 +1,5 @@
+// lib/widgets/dashboard/common_info_card_base.dart
+
 import 'package:flutter/material.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
@@ -13,12 +15,9 @@ class CommonInfoCardBase extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: white, // 배경색 유지
+        color: white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: primaryDarkest, // ✅ 외곽선 색상
-          width: 0.5, // ✅ 선 두께
-        ),
+        border: Border.all(color: primaryDarkest, width: 0.5),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8),

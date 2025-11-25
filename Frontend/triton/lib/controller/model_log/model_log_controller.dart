@@ -19,8 +19,7 @@ class ModelLogItem {
 
     String formattedDate;
     try {
-      final d = DateTime.parse(rawDate); //DB와 동일
-      //final d = DateTime.parse(rawDate).toLocal();
+      final d = DateTime.parse(rawDate).toLocal();
       formattedDate =
           "${d.year.toString().padLeft(4, '0')}-"
           "${d.month.toString().padLeft(2, '0')}-"
