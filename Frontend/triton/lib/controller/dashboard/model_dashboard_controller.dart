@@ -147,16 +147,21 @@ class ModelDashboardController extends GetxController {
       try {
         final json = jsonDecode(raw);
 
-        // Heartbeat 무시
-        if (json['heartbeat'] == true) return;
+        final data = json['data'];
+        if (data == null) return;
 
-        // history → 최근 10개
-        if (json['history'] != null) {
-          final list = (json['history'] as List).map((e) => ServerNotificationItem.fromJson(e)).toList();
+        // Heartbeat
+        if (data['heartbeat'] == true) return;
+
+        // History
+        if (data['history'] != null) {
+          final list = (data['history'] as List).map((e) => ServerNotificationItem.fromJson(e)).toList();
 
           serverNotifications.assignAll(list);
         }
-      } catch (_) {}
+      } catch (_) {
+        // silent fail
+      }
     });
   }
 
