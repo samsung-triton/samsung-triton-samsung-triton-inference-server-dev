@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -44,18 +45,29 @@ async def restart_server(request: ServerActorRequest, db: Session = Depends(get_
 
 @server_router.get("/status/stream")
 async def stream_status():
-    """Triton 상태 변경 실시간 SSE"""
     queue = asyncio.Queue()
     subscribers.add(queue)
 
     async def event_generator():
         try:
+            # heartbeat loop
             while True:
-                status = await queue.get()
-                yield f"data: {status}\n\n"
+                try:
+                    payload = await asyncio.wait_for(queue.get(), timeout=30)
+                    json_str = json.dumps(payload, ensure_ascii=False)
+                    yield f"data: {json_str}\n\n"
+
+                except asyncio.TimeoutError:
+                    # heartbeat
+                    yield 'data: {"heartbeat": true}\n\n'
+
         except asyncio.CancelledError:
             pass
+
         finally:
             subscribers.discard(queue)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+
