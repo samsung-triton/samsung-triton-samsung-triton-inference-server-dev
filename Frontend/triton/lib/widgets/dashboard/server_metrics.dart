@@ -1,5 +1,6 @@
-import 'package:fl_chart/fl_chart.dart';
+// lib/widgets/dashboard/server_metrics.dart
 
+/// Server snapshot metrics (CPU, RAM, GPU)
 class ServerMetrics {
   final double cpuUsage;
   final double ramUsage;
@@ -15,51 +16,12 @@ class ServerMetrics {
     required this.gpuVram,
     required this.models,
   });
-
-  static final mock = ServerMetrics(
-    cpuUsage: 30,
-    ramUsage: 50,
-    gpuUtilization: 40,
-    gpuVram: 60,
-    models: [
-      ModelPerf(key: "model1", name: "Model 1", success: 2720, fail: 174),
-      ModelPerf(key: "model2", name: "Model 2", success: 2650, fail: 244),
-      ModelPerf(key: "ensemble1", name: "Ensemble 1", success: 2500, fail: 394),
-    ],
-  );
 }
 
-// ✅ GPU VRAM 시계열 Mock 데이터
-class ServerGpuMockData {
-  static List<FlSpot> get vramUsage => const [
-    FlSpot(0, 15),
-    FlSpot(3, 35),
-    FlSpot(6, 65),
-    FlSpot(9, 80),
-    FlSpot(12, 55),
-    FlSpot(15, 45),
-    FlSpot(18, 60),
-    FlSpot(21, 75),
-  ];
-}
-
-// ✅ RAM 시계열 Mock 데이터
-class ServerRamMockData {
-  static List<FlSpot> get ramUsage => const [
-    FlSpot(0, 10),
-    FlSpot(3, 25),
-    FlSpot(6, 55),
-    FlSpot(9, 75),
-    FlSpot(12, 45),
-    FlSpot(15, 60),
-    FlSpot(18, 40),
-    FlSpot(21, 70),
-  ];
-}
-
+/// Per-model inference snapshot
 class ModelPerf {
-  final String key; // "model1"
-  final String name; // "Model 1"
+  final String key;
+  final String name;
   final int success;
   final int fail;
 
