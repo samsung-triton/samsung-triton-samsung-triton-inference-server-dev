@@ -159,7 +159,7 @@ extension FilterExportExtension on TritonServerLogController {
     final url = web.URL.createObjectURL(blob);
     web.HTMLAnchorElement()
       ..href = url
-      ..download = 'filtered_logs_${DateTime.now().toIso8601String()}.txt'
+      ..download = 'Triton_logs_${DateTime.now().toIso8601String()}.txt'
       ..click();
 
     web.URL.revokeObjectURL(url);
