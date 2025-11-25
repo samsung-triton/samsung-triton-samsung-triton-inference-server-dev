@@ -1,3 +1,5 @@
+// lib/widgets/dashboard/server_gpu_utilization_chart.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -14,53 +16,50 @@ class ServerGpuUtilizationChart extends StatelessWidget {
 
     return Obx(() {
       final gpu = controller.metrics.value.gpuUtilization;
-      final loading = controller.loading.value;
 
       return Center(
-        child: loading
-            ? const CircularProgressIndicator()
-            : LayoutBuilder(
-                builder: (context, constraints) {
-                  final side = constraints.biggest.shortestSide;
-                  final radius = side / 4;
-                  final ringThickness = 10;
-                  final centerSpaceRadius = radius - ringThickness;
-                  final sectionGap = side * 0.01;
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final side = constraints.biggest.shortestSide;
+            final radius = side / 4;
+            final ringThickness = 10;
+            final centerSpaceRadius = radius - ringThickness;
+            final sectionGap = side * 0.01;
 
-                  return Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: side,
-                        height: side,
-                        child: PieChart(
-                          PieChartData(
-                            startDegreeOffset: -90,
-                            centerSpaceRadius: centerSpaceRadius,
-                            sectionsSpace: sectionGap,
-                            sections: [
-                              PieChartSectionData(color: primaryNormal, value: gpu, title: '', radius: radius),
-                              PieChartSectionData(
-                                color: lightGray,
-                                value: (100 - gpu).clamp(0, 100).toDouble(),
-                                title: '',
-                                radius: radius,
-                              ),
-                            ],
-                          ),
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: side,
+                  height: side,
+                  child: PieChart(
+                    PieChartData(
+                      startDegreeOffset: -90,
+                      centerSpaceRadius: centerSpaceRadius,
+                      sectionsSpace: sectionGap,
+                      sections: [
+                        PieChartSectionData(color: primaryNormal, value: gpu, title: '', radius: radius),
+                        PieChartSectionData(
+                          color: lightGray,
+                          value: (100 - gpu).clamp(0, 100).toDouble(),
+                          title: '',
+                          radius: radius,
                         ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('GPU Util', style: T.t12(color: darkGray)),
-                          Text('${gpu.toStringAsFixed(2)}%', style: T.t16(color: primaryDarker, bold: true)),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
+                      ],
+                    ),
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('GPU Util', style: T.t12(color: darkGray)),
+                    Text('${gpu.toStringAsFixed(2)}%', style: T.t16(color: primaryDarker, bold: true)),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
       );
     });
   }
