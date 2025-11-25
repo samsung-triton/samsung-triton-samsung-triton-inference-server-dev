@@ -40,6 +40,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   @override
+  void dispose() {
+    // 대시보드를 떠날 때 SSE 종료
+    if (Get.isRegistered<DashboardController>()) {
+      Get.delete<DashboardController>(force: true);
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
