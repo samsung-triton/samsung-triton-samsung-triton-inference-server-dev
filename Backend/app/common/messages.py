@@ -126,3 +126,6 @@ class Messages(str, Enum):
     # ---- STANDARD TIME ----
     STANDARD_TIME_FETCH_SUCCESS = "집계 기준 시각 조회 성공"
     STANDARD_TIME_UPDATE_SUCCESS = "집계 기준 시각이 업데이트되었습니다."
+
+    # ---- Heartbeat ----
+    HEARTBEAT_SUCCESS = "heartbeat 응답 완료"
