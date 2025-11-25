@@ -113,15 +113,6 @@ class ApiClient extends GetConnect {
   }
 
   // ---------------------------------------------------------------------------
-  // 모델 대시보드 (Model Dashboard)
-  // ---------------------------------------------------------------------------
-
-  // 서버 알람 (Server Notifications)
-  Future<dynamic> getServerNotifications({required int page, required int size}) {
-    return _get('/api/v1/noti?page=$page&size=$size', apiName: 'getServerNotifications');
-  }
-
-  // ---------------------------------------------------------------------------
   // 모델 관리
   // ---------------------------------------------------------------------------
 
@@ -307,6 +298,7 @@ class ApiClient extends GetConnect {
   html.EventSource? _dashboardModelsEs;
   html.EventSource? _modelLatencyEs;
   html.EventSource? _modelStatsEs;
+  html.EventSource? _modelNotificationEs;
 
   // ---------------------------------------------------------------------------
   // SSE 생성
@@ -376,5 +368,10 @@ class ApiClient extends GetConnect {
     "$_baseUrl/api/v1/dashboard/model/$modelId/stats/stream",
     getEs: () => _modelStatsEs,
     setEs: (es) => _modelStatsEs = es,
+  );
+  Stream<String> listenModelNotification() => _createSseStream(
+    "$_baseUrl/api/v1/noti/error-sse",
+    getEs: () => _modelNotificationEs,
+    setEs: (es) => _modelNotificationEs = es,
   );
 }
