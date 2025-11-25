@@ -1,6 +1,8 @@
 // api 모음 파일
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'dart:async';
+import 'package:web/web.dart' as html;
 
 // 앱 전체에서 공통으로 사용하는 API 클라이언트.
 class ApiClient extends GetConnect {
@@ -100,16 +102,6 @@ class ApiClient extends GetConnect {
   // 서버 대시보드 (Server Dashboard)
   // ---------------------------------------------------------------------------
 
-  // 서버 메트릭스 정보
-  Future<dynamic> getServerMetrics() {
-    return _get('/api/v1/dashboard/server/metrics', apiName: 'getServerMetrics');
-  }
-
-  // GPU / 리소스 시계열 정보
-  Future<dynamic> getServerTimeSeries() {
-    return _get('/api/v1/dashboard/server/timeseries', apiName: 'getServerTimeSeries');
-  }
-
   // GET /api/v1/models/standard-time
   Future<dynamic> getStandardTime() {
     return _get('/api/v1/models/standard-time', apiName: 'getStandardTime');
@@ -123,21 +115,6 @@ class ApiClient extends GetConnect {
   // ---------------------------------------------------------------------------
   // 모델 대시보드 (Model Dashboard)
   // ---------------------------------------------------------------------------
-
-  // 대시보드용 모델 목록 조회
-  Future<dynamic> getDashboardModelList() {
-    return _get('/api/v1/dashboard/models', apiName: 'getDashboardModelList');
-  }
-
-  // 모델 통계 조회
-  Future<dynamic> getDashboardModelStats(int modelId) {
-    return _get('/api/v1/dashboard/model/$modelId/stats', apiName: 'getDashboardModelStats');
-  }
-
-  // 모델 레이턴시 조회 (timeseries)
-  Future<dynamic> getDashboardModelLatency(int modelId) {
-    return _get('/api/v1/dashboard/model/$modelId/latency', apiName: 'getDashboardModelLatency');
-  }
 
   // 서버 알람 (Server Notifications)
   Future<dynamic> getServerNotifications({required int page, required int size}) {
@@ -286,8 +263,8 @@ class ApiClient extends GetConnect {
         'model_name': modelName,
         'cursor': cursor,
         'requestId': requestId,
-        'start': startDate,
-        'end': endDate,
+        'start_date': startDate,
+        'end_date': endDate,
         'level': level,
         'global_search': grobalSearch,
         'limit': limit,
@@ -320,4 +297,84 @@ class ApiClient extends GetConnect {
     );
     return raw.body; // JSON 반환
   }
+
+  // ---------------------------------------------------------------------------
+  // SSE EventSource 핸들
+  // ---------------------------------------------------------------------------
+
+  html.EventSource? _serverMetricsEs;
+  html.EventSource? _serverTimeseriesEs;
+  html.EventSource? _dashboardModelsEs;
+  html.EventSource? _modelLatencyEs;
+  html.EventSource? _modelStatsEs;
+
+  // ---------------------------------------------------------------------------
+  // SSE 생성
+  // ---------------------------------------------------------------------------
+
+  Stream<String> _createSseStream(
+    String url, {
+    required html.EventSource? Function() getEs,
+    required void Function(html.EventSource?) setEs,
+  }) async* {
+    final old = getEs();
+    if (old != null) {
+      try {
+        old.close();
+      } catch (_) {}
+    }
+    setEs(null);
+
+    final es = html.EventSource(url);
+    setEs(es);
+
+    final controller = StreamController<String>();
+
+    es.onMessage.listen((event) {
+      controller.add(event.data?.toString() ?? '');
+    });
+
+    es.onError.listen((_) {
+      try {
+        es.close();
+      } catch (_) {}
+      setEs(null);
+    });
+
+    yield* controller.stream;
+  }
+
+  // ---------------------------------------------------------------------------
+  // SSE Endpoints
+  // ---------------------------------------------------------------------------
+
+  Stream<String> listenServerMetrics() => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/server/metrics/stream",
+    getEs: () => _serverMetricsEs,
+    setEs: (es) => _serverMetricsEs = es,
+  );
+
+  Stream<String> listenServerTimeSeries() => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/server/timeseries/stream",
+    getEs: () => _serverTimeseriesEs,
+    setEs: (es) => _serverTimeseriesEs = es,
+  );
+
+  Stream<String> listenDashboardModelList() => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/models/stream",
+    getEs: () => _dashboardModelsEs,
+    setEs: (es) => _dashboardModelsEs = es,
+  );
+
+  Stream<String> listenModelLatency(int modelId) => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/model/$modelId/latency/stream",
+    getEs: () => _modelLatencyEs,
+    setEs: (es) => _modelLatencyEs = es,
+  );
+
+  Stream<String> listenModelStats(int modelId) => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/model/$modelId/stats/stream",
+    getEs: () => _modelStatsEs,
+    setEs: (es) => _modelStatsEs = es,
+  );
 }
