@@ -52,8 +52,8 @@ class _ModalRegistrationState extends State<ModalRegistration> {
   bool get isModel => widget.kind == RegistrationKind.model;
   bool get isSetup => widget.kind == RegistrationKind.setup;
 
-  String get _modelTypeLabel => modelType == ModelType.normal ? 'single' : 'ensemble';
-  String get _modelTypeApiValue => modelType == ModelType.normal ? 'NORMAL' : 'ENSEMBLE';
+  // 모델 타입 문자열
+  String get _modelTypeString => modelType == ModelType.normal ? 'NORMAL' : 'ENSEMBLE';
 
   @override
   void initState() {
@@ -172,7 +172,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
       });
       await modelManageController.registerAssets(form);
     }
-    // 싱글 모델 등록
+    // NORMAL 모델 등록
     else if (modelType == ModelType.normal) {
       final form = FormData({
         if (pickedModelFile != null)
@@ -180,18 +180,18 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         if (pickedSetupFile != null)
           'setupFile': MultipartFile(pickedSetupFile!.bytes, filename: pickedSetupFile!.name),
         'modelName': nameCtrl.text.trim(),
-        'modelType': _modelTypeApiValue,
+        'modelType': _modelTypeString,
         'description': descCtrl.text.trim(),
       });
       await modelManageController.registerModel(form);
     }
-    // 앙상블 모델 등록
+    // ENSEMBLE 모델 등록
     else {
       final form = FormData({
         if (pickedSetupFile != null)
           'setupFile': MultipartFile(pickedSetupFile!.bytes, filename: pickedSetupFile!.name),
         'modelName': nameCtrl.text.trim(),
-        'modelType': _modelTypeApiValue,
+        'modelType': _modelTypeString,
         'description': descCtrl.text.trim(),
       });
       await modelManageController.registerEnsembleModel(form);
@@ -251,12 +251,12 @@ class _ModalRegistrationState extends State<ModalRegistration> {
             label: 'model type',
             child: Dropdown(
               width: 200,
-              items: const ['single', 'ensemble'],
+              items: const ['NORMAL', 'ENSEMBLE'],
               hintText: 'Select model type',
-              value: _modelTypeLabel,
+              value: _modelTypeString,
               onChanged: (newValue) {
                 setState(() {
-                  if (newValue == 'ensemble') {
+                  if (newValue == 'ENSEMBLE') {
                     modelType = ModelType.ensemble;
                   } else {
                     modelType = ModelType.normal;
