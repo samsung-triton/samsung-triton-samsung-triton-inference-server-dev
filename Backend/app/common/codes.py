@@ -65,3 +65,6 @@ class CustomCode(str, Enum):
     LOG_002 = "LOG-002"  # 모델 로그의 model_name 리스트 조회 성공
     LOG_003 = "LOG_003"  # 모델 로그 조회 성공
     LOG_004 = "LOG_004"  # 서버 로그 조회 성공
+
+    #Heartbeat
+    HEARTBEAT_001 = "HEARTBEAT-001"  # heartbeat 응답 완료
