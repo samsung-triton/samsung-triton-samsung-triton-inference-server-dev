@@ -30,13 +30,14 @@ class ServerController extends GetxController {
     super.onInit();
     _api = Get.find<ApiClient>();
     _startUptimeTicker();
-    refreshStatus();
+    refreshStatus(); // 초기에는 상태변화 없으므로 상태 호출
     _listenServerStatus();
   }
 
   @override
   void onClose() {
     _tick?.cancel();
+    _sseSub?.cancel();
     super.onClose();
   }
 
@@ -64,16 +65,21 @@ class ServerController extends GetxController {
   }
 
   void _listenServerStatus() {
-    _sseSub = _api.listenServerStatus().listen((data) {
-      final json = jsonDecode(data);
+    _sseSub = _api.listenServerStatus().listen((raw) {
+      final json = jsonDecode(raw);
 
-      final status = json['status'];
-      final startedAt = json['started_at'];
+      final sseStatus = json['data']?['data']?['status'];
 
-      serverStatus.value = ServerStatus(
-        status: status == 'ready' ? 'running' : 'stopped',
-        startedAt: startedAt != null ? DateTime.tryParse(startedAt) : null,
-      );
+      if (sseStatus == null) return;
+
+      // running으로 판단할 상태들
+      final runningStates = ['start', 'restart'];
+
+      final newStatus = runningStates.contains(sseStatus) ? 'running' : 'stopped';
+
+      final now = DateTime.now(); //startAt을 보내지 않기 때문에 현재 시간 사용
+
+      serverStatus.value = ServerStatus(status: newStatus, startedAt: newStatus == 'running' ? now : null);
     });
   }
 
