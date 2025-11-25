@@ -11,8 +11,36 @@ import 'package:triton/widgets/dashboard/model_notification_panel.dart';
 import 'package:triton/controller/dashboard/dashboard_controller.dart';
 import 'package:triton/controller/dashboard/model_dashboard_controller.dart';
 
-class ModelDashboardPanel extends StatelessWidget {
+class ModelDashboardPanel extends StatefulWidget {
   const ModelDashboardPanel({super.key});
+
+  @override
+  State<ModelDashboardPanel> createState() => _ModelDashboardPanelState();
+}
+
+class _ModelDashboardPanelState extends State<ModelDashboardPanel> {
+  @override
+  void initState() {
+    super.initState();
+
+    final dashCtrl = Get.find<DashboardController>();
+    final modelCtrl = Get.find<ModelDashboardController>();
+
+    // 화면 진입 시 SSE 자동 시작
+    final id = dashCtrl.selectedModelId.value;
+    if (id != null) {
+      modelCtrl.restartSse(id);
+    }
+  }
+
+  @override
+  void dispose() {
+    // 화면 떠날 때 SSE 자동 해제
+    final modelCtrl = Get.find<ModelDashboardController>();
+    modelCtrl.onClose();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -51,17 +51,16 @@ class ModelDashboardController extends GetxController {
   RxList<DateTime> latencyTimestamps = <DateTime>[].obs;
 
   // -----------------------------
-  // Server Notifications (REST)
+  // Server Notifications (SSE 기반)
   // -----------------------------
   RxList<ServerNotificationItem> serverNotifications = <ServerNotificationItem>[].obs;
 
-  RxInt notiPage = 1.obs;
-  RxInt notiSize = 10.obs;
-  RxInt notiTotalPages = 1.obs;
-
+  // -----------------------------
   // SSE Subscriptions
+  // -----------------------------
   StreamSubscription<String>? _statsSub;
   StreamSubscription<String>? _latencySub;
+  StreamSubscription<String>? _notiSub;
 
   @override
   void onInit() {
@@ -75,11 +74,11 @@ class ModelDashboardController extends GetxController {
   void restartSse(int modelId) {
     _statsSub?.cancel();
     _latencySub?.cancel();
+    _notiSub?.cancel();
 
     _startStatsSse(modelId);
     _startLatencySse(modelId);
-
-    fetchServerNotifications(); // 알림은 REST 요청
+    _startNotificationSse();
   }
 
   // ---------------------------------------------------------
@@ -141,23 +140,31 @@ class ModelDashboardController extends GetxController {
   }
 
   // ---------------------------------------------------------
-  // Server Notifications (REST)
+  // Notification SSE
   // ---------------------------------------------------------
-  Future<void> fetchServerNotifications() async {
-    try {
-      final data = await _api.getServerNotifications(page: notiPage.value, size: notiSize.value);
+  void _startNotificationSse() {
+    _notiSub = _api.listenModelNotification().listen((raw) {
+      try {
+        final json = jsonDecode(raw);
 
-      final items = data['items'] as List;
-      serverNotifications.assignAll(items.map((e) => ServerNotificationItem.fromJson(e)).toList());
+        // Heartbeat 무시
+        if (json['heartbeat'] == true) return;
 
-      notiTotalPages.value = data['total_pages'] ?? 1;
-    } catch (_) {}
+        // history → 최근 10개
+        if (json['history'] != null) {
+          final list = (json['history'] as List).map((e) => ServerNotificationItem.fromJson(e)).toList();
+
+          serverNotifications.assignAll(list);
+        }
+      } catch (_) {}
+    });
   }
 
   @override
   void onClose() {
     _statsSub?.cancel();
     _latencySub?.cancel();
+    _notiSub?.cancel();
     super.onClose();
   }
 }
