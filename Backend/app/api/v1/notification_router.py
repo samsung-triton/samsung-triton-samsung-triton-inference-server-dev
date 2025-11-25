@@ -10,67 +10,89 @@ from app.core.DB.clickhouse import get_clickhouse_db
 from app.schemas.base_schema import BaseResponse
 from app.services.notification_service import get_inference_notification_service
 from app.common.sse_channels import error_log_channel
+from app.core.response_utils import create_response
+from app.common.codes import CustomCode
+from app.common.messages import Messages
 
 notification_router = APIRouter(prefix="/noti", tags=["Notification"])
 
 
 @notification_router.get("", response_model=BaseResponse, status_code=status.HTTP_200_OK)
 def get_inference_notification(
-    page: int = Query(1, ge=1, description="페이지 번호(1부터 시작)"),
-    size: int = Query(8, ge=1, le=100, description="페이지당 개수"),
+    page: int = Query(1, ge=1),
+    size: int = Query(8, ge=1, le=100),
     db: Session = Depends(get_clickhouse_db),
 ):
     return get_inference_notification_service(db=db, page=page, size=size)
 
 
 # Vector → FastAPI PUSH endpoint
-@notification_router.post("/error-event")
+@notification_router.post("/error-event", response_model=BaseResponse)
 async def push_error_event(event: dict):
     await error_log_channel.publish(event)
-    return {"status": "ok"}
+    return create_response(
+        CustomCode.NOTI_001.value,
+        Messages.NOTIFICATION_FETCH_SUCCESS.value,
+        data={"received": event},
+    )
 
 
 # SSE endpoint
 @notification_router.get("/error-sse")
 async def error_sse(db=Depends(get_clickhouse_db)):
-    # 1) 최근 10개 ERROR 로그 가져오기
+
     rows = db.execute(text("""
-        SELECT toDateTime64(ts, 6) AS ts,
-                    level,
-                    error_message
+        SELECT toDateTime64(ts, 6) AS ts, level, error_message
         FROM logs.triton_error_logs
         ORDER BY ts DESC
         LIMIT 10
     """)).fetchall()
 
     history = [
-        {
-            "ts": str(r.ts),
-            "level": r.level,
-            "error_message": r.error_message
-        }
+        {"ts": str(r.ts), "level": r.level, "error_message": r.error_message}
         for r in rows
     ]
 
     async def event_stream():
-        # 2) SSE 채널 구독
         queue = error_log_channel.subscribe()
 
         try:
-            # 3) 최초 연결 시 과거 히스토리 한번 전송
-            init_packet = json.dumps({"history": history}, ensure_ascii=False)
+            # 최초 히스토리 전송 — BaseResponse 적용
+            init_packet = create_response(
+                CustomCode.NOTI_001.value,
+                Messages.NOTIFICATION_FETCH_SUCCESS.value,
+                data={"history": history},
+            ).json()
+
             yield f"data: {init_packet}\n\n"
 
-            # 4) 실시간 + heartbeat loop
+            # 실시간 + heartbeat
             while True:
                 try:
-                    # 새 에러 로그 이벤트 대기
                     data = await asyncio.wait_for(queue.get(), timeout=30)
-                    yield f"data: {data}\n\n"
+
+                    if isinstance(data, str):
+                        try:
+                            data = json.loads(data)
+                        except:
+                            pass
+
+                    json_str = create_response(
+                        CustomCode.NOTI_001.value,
+                        Messages.NOTIFICATION_FETCH_SUCCESS.value,
+                        data=data,
+                    ).model_dump_json()
+
+                    yield f"data: {json_str}\n\n"
 
                 except asyncio.TimeoutError:
-                    # heartbeat
-                    yield 'data: {"heartbeat": true}\n\n'
+                    heartbeat = create_response(
+                        CustomCode.HEARTBEAT_001.value,
+                        Messages.HEARTBEAT_SUCCESS.value,
+                        data={"heartbeat": True},
+                    ).model_dump_json()
+
+                    yield f"data: {heartbeat}\n\n"
 
         except asyncio.CancelledError:
             error_log_channel.unsubscribe(queue)
