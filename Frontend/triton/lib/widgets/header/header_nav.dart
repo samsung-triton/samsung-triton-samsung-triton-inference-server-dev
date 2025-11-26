@@ -1,10 +1,8 @@
-//헤더 좌측 메뉴 바
+// 헤더 좌측 메뉴 바
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:triton/widgets/header/menu_text.dart';
-
 import 'package:triton/router.dart';
+import 'package:triton/widgets/header/menu_text.dart';
 
 class HeaderNav extends StatelessWidget {
   const HeaderNav({super.key});
@@ -15,7 +13,7 @@ class HeaderNav extends StatelessWidget {
 
     return Container(
       height: 48,
-      alignment: Alignment.center, //menu를 정렬, 내부 자식들에게는 영향 X
+      alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
