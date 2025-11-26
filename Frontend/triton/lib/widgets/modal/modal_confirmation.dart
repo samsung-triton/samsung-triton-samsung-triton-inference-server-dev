@@ -55,7 +55,7 @@ class _ModalConfirmationState extends State<ModalConfirmation> {
       titleColor: white,
       dividerColor: white,
       children: [
-        // 에러 배너
+        // 에러 문구
         if (_error != null) ...[
           Container(
             width: 400,
@@ -82,13 +82,16 @@ class _ModalConfirmationState extends State<ModalConfirmation> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // 확인 버튼
             ButtonMedium(
               text: 'ok',
-              onPressed: _loading ? null : _handleOk, // 로딩 중 비활성화
+              // 로딩 중 비활성화
+              onPressed: _loading ? null : _handleOk,
               backgroundColor: _loading ? gray : white,
               textColor: black,
             ),
             const SizedBox(width: 12),
+            // 취소 버튼
             ButtonMedium(
               text: 'cancel',
               onPressed: _loading ? null : () => ModalPortal.close(context),
