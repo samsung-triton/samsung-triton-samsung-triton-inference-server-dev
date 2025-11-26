@@ -1,4 +1,4 @@
-// 코드 에디터 본문
+// config 에디터 본문
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/model_manage/config_controller.dart';
@@ -17,7 +17,8 @@ class _CodeEditorState extends State<CodeEditor> {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: codeEditorController.editorCtrl, // 에디터 컨트롤러 안 텍스트 컨트롤러 연결
+      // 에디터 컨트롤러 안 텍스트 컨트롤러 연결
+      controller: codeEditorController.editorCtrl,
       expands: true,
       maxLines: null,
       minLines: null,
