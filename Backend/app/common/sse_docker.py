@@ -1,6 +1,5 @@
 import docker
 import asyncio
-import json
 from app.core.response_utils import create_response
 from app.common.codes import CustomCode
 from app.common.messages import Messages
@@ -43,23 +42,17 @@ def build_response(status: str):
 
     if status == "start":
         return create_response(
-            code=CustomCode.DOCKER_006.value,
-            message=Messages.SERVER_START_SUCCESS.value,
-            data={"status": "start"}
+            code=CustomCode.DOCKER_002.value, message=Messages.SERVER_START_SUCCESS.value, data={"status": "start"}
         )
 
     if status == "stop":
         return create_response(
-            code=CustomCode.DOCKER_002.value,
-            message=Messages.SERVER_STOP_SUCCESS.value,
-            data={"status": "stop"}
+            code=CustomCode.DOCKER_003.value, message=Messages.SERVER_STOP_SUCCESS.value, data={"status": "stop"}
         )
-    
+
     if status == "restart":
         return create_response(
-            code=CustomCode.DOCKER_003.value,
-            message=Messages.SERVER_RESTART_SUCCESS.value,
-            data={"status": "restart"}
+            code=CustomCode.DOCKER_004.value, message=Messages.SERVER_RESTART_SUCCESS.value, data={"status": "restart"}
         )
 
     return None
@@ -83,7 +76,7 @@ async def docker_event_watcher(container_name: str):
             if attrs.get("name") != container_name:
                 continue
 
-            action = event.get("Action")   # GPU 서버는 status 대신 Action 사용
+            action = event.get("Action")  # GPU 서버는 status 대신 Action 사용
             print("FILTERED ACTION:", action, flush=True)
 
             unified_status = convert_status(action)
@@ -96,5 +89,3 @@ async def docker_event_watcher(container_name: str):
             publish_event(resp)
 
     loop.run_in_executor(None, _listen)
-
-

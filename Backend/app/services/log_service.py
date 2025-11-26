@@ -21,9 +21,9 @@ def get_web_log_service(
 
     if end_date < start_date:
         raise CustomHTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            code=CustomCode.ERR_400.value,
-            detail=Messages.ERR_END_DATE_BEFORE_START_DATE.value,
+            status.HTTP_400_BAD_REQUEST,
+            CustomCode.ERR_400.value,
+            Messages.ERR_END_DATE_BEFORE_START_DATE.value,
         )
 
     server_logs = (

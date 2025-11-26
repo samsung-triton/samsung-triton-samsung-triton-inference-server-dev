@@ -37,7 +37,7 @@ async def push_error_event(event: dict):
 
 
 # SSE endpoint
-@notification_router.get("/error-sse")
+@notification_router.get("/stream")
 async def error_sse(db=Depends(get_clickhouse_db)):
     rows = db.execute(
         text("""

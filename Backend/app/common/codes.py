@@ -39,20 +39,17 @@ class CustomCode(str, Enum):
 
     # triton 모델 관리
     MODEL_001 = "MODEL-001"  # 모델 목록 조회 성공
-    MODEL_002 = "MODEL-002"  # 일반 모델 최초 등록 성공
-    MODEL_003 = "MODEL-003"  # 앙상블 모델 등록 성공
-    MODEL_004 = "MODEL-004"  # 기존 모델에 버전 추가 성공
-    MODEL_005 = "MODEL-005"  # 모델의 버전 삭제 성공
-    MODEL_006 = "MODEL-006"  # 모델 전제 삭제 성공
-    MODEL_007 = "MODEL-007"  # 모델의 버전 목록 및 현재 config 조회
+    MODEL_002 = "MODEL-002"  # 모델의 버전 목록 및 현재 config 조회
+    MODEL_003 = "MODEL-003"  # 일반 모델 최초 등록 성공 # 앙상블 모델 등록 성공
+    MODEL_004 = "MODEL-004"  # 앙상블 모델 등록 성공
+    MODEL_005 = "MODEL-005"  # 기존 모델에 버전 추가 성공
+    MODEL_006 = "MODEL-006"  # 모델의 버전 삭제 성공
+    MODEL_007 = "MODEL-007"  # 모델 전제 삭제 성공
 
     # config 파일 관리
-    CONFIG_001 = "CONFIG-001"  # 모델 별 사용중인 config 파일 조회 성공
-    CONFIG_002 = "CONFIG-002"  # 모델의 롤백 가능한 config 목록 조회 성공
-    CONFIG_003 = "CONFIG-003"  # 사용자가 선택한 config 조회 성공
-    CONFIG_004 = "CONFIG-004"  # 모델의 config 수정 성공
-    CONFIG_005 = "CONFIG-005"  # 모델의 config 이력 조회 성공
-    CONFIG_006 = "CONFIG-006"  # 모델의 config 삭제 성공
+    CONFIG_001 = "CONFIG-001"  # 모델 별 현재 포함 모든 Config들의 전체 내용 반환
+    CONFIG_002 = "CONFIG-002"  # 모델의 config 수정 성공
+    CONFIG_003 = "CONFIG-003"  # 모델의 config 삭제 성공
 
     # 모델 추론
     INFERENCE_001 = "INFERENCE-001"  # 추론 전 입력 데이터 저장 성공

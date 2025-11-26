@@ -16,7 +16,6 @@ def varify_mastekey_service(masterKey: int, db: Session) -> BaseResponse:
             status_code=status.HTTP_401_UNAUTHORIZED,
             code=CustomCode.ERR_401.value,
             message=Messages.MASTER_KEY_MISMATCH.value,
-            data=None,
         )
 
     return create_response(CustomCode.MASTER_001.value, Messages.MASTER_KEY_MATCH.value)
