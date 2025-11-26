@@ -41,7 +41,6 @@ class ApiClient extends GetConnect {
   dynamic _unwrapResponse(Response res, String apiName) {
     // 1) 요청 실패: message 반환
     if (!res.isOk) {
-      print('[ApiClient] $apiName Api Error: ${res.statusCode} ${res.statusText}');
       return res.body['message'];
     }
 

@@ -141,7 +141,6 @@ class ServerController extends GetxController {
       return true;
     } catch (e) {
       lastError.value = '서버 시작 실패: $e'; //alert로 띄울지, 메세지 커스텀 할지
-      print('[startServer] 예외 발생: $e'); //에러 로그 출력, 테스트 후 삭제 예정
 
       return false;
     } finally {
