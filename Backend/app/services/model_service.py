@@ -219,7 +219,7 @@ def get_model_detail_service(model_id: int, db: Session):
                 "versionId": mv.model_version_id,
                 "version": mv.version,
                 "fileName": mv.represent_file_name,
-                "userName": user.login_id if user else None,
+                "userName": user.name if user else None,
                 "createdAt": mv.created_at.strftime("%y-%m-%d %H:%M:%S"),
             }
             for mv, user in versions
@@ -408,7 +408,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
 
     # === 3. DB 기록 ===
     try:
-        model = _save_model(db, model_name, "ENSEMBLE", str(MODEL_REPO_ROOT / model_name))
+        model = _save_model(db, model_name, req.modelType.value, str(MODEL_REPO_ROOT / model_name))
         version = _save_model_version(db, model.model_id, user.user_id, 1, None)
         for f in saved_config_files:
             _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])

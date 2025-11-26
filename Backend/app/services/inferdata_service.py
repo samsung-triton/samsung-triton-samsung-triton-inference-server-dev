@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 
 
 def save_input_before_infer_service(
-    clientId: str, modelName: str, dataFiles: List[UploadFile], db: Session
+    client_id: str, model_name: str, data_files: List[UploadFile], db: Session
 ) -> BaseResponse:
-    model = db.query(Model).filter(Model.name == modelName).first()
+    model = db.query(Model).filter(Model.name == model_name).first()
 
     if not model:
         raise CustomHTTPException(
@@ -50,7 +50,7 @@ def save_input_before_infer_service(
         saved_paths = []
 
         # 여러 파일 저장 (로그는 한 번만 남김)
-        for file in dataFiles:
+        for file in data_files:
             file_path = save_dir / f"{uid}_{file.filename}"
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
@@ -59,7 +59,7 @@ def save_input_before_infer_service(
         # 로그
         new_log = InferenceLogs(
             uid=uid,
-            client_id=clientId,
+            client_id=client_id,
             input_path=",".join(saved_paths),  # 여러 경로를 문자열로 저장 (또는 JSON 필드라면 리스트로)
             model_id=model.model_id,
         )
@@ -169,7 +169,7 @@ def save_binary_output_after_infer_service(
         db.refresh(inferenceData)
 
         return create_response(
-            code=CustomCode.INFERENCE_002,
+            code=CustomCode.INFERENCE_003,
             message=Messages.OUTPUT_DATA_SAVE_SUCCESS.value,
             data={"uid": uid, "output_path": str(file_path)},
         )

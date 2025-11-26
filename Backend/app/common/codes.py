@@ -51,15 +51,16 @@ class CustomCode(str, Enum):
     CONFIG_002 = "CONFIG-002"  # 모델의 config 수정 성공
     CONFIG_003 = "CONFIG-003"  # 모델의 config 삭제 성공
 
-    # 모델 추론
-    INFERENCE_001 = "INFERENCE-001"  # 추론 전 입력 데이터 저장 성공
-    INFERENCE_002 = "INFERENCE-002"  # 추론 후 결과 데이터 저장 성공
-
-    # 로그 관리 (업데이트 예정)
+    # 로그 관리
     LOG_001 = "LOG-001"  # api 로그 응답 완료
     LOG_002 = "LOG-002"  # 모델 로그의 model_name 리스트 조회 성공
     LOG_003 = "LOG-003"  # 모델 로그 조회 성공
     LOG_004 = "LOG-004"  # 서버 로그 조회 성공
+
+    # 모델 추론
+    INFERENCE_001 = "INFERENCE-001"  # 추론 전 입력 데이터 저장 성공
+    INFERENCE_002 = "INFERENCE-002"  # 추론 후 결과 데이터 저장 성공
+    INFERENCE_003 = "INFERENCE-003"  # 추론 후 결과 바이너리 데이터 저장 성공
 
     # Heartbeat
     HEARTBEAT_001 = "HEARTBEAT-001"  # heartbeat 응답 완료

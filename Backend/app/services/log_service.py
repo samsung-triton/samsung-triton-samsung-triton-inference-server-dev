@@ -94,7 +94,7 @@ def get_web_log_service(
 
     return create_response(
         code=CustomCode.LOG_001.value,
-        message=Messages.MODEL_API_LOG_FETCH_SUCCESS.value,
+        message=Messages.WEB_LOG_FETCH_SUCCESS.value,
         data={
             "items": paginated_items,
             "page": page,
@@ -120,7 +120,7 @@ def get_model_name_list_service(db):
 
     return create_response(
         CustomCode.LOG_002,
-        Messages.MODEL_LOG_MODEL_NAME_LIST_FETCH_SUCCESS,
+        Messages.INFER_LOG_MODEL_NAME_LIST_FETCH_SUCCESS,
         {"models": model_names},
     )
 
@@ -207,7 +207,7 @@ def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id
 
     return create_response(
         CustomCode.LOG_003,
-        Messages.MODEL_LOG_FETCH_SUCCESS,
+        Messages.INFER_LOG_FETCH_SUCCESS,
         {
             "logs": logs,
             "next_cursor": next_cursor,
