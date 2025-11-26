@@ -1,3 +1,4 @@
+// 화면 이동을 위한 라우터
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_storage/get_storage.dart';
@@ -19,11 +20,11 @@ class Routes {
   static const serverLog = '/server_log';
 }
 
-// 실직적인 Router를 담당하는 인스턴스
+// 라우터 담당하는 인스턴스
 final appRouter = GoRouter(
   initialLocation: Routes.login,
 
-  // 로그인/권한 체크
+  // 로그인 | role 권한 체크
   redirect: (context, state) {
     final authStorage = GetStorage('auth');
     final loginedId = authStorage.read<String>('loginedId');
@@ -32,15 +33,16 @@ final appRouter = GoRouter(
     final loc = state.matchedLocation;
     final isLoginRoute = loc == Routes.login;
 
-    // 1) 로그인 안 되어 있으면: 로그인 페이지만 허용
+    // 비로그인 접근 제어
     if (loginedId == null || loginedId.isEmpty) {
+      // 로그인 페이지만 허용
       if (!isLoginRoute) {
         return Routes.login;
       }
       return null;
     }
 
-    // 2) role에 따른 접근 제어: OPER
+    // OPER 접근 제어
     if (role == 'OPER') {
       // dashboard만 허용
       const allowedForOper = {Routes.dashboard};
@@ -50,7 +52,7 @@ final appRouter = GoRouter(
       return null;
     }
 
-    // 2) role에 따른 접근 제어: DEVEL
+    // DEVEL 접근 제어
     if (role == 'DEVEL') {
       // 로그인 제외 모든 페이지 허용
       const allowedForDevel = {Routes.dashboard, Routes.modelManage, Routes.tritonLog, Routes.serverLog};
@@ -60,14 +62,17 @@ final appRouter = GoRouter(
       return null;
     }
 
-    // 3) role이 이상한 값이면 그냥 다시 로그인 시키기
+    // role이 이상한 값이면 그냥 다시 로그인
     return Routes.login;
   },
 
   routes: [
     // 공통 프레임(헤더) 아래의 하위 라우트들
     ShellRoute(
+      // 프레임(헤더)
       builder: (_, __, child) => AppFrame(child: child),
+
+      // 실라우터
       routes: [
         GoRoute(
           path: Routes.login,

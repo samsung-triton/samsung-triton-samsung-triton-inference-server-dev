@@ -1,5 +1,6 @@
+// 작은 크기 버튼
 import 'package:flutter/material.dart';
-import '../../theme/typography.dart';
+import 'package:triton/theme/typography.dart';
 
 class ButtonSmall extends StatelessWidget {
   final String text;
@@ -13,7 +14,7 @@ class ButtonSmall extends StatelessWidget {
   final VoidCallback? onPressed;
 
   const ButtonSmall({
-    Key? key,
+    super.key,
     required this.text,
     this.backgroundColor = Colors.white,
     this.textColor = Colors.black,
@@ -23,7 +24,7 @@ class ButtonSmall extends StatelessWidget {
     this.borderRadius = 4,
     this.isbold = false,
     this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

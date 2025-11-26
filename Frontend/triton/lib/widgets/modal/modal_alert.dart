@@ -1,3 +1,4 @@
+// 알람 모달
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/utils/show_alert.dart';

@@ -1,18 +1,14 @@
+// 서버 마스터키 입력 모달
 import 'package:flutter/material.dart';
+import 'package:triton/controller/server/server_controller.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
+import 'package:triton/utils/modal_util.dart';
+import 'package:triton/widgets/button/button_medium.dart';
 import 'package:triton/widgets/input/input_medium.dart';
 import 'package:get/get.dart';
-
-import '../../controller/server/server_controller.dart';
-
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
-
-import '../../utils/modal_util.dart';
-
-import 'modal_base.dart';
-import '../button/button_medium.dart';
-
-import '../../widgets/modal/modal_description.dart';
+import 'package:triton/widgets/modal/modal_base.dart';
+import 'package:triton/widgets/modal/modal_description.dart';
 
 // 모달 종류
 enum ControlKind { stop, restart }
@@ -61,6 +57,7 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
     final serverController = Get.find<ServerController>();
 
     try {
+      // 서버 마스터키 확인 기능 호출
       final ok = await serverController.verifyMasterKey(masterKeyCtrl.text);
       if (!ok) {
         setState(() {
@@ -74,21 +71,23 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
 
         ModalPortal.close(context, true);
 
-        // 다음 프레임에 설명 모달 열기
+        // 설명 모달 열기
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final descCtrl = TextEditingController();
 
           ModalPortal.open(
             hostCtx,
             builder: (dialogCtx) => ModalDescription(
-              descCtrl: descCtrl, //description
+              descCtrl: descCtrl,
               isServer: true,
               onOK: () async {
                 final serverController = Get.find<ServerController>();
                 if (widget.kind == ControlKind.stop) {
+                  // 트리톤 서버 정지 기능 호출
                   await serverController.stopServer(descCtrl.text);
                 }
                 if (widget.kind == ControlKind.restart) {
+                  // 트리톤 서버 재시작 기능 호출
                   await serverController.restartServer(descCtrl.text);
                 }
               },
@@ -97,7 +96,6 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
         });
       }
     } catch (e) {
-      // 실패 메시지 노출
       setState(() {
         _error = 'Request failed. please try again.';
       });
@@ -123,10 +121,11 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
             'To stop or restart the server,\nplease enter your password.',
             style: T.t16(color: white),
             textAlign: TextAlign.center,
-            maxLines: 2, // 최대 2줄
+            maxLines: 2,
           ),
         ),
 
+        // 에러 문구
         if (_error != null) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -145,11 +144,12 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
           ),
         ],
 
+        // 패스워드 입력칸
         Center(
           child: SizedBox(
             width: 200,
             child: InputMedium(hintText: "Enter password", obscureText: true, controller: masterKeyCtrl),
-          ), // [ADDED]
+          ),
         ),
 
         const SizedBox(height: 20),
@@ -158,13 +158,16 @@ class _ModalConfirmationPasswordState extends State<ModalConfirmationPassword> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // 확인 버튼
             ButtonMedium(
               text: 'ok',
-              onPressed: _loading ? null : _handleOk, // 로딩 중 비활성화
+              // 로딩 중 비활성화
+              onPressed: _loading ? null : _handleOk,
               backgroundColor: _loading ? lightGray : white,
               textColor: black,
             ),
             const SizedBox(width: 12),
+            // 취소 버튼
             ButtonMedium(
               text: 'cancel',
               onPressed: _loading ? null : () => ModalPortal.close(context),

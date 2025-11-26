@@ -1,6 +1,7 @@
+// 기본 텍스트 인풋
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
 class InputType extends StatelessWidget {
   final String hintText;
@@ -16,7 +17,7 @@ class InputType extends StatelessWidget {
   final VoidCallback? onTap;
 
   const InputType({
-    Key? key,
+    super.key,
     this.hintText = '',
     this.controller,
     this.enabled = true,
@@ -28,12 +29,15 @@ class InputType extends StatelessWidget {
     this.borderRadius = 4,
     this.padding = const EdgeInsets.symmetric(horizontal: 8),
     this.onTap,
-  }) : super(key: key);
+  });
 
   Color _borderColor() {
-    if (!enabled) return lightGray; // 비활성화
-    if (hasError) return statusRed; // 에러 상태
-    return lightGray; // 기본 border
+    // 비활성화
+    if (!enabled) return lightGray;
+    // 에러 상태
+    if (hasError) return statusRed;
+    // 기본 border
+    return lightGray;
   }
 
   @override

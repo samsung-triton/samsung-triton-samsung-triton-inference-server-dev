@@ -1,14 +1,12 @@
-// 이유 작성 모달
+// 설명 작성 모달
 import 'package:flutter/material.dart';
-
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
-
-import '../../utils/modal_util.dart';
-import '../input/input_large.dart';
-import '../button/button_medium.dart';
-import 'modal_base.dart';
-import 'modal_confirmation.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
+import 'package:triton/utils/modal_util.dart';
+import 'package:triton/widgets/button/button_medium.dart';
+import 'package:triton/widgets/input/input_large.dart';
+import 'package:triton/widgets/modal/modal_base.dart';
+import 'package:triton/widgets/modal/modal_confirmation.dart';
 
 class ModalDescription extends StatefulWidget {
   final TextEditingController descCtrl;
@@ -52,6 +50,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
       _loading = true;
       _error = null;
     });
+
     // 0) 입력 검증
     if (widget.descCtrl.text.trim().isEmpty) {
       setState(() {
@@ -62,7 +61,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
     }
     setState(() => _error = null);
 
-    // 분기1) 서버: 즉시 실행 후 현재 모달 닫기
+    // 서버모달: 즉시 실행 후 현재 모달 닫기
     if (widget.isServer) {
       if (widget.onOK != null) {
         await widget.onOK!();
@@ -72,13 +71,13 @@ class _ModalDescriptionState extends State<ModalDescription> {
       return;
     }
 
-    // 분기2) 서버아님: 확인 모달로 전환
+    // 일반모달: 확인 모달로 전환
     final hostCtx = Navigator.of(context, rootNavigator: true).context;
 
     // 현재 모달 닫기
     ModalPortal.close(context);
 
-    // 다음 프레임에 확인 모달 열기
+    // 확인 모달 열기
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() => _loading = false);
       ModalPortal.open(
@@ -95,8 +94,8 @@ class _ModalDescriptionState extends State<ModalDescription> {
 
   @override
   Widget build(BuildContext context) {
-    // 서버/일반 문구 분기
-    final String title = widget.isServer ? 'Description' : 'description';
+    final String title = 'Description';
+    // 본문 메세지 (서버|일반 구분)
     final String message = widget.isServer
         ? 'Restarting(stopping) the server may interrupt\n'
               'ongoing inferences. Please ensure all tasks are\n'
@@ -110,7 +109,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
     return ModalBase(
       title: title,
       children: [
-        // 에러 배너
+        // 에러 문구구
         if (_error != null) ...[
           Container(
             width: 400,
@@ -121,7 +120,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
           const SizedBox(height: 8),
         ],
 
-        // 안내 문구
+        // 본문
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Text(
@@ -133,7 +132,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
 
         const SizedBox(height: 8),
 
-        // 입력창
+        // 설명 입력창
         InputLarge(hintText: hint, controller: widget.descCtrl),
 
         const SizedBox(height: 24),
@@ -142,6 +141,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // 확인 버튼
             ButtonMedium(
               text: 'ok',
               onPressed: _canSubmit ? () => _handleOk(context) : null,
@@ -149,6 +149,7 @@ class _ModalDescriptionState extends State<ModalDescription> {
               textColor: white,
             ),
             const SizedBox(width: 12),
+            // 취소 버튼
             ButtonMedium(
               text: 'cancel',
               onPressed: () => ModalPortal.close(context),
