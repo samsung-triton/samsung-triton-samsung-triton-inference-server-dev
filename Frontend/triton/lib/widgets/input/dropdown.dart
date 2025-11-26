@@ -1,3 +1,4 @@
+// 드롭다운 위젯
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:triton/theme/app_colors.dart';
@@ -9,7 +10,7 @@ class Dropdown extends StatefulWidget {
   final List<String> items;
   final String hintText;
 
-  // 외부에서 선택값과 콜백 받을 수 있도록 추가
+  // 선택값과 선택기능
   final String? value;
   final ValueChanged<String?>? onChanged;
 
@@ -47,8 +48,6 @@ class _DropdownState extends State<Dropdown> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton2<String>(
           isExpanded: true,
-          hint: Text(widget.hintText, style: T.t12(color: gray, bold: false)),
-          value: selectedItem,
           iconStyleData: const IconStyleData(icon: Icon(Icons.arrow_drop_down, color: black), iconSize: 20),
           buttonStyleData: ButtonStyleData(
             height: widget.height ?? 28,
@@ -75,21 +74,29 @@ class _DropdownState extends State<Dropdown> {
               trackColor: WidgetStateProperty.all(Colors.transparent),
               trackVisibility: WidgetStateProperty.all(false),
             ),
-            offset: const Offset(0, 0), // 드롭다운을 아래로 띄움
+            offset: const Offset(0, 0),
           ),
           menuItemStyleData: MenuItemStyleData(
-            height: 28, // 각 항목의 높이
-            padding: const EdgeInsets.symmetric(horizontal: 12), // 좌우 여백
-            overlayColor: WidgetStateProperty.all(
-              primaryLightest.withValues(alpha: 0.2), // 커서 위치 배경색
-            ),
+            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            overlayColor: WidgetStateProperty.all(primaryLightest.withValues(alpha: 0.2)),
           ),
+
+          // 아이템 선택
           onChanged: (String? newValue) {
             setState(() {
               selectedItem = newValue!;
             });
-            widget.onChanged?.call(newValue); // 외부에 전달
+            // 외부에 전달
+            widget.onChanged?.call(newValue);
           },
+
+          hint: Text(widget.hintText, style: T.t12(color: gray, bold: false)),
+
+          // 선택된 아이템
+          value: selectedItem,
+
+          // 드롭다운 아이템
           items: widget.items.map((value) {
             return DropdownMenuItem<String>(
               value: value,
