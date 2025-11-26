@@ -19,7 +19,6 @@ class AuthController extends GetxController {
 
   Future<bool> login(String id, String pw) async {
     if (id.trim().isEmpty || pw.trim().isEmpty) {
-      print('[Auth] ❌ 아이디/비밀번호 비어있음');
       return false;
     }
 
@@ -28,24 +27,20 @@ class AuthController extends GetxController {
 
       // 데이터가 String이면 에러메세지
       if (data is String) {
-        print(data);
         return false;
       }
 
       final String serverRole = data['role']?.toString() ?? '';
-      print('[Auth] ✅ 로그인 성공 (id=$id, role=$serverRole)');
 
       _persistSession(id, serverRole); // loginId & role 저장
       return true;
     } catch (e) {
-      print('[Auth] ❌ 예외: $e');
       return false;
     }
   }
 
   void logout() {
     _clearSession();
-    print('[Auth] ✅ 로그아웃 완료');
   }
 
   // 세션 저장
