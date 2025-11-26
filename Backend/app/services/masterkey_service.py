@@ -13,7 +13,7 @@ def varify_mastekey_service(masterKey: int, db: Session) -> BaseResponse:
     mk = db.query(MasterKey).filter(MasterKey.key == masterKey).first()
     if not mk:
         raise CustomHTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             code=CustomCode.ERR_401.value,
             message=Messages.MASTER_KEY_MISMATCH.value,
             data=None,

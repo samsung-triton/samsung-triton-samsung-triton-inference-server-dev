@@ -13,7 +13,7 @@ from app.models.user import User
 from app.core.customException import CustomHTTPException
 
 
-def get_api_log_service(
+def get_web_log_service(
     start_date, end_date, username, type, description, global_search, page: int, size: int, db: Session
 ) -> BaseResponse:
     start_dt = datetime.combine(start_date, datetime.min.time())
@@ -130,7 +130,7 @@ def _add_cond(where: list, cond: str | None):
         where.append(cond)
 
 
-def get_model_logs_service(db, model_name, start, end, level, cursor, request_id, global_search, limit):
+def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id, global_search, limit):
     # 날짜 유효성 체크
     if (start and not end) or (end and not start):
         return create_response(

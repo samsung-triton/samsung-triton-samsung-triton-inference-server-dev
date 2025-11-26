@@ -20,8 +20,8 @@ server_router = APIRouter(prefix="/server", tags=["Server Management"])
 
 # 서버 상태 조회
 @server_router.get("/status", response_model=BaseResponse)
-async def get_server_status(db: Session = Depends(get_db)):
-    return await get_server_status_service(db)
+async def get_server_status():
+    return await get_server_status_service()
 
 
 # 서버 시작

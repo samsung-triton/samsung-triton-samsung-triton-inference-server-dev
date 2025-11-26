@@ -86,7 +86,7 @@ def save_model_release(
 
 
 # =========================
-# 1. 모델 목록 조회
+# 모델 목록 조회
 # =========================
 def list_models_service(db: Session) -> Dict[str, Any]:
     # Triton 서버 Health Check
@@ -165,8 +165,81 @@ def list_models_service(db: Session) -> Dict[str, Any]:
     )
 
 
+# =====================================================
+# 특정 모델의 버전 목록 및 현재 Config 조회
+# =====================================================
+def get_model_detail_service(model_id: int, db: Session):
+    # 모델 존재 확인
+    model = db.query(Model).filter(Model.model_id == model_id).first()
+    if not model:
+        raise CustomHTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=CustomCode.ERR_404.value,
+            message=Messages.MODEL_NOT_FOUND.value,
+        )
+
+    # 현재 Config 조회
+    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
+
+    config_data = None
+    if config:
+        config_data = {
+            "configId": config.config_id,
+            "version": config.version,
+            "filePath": config.file_path,
+            "content": config.content,
+            "createdAt": config.created_at.strftime("%y-%m-%d %H:%M:%S"),
+        }
+
+    # 모델 타입별 분기
+    if model.type == "ENSEMBLE":
+        # 앙상블 모델은 버전 리스트 없이 config만 반환
+        data = {
+            "modelId": model.model_id,
+            "modelName": model.name,
+            "modelType": model.type,
+            "versions": None,  # 또는 []
+            "config": config_data,
+        }
+
+    else:
+        # 일반 모델은 버전 리스트 포함
+        versions = (
+            db.query(ModelVersion, User)
+            .join(User, User.user_id == ModelVersion.created_by, isouter=True)
+            .filter(ModelVersion.model_id == model_id)
+            .order_by(ModelVersion.version.asc())
+            .all()
+        )
+
+        version_list = [
+            {
+                "versionId": mv.model_version_id,
+                "version": mv.version,
+                "fileName": mv.represent_file_name,
+                "userName": user.login_id if user else None,
+                "createdAt": mv.created_at.strftime("%y-%m-%d %H:%M:%S"),
+            }
+            for mv, user in versions
+        ]
+
+        data = {
+            "modelId": model.model_id,
+            "modelName": model.name,
+            "modelType": model.type,
+            "versions": version_list,
+            "config": config_data,
+        }
+
+    return create_response(
+        CustomCode.MODEL_007.value,
+        Messages.MODEL_LIST_FETCH_SUCCESS.value,
+        data,
+    )
+
+
 # =========================================================
-# 2. 일반 모델 최초 등록
+# 일반 모델 최초 등록
 # =========================================================
 
 MODEL_EXTS = [".onnx", ".pt", ".pth", ".pb", ".plan", ".trt", ".py"]
@@ -287,7 +360,7 @@ def register_model_service(
 
 
 # =====================================================
-# 3. 앙상블 모델 등록
+# 앙상블 모델 등록
 # =====================================================
 def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile, db: Session):
     # 모델명 확인
@@ -357,7 +430,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
 
 
 # =====================================================
-# 4. 모델 관련 파일 추가
+# 모델 관련 파일 추가
 # =====================================================
 def register_model_assets_service(
     model_id: int,
@@ -513,7 +586,7 @@ def register_model_assets_service(
 
 
 # =====================================================
-# 5. 모델 버전 삭제
+# 모델 버전 삭제
 # =====================================================
 def _delete_version_files_and_db(model, version: int, db: Session):
     try:
@@ -627,7 +700,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
 
 
 # =====================================================
-# 6. 모델 전체 삭제
+# 모델 전체 삭제
 # =====================================================
 def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
     # === 1. 모델 및 유저 검증 ===
@@ -681,76 +754,3 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
     db.commit()
 
     return create_response(CustomCode.MODEL_006.value, Messages.MODEL_DELETE_SUCCESS.value, None)
-
-
-# =====================================================
-# 9. 특정 모델의 버전 목록 및 현재 Config 조회
-# =====================================================
-def get_model_detail_service(model_id: int, db: Session):
-    # 모델 존재 확인
-    model = db.query(Model).filter(Model.model_id == model_id).first()
-    if not model:
-        raise CustomHTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code=CustomCode.ERR_404.value,
-            message=Messages.MODEL_NOT_FOUND.value,
-        )
-
-    # 현재 Config 조회
-    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
-
-    config_data = None
-    if config:
-        config_data = {
-            "configId": config.config_id,
-            "version": config.version,
-            "filePath": config.file_path,
-            "content": config.content,
-            "createdAt": config.created_at.strftime("%y-%m-%d %H:%M:%S"),
-        }
-
-    # 모델 타입별 분기
-    if model.type == "ENSEMBLE":
-        # 앙상블 모델은 버전 리스트 없이 config만 반환
-        data = {
-            "modelId": model.model_id,
-            "modelName": model.name,
-            "modelType": model.type,
-            "versions": None,  # 또는 []
-            "config": config_data,
-        }
-
-    else:
-        # 일반 모델은 버전 리스트 포함
-        versions = (
-            db.query(ModelVersion, User)
-            .join(User, User.user_id == ModelVersion.created_by, isouter=True)
-            .filter(ModelVersion.model_id == model_id)
-            .order_by(ModelVersion.version.asc())
-            .all()
-        )
-
-        version_list = [
-            {
-                "versionId": mv.model_version_id,
-                "version": mv.version,
-                "fileName": mv.represent_file_name,
-                "userName": user.login_id if user else None,
-                "createdAt": mv.created_at.strftime("%y-%m-%d %H:%M:%S"),
-            }
-            for mv, user in versions
-        ]
-
-        data = {
-            "modelId": model.model_id,
-            "modelName": model.name,
-            "modelType": model.type,
-            "versions": version_list,
-            "config": config_data,
-        }
-
-    return create_response(
-        CustomCode.MODEL_007.value,
-        Messages.MODEL_LIST_FETCH_SUCCESS.value,
-        data,
-    )

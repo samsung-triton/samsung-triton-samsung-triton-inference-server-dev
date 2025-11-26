@@ -2,19 +2,61 @@ from enum import Enum
 
 
 class Messages(str, Enum):
-    # ---- Master Key ----
-    LOGIN_SUCCESS = "로그인이 성공적으로 완료되었습니다."
-    INVALID_PARAM = "요청 파라미터가 올바르지 않습니다."
-    INVALID_CREDENTIAL = "아이디 또는 비밀번호가 일치하지 않습니다."
-    USER_NOT_FOUND = "해당 유저를 찾을 수 없습니다."
+    # ---- Common Messages ----
+    INVALID_PARAM = "The request contains invalid or missing parameters."
+
+    # ---- User Key ----
+    # LOGIN_SUCCESS = "로그인이 성공적으로 완료되었습니다."
+    # INVALID_CREDENTIAL = "아이디 또는 비밀번호가 일치하지 않습니다."
+    # USER_NOT_FOUND = "해당 유저를 찾을 수 없습니다."
+    LOGIN_SUCCESS = "Login completed successfully."
+    INVALID_CREDENTIAL = "The login ID or password is incorrect."
+    USER_NOT_FOUND = "The specified user could not be found."
 
     # ---- Master Key ----
-    MASTER_KEY_MATCH = "마스터 키가 일치합니다."
-    MASTER_KEY_MISMATCH = "마스터 키가 일치하지 않습니다."
+    # MASTER_KEY_MATCH = "마스터 키가 일치합니다."
+    # MASTER_KEY_MISMATCH = "마스터 키가 일치하지 않습니다."
+    MASTER_KEY_MATCH = "The master key matches."
+    MASTER_KEY_MISMATCH = "The master key does not match."
+
+    # ---- Triton Server ----
+    # SERVER_DOCKER_COMMAND_ERROR = "Docker 명령 실행 중 오류가 발생했습니다."
+    # SERVER_READY = "서버가 준비 상태입니다."
+    # SERVER_NOT_READY = "서버가 준비되지 않았습니다."
+    # SERVER_STATUS_FETCH_ERROR = "Triton 상태 조회 중 오류가 발생했습니다."
+    # SERVER_START_SUCCESS = "서버가 성공적으로 시작되었습니다."
+    # SERVER_START_ERROR = "서버 시작 중 오류가 발생했습니다."
+    # SERVER_STOP_SUCCESS = "서버가 성공적으로 중지되었습니다."
+    # SERVER_STOP_ERROR = "서버 중지 중 오류가 발생했습니다."
+    # SERVER_RESTART_SUCCESS = "서버가 성공적으로 재시작되었습니다."
+    # SERVER_RESTART_ERROR = "서버 재시작 중 오류가 발생했습니다."
+    SERVER_DOCKER_COMMAND_ERROR = "An error occurred while executing the Docker command."
+    SERVER_READY = "The server is in a ready state."
+    SERVER_NOT_READY = "The server is not ready."
+    SERVER_STATUS_FETCH_ERROR = "An error occurred while retrieving the Triton server status."
+
+    SERVER_START_SUCCESS = "The server has been successfully started."
+    SERVER_START_ERROR = "An error occurred while starting the server."
+
+    SERVER_STOP_SUCCESS = "The server has been successfully stopped."
+    SERVER_STOP_ERROR = "An error occurred while stopping the server."
+
+    SERVER_RESTART_SUCCESS = "The server has been successfully restarted."
+    SERVER_RESTART_ERROR = "An error occurred while restarting the server."
+
+    # ---- DashBoard / Metrics ----
+    DASHBOARD_MODEL_LIST_SUCCESS = "대시보드용 모델 목록 조회 성공"
+    SERVER_METRICS_FETCH_SUCCESS = "서버 실시간 메트릭 조회 성공"
+    RESOURCE_TIMESERIES_FETCH_SUCCESS = "리소스 시계열 데이터 조회 성공"
+    METRICS_INVALID_PERIOD = "지원하지 않는 period 값입니다. (허용: 1h, 6h, 24h)"
+    PROMETHEUS_RANGE_QUERY_ERROR = "Prometheus Range Query 중 오류가 발생했습니다."
+    SERVER_METRIC_FAIL = "서버 메트릭 조회 실패"
+    PROMETHEUS_BAD_STATUS = "Prometheus 응답 상태가 올바르지 않습니다."
+    PROMETHEUS_QUERY_FAIL = "Prometheus 메트릭 수집 중 오류 발생"
+    MODEL_PER_STATUS_FETCH_SUCCESS = "모델 별 요청 통계 조회 성공"
 
     # ---- Model List / Triton Ready ----
     MODEL_LIST_FETCH_SUCCESS = "모델 목록을 성공적으로 조회했습니다."
-    TRITON_NOT_READY = "Triton Server가 준비되지 않았습니다."
     MODEL_LIST_FETCH_ERROR = "모델 목록 조회 중 오류가 발생했습니다."
 
     # ---- Model Register ----
@@ -70,16 +112,7 @@ class Messages(str, Enum):
     MODEL_UNLOAD_ALREADY = "해당 모델은 이미 언로드된 상태입니다."
     MODEL_UNLOAD_ERROR = "모델 언로드 중 오류가 발생했습니다. Triton Server 로그를 확인하세요."
 
-    # ---- Server State / Config ----
-    SERVER_READY = "서버가 준비 상태입니다."
-    SERVER_NOT_READY = "서버가 준비되지 않았습니다."
-    SERVER_START_SUCCESS = "서버가 성공적으로 시작되었습니다."
-    SERVER_RESTART_SUCCESS = "서버가 성공적으로 재시작되었습니다."
-    SERVER_START_ERROR = "서버 시작 중 오류가 발생했습니다."
-    SERVER_STOP_SUCCESS = "서버가 성공적으로 중지되었습니다."
-    SERVER_STOP_ERROR = "서버 중지 중 오류가 발생했습니다."
-    SERVER_RESTART_ERROR = "서버 재시작 중 오류가 발생했습니다."
-
+    # ---- Config ----
     CONFIG_CURRENT_FETCH_SUCCESS = "현재 사용 중인 Config가 조회되었습니다."
     CONFIG_HISTORY_FETCH_SUCCESS = "Config 이력 목록이 조회되었습니다."
     CONFIG_ONE_FETCH_SUCCESS = "선택한 Config 내용이 조회되었습니다."
@@ -94,17 +127,6 @@ class Messages(str, Enum):
     INPUT_DATA_SAVE_FAIL = "입력 데이터 저장 중 오류 발생"
     OUTPUT_DATA_SAVE_FAIL = "결과 데이터 저장 중 오류 발생"
     UID_NOT_FOUND = "해당 UID를 찾을 수 없습니다"
-
-    # ---- Metrics ----
-    DASHBOARD_MODEL_LIST_SUCCESS = "대시보드용 모델 목록 조회 성공"
-    SERVER_METRICS_FETCH_SUCCESS = "서버 실시간 메트릭 조회 성공"
-    RESOURCE_TIMESERIES_FETCH_SUCCESS = "리소스 시계열 데이터 조회 성공"
-    METRICS_INVALID_PERIOD = "지원하지 않는 period 값입니다. (허용: 1h, 6h, 24h)"
-    PROMETHEUS_RANGE_QUERY_ERROR = "Prometheus Range Query 중 오류가 발생했습니다."
-    SERVER_METRIC_FAIL = "서버 메트릭 조회 실패"
-    PROMETHEUS_BAD_STATUS = "Prometheus 응답 상태가 올바르지 않습니다."
-    PROMETHEUS_QUERY_FAIL = "Prometheus 메트릭 수집 중 오류 발생"
-    MODEL_PER_STATUS_FETCH_SUCCESS = "모델 별 요청 통계 조회 성공"
 
     # ---- Logs (Model / Server) ----
     MODEL_LOG_MODEL_NAME_LIST_FETCH_SUCCESS = "모델 로그의 model_name 리스트 조회 성공"
