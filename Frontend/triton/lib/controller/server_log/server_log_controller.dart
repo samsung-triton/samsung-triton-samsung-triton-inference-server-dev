@@ -162,7 +162,7 @@ extension FilterExportExtension on ServerLogController {
 
     web.HTMLAnchorElement()
       ..href = url
-      ..download = 'server_logs_${DateTime.now().toIso8601String()}.txt'
+      ..download = 'Server_logs_${DateTime.now().toIso8601String()}.txt'
       ..click();
 
     web.URL.revokeObjectURL(url);

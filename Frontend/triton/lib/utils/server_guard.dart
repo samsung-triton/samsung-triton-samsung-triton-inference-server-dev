@@ -2,11 +2,7 @@
 import 'package:get/get.dart';
 import 'package:triton/controller/server/server_controller.dart';
 
-Future<bool> isServerRunning() async {
+bool isServerRunning() {
   final server = Get.find<ServerController>();
-
-  await server.refreshStatus();
-
-  final status = server.serverStatus.value?.status;
-  return status == 'running';
+  return server.serverStatus.value?.status == 'running';
 }
