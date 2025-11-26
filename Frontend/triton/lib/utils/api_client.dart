@@ -299,6 +299,7 @@ class ApiClient extends GetConnect {
   html.EventSource? _modelLatencyEs;
   html.EventSource? _modelStatsEs;
   html.EventSource? _modelNotificationEs;
+  html.EventSource? _serverStatusEs;
 
   // ---------------------------------------------------------------------------
   // SSE 생성
@@ -373,5 +374,10 @@ class ApiClient extends GetConnect {
     "$_baseUrl/api/v1/noti/error-sse",
     getEs: () => _modelNotificationEs,
     setEs: (es) => _modelNotificationEs = es,
+  );
+  Stream<String> listenServerStatus() => _createSseStream(
+    "$_baseUrl/api/v1/server/status/stream",
+    getEs: () => _serverStatusEs,
+    setEs: (es) => _serverStatusEs = es,
   );
 }
