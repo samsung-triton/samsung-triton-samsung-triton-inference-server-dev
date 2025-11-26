@@ -176,8 +176,6 @@ class ConfigController extends GetxController {
     final content = editorCtrl.text;
     final saveId = _authStorage.read<String>('loginedId') ?? '';
 
-    print(content);
-
     final dynamic data = await _api.applyConfig(
       modelId: modelId,
       loginId: saveId,

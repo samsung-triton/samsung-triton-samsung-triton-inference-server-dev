@@ -37,7 +37,6 @@ class _ModalConfirmationState extends State<ModalConfirmation> {
       }
     } catch (e) {
       // 실패 메시지 노출
-      print(e);
       setState(() {
         _error = 'request failed. please try again.';
       });
