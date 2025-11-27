@@ -171,7 +171,7 @@ async def get_server_metrics_service() -> BaseResponse:
             gpu_data.append(
                 {
                     "uuid": uuid,
-                    "gpu_util": round(vals.get("gpu_util", 0), 2),
+                    "gpuUtil": round(vals.get("gpu_util", 0), 2),
                 }
             )
 
@@ -183,7 +183,7 @@ async def get_server_metrics_service() -> BaseResponse:
 
         data = {
             "timestamp": datetime.now(TIMEZONE).isoformat(),
-            "cpu_utilization": round(cpu_util, 2),
+            "cpuUtilization": round(cpu_util, 2),
             "gpu": gpu_data,
         }
 
@@ -247,7 +247,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             points = parse_prometheus_values(s, skip_invalid=True)
             vram_series_list.append(
                 SeriesItem(
-                    gpu_uuid=metric.get("gpu_uuid", "unknown"),
+                    gpuUuid=metric.get("gpu_uuid", "unknown"),
                     values=points,
                 )
             )
@@ -258,7 +258,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             points = parse_prometheus_values(s, skip_invalid=True)
             ram_series_list.append(
                 SeriesItem(
-                    gpu_uuid=metric.get("gpu_uuid", "none"),
+                    gpuUuid=metric.get("gpu_uuid", "none"),
                     values=points,
                 )
             )
@@ -339,19 +339,19 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
         code=CustomCode.DASH_003.value,
         message=f"{model.name} 통계 조회 성공",
         data={
-            "model_name": model.name,
-            "base_time": base_time_str,  # "HH:MM"
-            "aggregation_start": start_time.isoformat(),
-            "aggregation_end": end_time.isoformat(),
-            "request_total": request_total,
-            "request_success": request_success,
-            "request_fail": request_fail,
-            "inference_total": inference_total,
-            "inference_ok": inference_ok,
-            "inference_ng": inference_ng,
-            "inference_error": inference_error,
-            "ok_ratio": round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0,
-            "avg_latency_ms": avg_ms,
+            "modelName": model.name,
+            "baseTime": base_time_str,  # "HH:MM"
+            "aggregationStart": start_time.isoformat(),
+            "aggregationEnd": end_time.isoformat(),
+            "requestTotal": request_total,
+            "requestSuccess": request_success,
+            "requestFail": request_fail,
+            "inferenceTotal": inference_total,
+            "inferenceOk": inference_ok,
+            "inferenceNg": inference_ng,
+            "inferenceError": inference_error,
+            "okRatio": round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0,
+            "avgLatencyMs": avg_ms,
         },
     )
 

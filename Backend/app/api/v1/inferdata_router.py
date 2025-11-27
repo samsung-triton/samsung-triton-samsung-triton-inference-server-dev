@@ -34,10 +34,10 @@ def save_output_after_infer(request: SaveInferenceResultRequest, db: Session = D
 async def save_binay_output_after_infer(
     request: Request,
     uid: str = Query(...),
-    isOk: bool = Query(...),
+    is_ok: bool = Query(...),
     extension: str = Query(...),
     db: Session = Depends(get_db),
 ):
     binary_data = await request.body()
 
-    return save_binary_output_after_infer_service(uid, isOk, extension, binary_data, db)
+    return save_binary_output_after_infer_service(uid, is_ok, extension, binary_data, db)

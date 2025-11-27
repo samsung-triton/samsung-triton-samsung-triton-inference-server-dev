@@ -72,7 +72,7 @@ def save_input_before_infer_service(
             Messages.INPUT_DATA_SAVE_SUCCESS.value,
             {
                 "uid": uid,
-                "input_path": saved_paths,  # 리스트 형태 반환
+                "inputPath": saved_paths,  # 리스트 형태 반환
             },
         )
 
@@ -122,7 +122,7 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
         return create_response(
             CustomCode.INFERENCE_002,
             Messages.OUTPUT_DATA_SAVE_SUCCESS.value,
-            {"uid": uid, "output_path": str(file_path)},
+            {"uid": uid, "outputPath": str(file_path)},
         )
 
     except Exception as e:
@@ -171,7 +171,7 @@ def save_binary_output_after_infer_service(
         return create_response(
             code=CustomCode.INFERENCE_003,
             message=Messages.OUTPUT_DATA_SAVE_SUCCESS.value,
-            data={"uid": uid, "output_path": str(file_path)},
+            data={"uid": uid, "outputPath": str(file_path)},
         )
 
     except Exception as e:
