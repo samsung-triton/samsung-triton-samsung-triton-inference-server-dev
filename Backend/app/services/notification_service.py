@@ -7,6 +7,7 @@ from app.core.customException import CustomHTTPException
 from app.core.response_utils import create_response
 from app.common.codes import CustomCode
 from app.common.messages import Messages
+from app.common.utils import to_utc_z
 
 
 def get_inference_notification_service(db: Session, page: int, size: int) -> BaseResponse:
@@ -36,7 +37,7 @@ def get_inference_notification_service(db: Session, page: int, size: int) -> Bas
 
         items = [
             {
-                "ts": row.ts.isoformat() if hasattr(row.ts, "isoformat") else str(row.ts),
+                "ts": to_utc_z(row.ts),
                 "level": row.level,
                 "errorMessage": row.error_message,
             }
