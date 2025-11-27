@@ -1,5 +1,6 @@
 import subprocess
 import json
+from Backend.app.common.utils import to_utc_z
 from fastapi import status
 from datetime import datetime, timezone
 
@@ -44,9 +45,11 @@ async def get_triton_status():
         # 변환
         started_at = None
         if started_at_raw and started_at_raw != "0001-01-01T00:00:00Z":
-            started_at = (
-                datetime.fromisoformat(started_at_raw.replace("Z", "+00:00")).astimezone(timezone.utc).isoformat()
-            )
+            try:
+                started_dt = datetime.fromisoformat(started_at_raw.replace("Z", "+00:00"))
+                started_at = to_utc_z(started_dt)
+            except:
+                started_at = None
 
         return {
             "status": "start" if is_running else "stop",
@@ -66,7 +69,8 @@ async def start_triton():
     """Triton 컨테이너 시작"""
     cmd = f"docker compose {_compose_path()} up -d"
     _run_compose(cmd)
-    return {"status": "start", "startedAt": datetime.now(TIMEZONE).isoformat()}
+    return {"status": "start", "startedAt": to_utc_z(datetime.now(timezone.utc))}
+
 
 
 async def stop_triton():
@@ -78,4 +82,4 @@ async def stop_triton():
 async def restart_triton():
     cmd = f"docker compose {_compose_path()} restart"
     _run_compose(cmd)
-    return {"status": "restart", "startedAt": datetime.now(TIMEZONE).isoformat()}
+    return {"status": "restart", "startedAt": to_utc_z(datetime.now(timezone.utc))}

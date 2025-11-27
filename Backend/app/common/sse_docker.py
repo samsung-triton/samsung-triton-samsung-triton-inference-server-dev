@@ -45,7 +45,7 @@ def build_response(status: str):
         return create_response(
             code=CustomCode.SSE_DOCKER_002.value,
             message=Messages.SSE_TRITON_START.value,
-            data={"status": "start", "started_at": now_utc},
+            data={"status": "start", "startedAt": now_utc},
         )
 
     if status == "stop":
@@ -57,7 +57,7 @@ def build_response(status: str):
         return create_response(
             code=CustomCode.SSE_DOCKER_004.value,
             message=Messages.SSE_TRITON_RESTART.value,
-            data={"status": "restart", "started_at": now_utc},
+            data={"status": "restart", "startedAt": now_utc},
         )
 
     return None
