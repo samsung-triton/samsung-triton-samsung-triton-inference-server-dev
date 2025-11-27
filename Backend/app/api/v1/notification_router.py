@@ -48,7 +48,7 @@ async def error_sse(db=Depends(get_clickhouse_db)):
     """)
     ).fetchall()
 
-    history = [{"ts": str(r.ts), "level": r.level, "error_message": r.error_message} for r in rows]
+    history = [{"ts": str(r.ts), "level": r.level, "errorMessage": r.error_message} for r in rows]
 
     async def event_stream():
         queue = error_log_channel.subscribe()

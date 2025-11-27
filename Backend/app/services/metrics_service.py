@@ -358,9 +358,9 @@ async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
             {
                 "modelId": m.model_id,
                 "modelName": m.name,
-                "inference_total": inference_total,
-                "inference_ok": inference_ok,
-                "ok_ratio": ok_ratio,
+                "inferenceTotal": inference_total,
+                "inferenceOk": inference_ok,
+                "okRatio": ok_ratio,
             }
         )
 

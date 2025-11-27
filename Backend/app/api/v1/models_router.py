@@ -96,7 +96,8 @@ def delete_model_version(
     return delete_model_version_service(
         model_id=model_id,
         version=version,
-        req=req,
+        login_id=req.login_id,
+        description=req.description,
         db=db,
     )
 
@@ -109,6 +110,7 @@ def delete_model(
 ):
     return delete_model_service(
         model_id=model_id,
-        req=req,
+        login_id=req.login_id,
+        description=req.description,
         db=db,
     )
