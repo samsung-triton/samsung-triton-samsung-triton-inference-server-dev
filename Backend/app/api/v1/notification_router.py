@@ -30,11 +30,7 @@ def get_inference_notification(
 @notification_router.post("/error-event", response_model=BaseResponse)
 async def push_error_event(event: dict):
     await error_log_channel.publish(event)
-    return create_response(
-        CustomCode.NOTI_001.value,
-        Messages.NOTIFICATION_FETCH_SUCCESS.value,
-        data={"received": event},
-    )
+    return {"ok": True}
 
 
 # SSE endpoint
@@ -59,7 +55,6 @@ async def error_sse(db=Depends(get_clickhouse_db)):
         }
         for r in rows
     ]
-
 
     async def event_stream():
         queue = error_log_channel.subscribe()
