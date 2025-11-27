@@ -56,5 +56,5 @@ def update_standard_time(new_time: str):
     return create_response(
         code=CustomCode.STANDARD_TIME_002.value,
         message=Messages.STANDARD_TIME_UPDATE_SUCCESS.value,
-        data={"base_time": new_time},
+        data={"baseTime": new_time},
     )
