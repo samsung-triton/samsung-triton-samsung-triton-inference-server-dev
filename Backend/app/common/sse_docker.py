@@ -3,7 +3,7 @@ import asyncio
 from app.core.response_utils import create_response
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-
+from datetime import datetime, timezone
 subscribers = set()
 
 
@@ -38,21 +38,27 @@ def convert_status(action: str):
 
 
 def build_response(status: str):
-    """create_response로 통일된 응답 포맷 생성"""
+    now_utc = datetime.now(timezone.utc).isoformat()
 
     if status == "start":
         return create_response(
-            code=CustomCode.DOCKER_002.value, message=Messages.SERVER_START_SUCCESS.value, data={"status": "start"}
+            code=CustomCode.SSE_DOCKER_002.value,
+            message=Messages.SSE_TRITON_START.value,
+            data={"status": "start", "started_at": now_utc}
         )
 
     if status == "stop":
         return create_response(
-            code=CustomCode.DOCKER_003.value, message=Messages.SERVER_STOP_SUCCESS.value, data={"status": "stop"}
+            code=CustomCode.SSE_DOCKER_003.value,
+            message=Messages.SSE_TRITON_STOP.value,
+            data={"status": "stop"}
         )
 
     if status == "restart":
         return create_response(
-            code=CustomCode.DOCKER_004.value, message=Messages.SERVER_RESTART_SUCCESS.value, data={"status": "restart"}
+            code=CustomCode.SSE_DOCKER_004.value,
+            message=Messages.SSE_TRITON_RESTART.value,
+            data={"status": "restart", "started_at": now_utc}
         )
 
     return None

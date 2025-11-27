@@ -112,5 +112,11 @@ class Messages(str, Enum):
     OUTPUT_DATA_SAVE_FAIL = "An error occurred while saving output data."
     UID_NOT_FOUND = "The specified UID could not be found."
 
+    # ---- SSE Messages ----
+    # ---- Docker ----
+    SSE_TRITON_START = "[SSE] Triton server has been STARTED."
+    SSE_TRITON_STOP = "[SSE] Triton server has been STOPPED."
+    SSE_TRITON_RESTART = "[SSE] Triton server has been RESTARTED."
+
     # ---- Heartbeat ----
     HEARTBEAT_SUCCESS = "Heartbeat response completed."
