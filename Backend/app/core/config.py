@@ -43,8 +43,6 @@ class Settings(BaseSettings):
 
     ALLOW_OVERWRITE: bool = False
 
-    TIMEZONE: str
-
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
