@@ -149,10 +149,24 @@ class DashboardController extends GetxController {
     final mm = resetMinute.value.toString().padLeft(2, '0');
 
     try {
-      final res = await _api.updateStandardTime("$hh:$mm");
+      // 오늘 날짜 + 사용자가 입력한 Local 시/분
+      final now = DateTime.now();
+      final localDateTime = DateTime(now.year, now.month, now.day, int.parse(hh), int.parse(mm));
 
+      // UTC로 변환
+      final utc = localDateTime.toUtc();
+
+      // UTC에서 HH:mm 추출
+      final utcHH = utc.hour.toString().padLeft(2, '0');
+      final utcMM = utc.minute.toString().padLeft(2, '0');
+
+      // BE에 UTC 기준 HH:mm 전송
+      final utcHHMM = "$utcHH:$utcMM";
+
+      final res = await _api.updateStandardTime(utcHHMM);
+
+      // 화면 상태 업데이트
       resetTime.value = res['base_time'];
-
       final p = resetTime.value.split(':');
       resetHour.value = int.parse(p[0]);
       resetMinute.value = int.parse(p[1]);
