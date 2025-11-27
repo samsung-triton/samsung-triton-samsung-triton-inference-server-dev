@@ -30,21 +30,17 @@ async def get_server_status():
 
 @server_router.post("/start", response_model=BaseResponse)
 async def start_server(request: ServerActorRequest, db: Session = Depends(get_db)):
-    return await start_server_service(db, actor_login_id=request.user_login_id)
+    return await start_server_service(db, actor_login_id=request.login_id)
 
 
 @server_router.post("/stop", response_model=BaseResponse)
 async def stop_server(request: ServerActorRequest, db: Session = Depends(get_db)):
-    return await stop_server_service(
-        db, actor_login_id=request.user_login_id, description=request.description
-    )
+    return await stop_server_service(db, actor_login_id=request.login_id, description=request.description)
 
 
 @server_router.post("/restart", response_model=BaseResponse)
 async def restart_server(request: ServerActorRequest, db: Session = Depends(get_db)):
-    return await restart_server_service(
-        db, actor_login_id=request.user_login_id, description=request.description
-    )
+    return await restart_server_service(db, actor_login_id=request.login_id, description=request.description)
 
 
 @server_router.get("/status/stream")
@@ -58,12 +54,7 @@ async def stream_status():
                 try:
                     payload = await asyncio.wait_for(queue.get(), timeout=30)
 
-                    json_str = create_response(
-                        CustomCode.DOCKER_001.value,
-                        Messages.SERVER_READY.value,
-                        data=payload,
-                    ).model_dump_json()
-
+                    json_str = json.dumps(payload)
                     yield f"data: {json_str}\n\n"
 
                 except asyncio.TimeoutError:

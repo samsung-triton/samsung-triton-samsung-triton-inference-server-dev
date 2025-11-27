@@ -172,7 +172,7 @@ async def get_server_metrics_service() -> BaseResponse:
             gpu_data.append(
                 {
                     "uuid": uuid,
-                    "gpu_util": round(vals.get("gpu_util", 0), 2),
+                    "gpuUtil": round(vals.get("gpu_util", 0), 2),
                 }
             )
 
@@ -246,7 +246,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             points = parse_prometheus_values(s, skip_invalid=True)
             vram_series_list.append(
                 SeriesItem(
-                    gpu_uuid=metric.get("gpu_uuid", "unknown"),
+                    gpuUuid=metric.get("gpu_uuid", "unknown"),
                     values=points,
                 )
             )
@@ -257,7 +257,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             points = parse_prometheus_values(s, skip_invalid=True)
             ram_series_list.append(
                 SeriesItem(
-                    gpu_uuid=metric.get("gpu_uuid", "none"),
+                    gpuUuid=metric.get("gpu_uuid", "none"),
                     values=points,
                 )
             )
@@ -359,9 +359,9 @@ async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
             {
                 "modelId": m.model_id,
                 "modelName": m.name,
-                "inference_total": inference_total,
-                "inference_ok": inference_ok,
-                "ok_ratio": ok_ratio,
+                "inferenceTotal": inference_total,
+                "inferenceOk": inference_ok,
+                "okRatio": ok_ratio,
             }
         )
 

@@ -1,8 +1,8 @@
-from pydantic import BaseModel
 from datetime import date
+from app.schemas.base_schema import BaseRequest
 
 
-class LogRequest(BaseModel):
+class LogRequest(BaseRequest):
     start_date: date | None = None
     end_date: date | None = None
     username: str | None = None
@@ -11,7 +11,7 @@ class LogRequest(BaseModel):
     global_search: str | None = None
 
 
-class ModelLogRequest(BaseModel):
+class ModelLogRequest(BaseRequest):
     model_name: str | None = None
     cursor: str | None = None
     request_id: str | None = None
@@ -22,7 +22,7 @@ class ModelLogRequest(BaseModel):
     limit: int | None = 200
 
 
-class ServerLogRequest(BaseModel):
+class ServerLogRequest(BaseRequest):
     cursor: str | None = None
     start: str | None = None
     end: str | None = None

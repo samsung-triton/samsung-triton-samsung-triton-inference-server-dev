@@ -7,7 +7,6 @@ from typing import Dict, Any, List
 from pathlib import Path
 
 from app.clients.triton_client import triton_client
-from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 from app.core.config import settings
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
@@ -267,17 +266,20 @@ def _choose_represent_file(file_names: list[str]) -> str | None:
 
 
 def register_model_service(
-    req: ModelRegisterRequest,
+    model_name: str,
+    model_type: ModelType,
+    description: str | None,
+    login_id: str,
     model_file: UploadFile,
     config_file: UploadFile,
     db: Session,
 ) -> Dict[str, Any]:
     """단일 모델 등록 서비스"""
 
-    user = get_user_or_404(db, req.LoginId)
+    user = get_user_or_404(db, login_id)
 
     # 모델명 확인
-    model_name = safe_name(req.modelName)
+    model_name = safe_name(model_name)
     if not model_name:
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -322,7 +324,7 @@ def register_model_service(
     cfg_entry: Path | None = Path(cfg_dict["filePath"]) if cfg_dict else None
 
     try:
-        model = _save_model(db, model_name, req.modelType.value, str(MODEL_REPO_ROOT / model_name))
+        model = _save_model(db, model_name, model_type.value, str(MODEL_REPO_ROOT / model_name))
         version = _save_model_version(db, model.model_id, user.user_id, 1, represent_file)
         for f in saved_files:
             _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
@@ -341,7 +343,7 @@ def register_model_service(
             type_=ReleaseType.MODEL,
             action_=ReleaseAction.CREATE,
             target_id=model.model_id,
-            reason=req.description or "신규 모델 등록",
+            reason=description or "신규 모델 등록",
         )
 
         db.commit()
@@ -363,11 +365,18 @@ def register_model_service(
 # =====================================================
 # 앙상블 모델 등록
 # =====================================================
-def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile, db: Session):
-    user = get_user_or_404(db, req.LoginId)
+def register_ensemble_service(
+    model_name: str,
+    model_type: ModelType,
+    description: str | None,
+    login_id: str,
+    config_file: UploadFile,
+    db: Session,
+):
+    user = get_user_or_404(db, login_id)
 
     # 모델명 확인
-    model_name = safe_name(req.modelName)
+    model_name = safe_name(model_name)
     if not model_name:
         raise CustomHTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -407,7 +416,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
 
     # === 3. DB 기록 ===
     try:
-        model = _save_model(db, model_name, req.modelType.value, str(MODEL_REPO_ROOT / model_name))
+        model = _save_model(db, model_name, model_type.value, str(MODEL_REPO_ROOT / model_name))
         version = _save_model_version(db, model.model_id, user.user_id, 1, None)
         for f in saved_config_files:
             _save_version_file(db, version.model_version_id, f["fileName"], f["filePath"])
@@ -418,7 +427,7 @@ def register_ensemble_service(req: ModelRegisterRequest, config_file: UploadFile
             type_=ReleaseType.MODEL,
             action_=ReleaseAction.CREATE,
             target_id=model.model_id,
-            reason=req.description or "신규 앙상블 모델 등록",
+            reason=description or "신규 앙상블 모델 등록",
         )
 
         db.commit()
@@ -627,7 +636,7 @@ def _delete_version_files_and_db(model, version: int, db: Session):
         pass
 
 
-def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRequest, db: Session):
+def delete_model_version_service(model_id: int, version: int, login_id: str, description: str | None, db: Session):
     # === 1. 모델, 버전, 유저 검증 ===
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
@@ -637,7 +646,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
             Messages.MODEL_NOT_FOUND.value,
         )
 
-    user = get_user_or_404(db, req.loginId)
+    user = get_user_or_404(db, login_id)
 
     version_obj = (
         db.query(ModelVersion).filter(ModelVersion.model_id == model_id, ModelVersion.version == version).first()
@@ -694,7 +703,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
         type_=ReleaseType.VERSION,
         action_=ReleaseAction.DELETE,
         target_id=model_id,
-        reason=req.description or f"{model.name}의 {version}번 버전 삭제",
+        reason=description or f"{model.name}의 {version}번 버전 삭제",
     )
     db.commit()
 
@@ -708,7 +717,7 @@ def delete_model_version_service(model_id: int, version: int, req: ModelDeleteRe
 # =====================================================
 # 모델 전체 삭제
 # =====================================================
-def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
+def delete_model_service(model_id: int, login_id: str, description: str | None, db: Session):
     # === 1. 모델 및 유저 검증 ===
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
@@ -718,7 +727,7 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
             Messages.MODEL_NOT_FOUND.value,
         )
 
-    user = get_user_or_404(db, req.loginId)
+    user = get_user_or_404(db, login_id)
 
     # === 2. Triton 언로드 ===
     try:
@@ -755,7 +764,7 @@ def delete_model_service(model_id: int, req: ModelDeleteRequest, db: Session):
         type_=ReleaseType.MODEL,
         action_=ReleaseAction.DELETE,
         target_id=model_id,
-        reason=req.description or f"{model.name} 모델 전체 삭제",
+        reason=description or f"{model.name} 모델 전체 삭제",
     )
     db.commit()
 

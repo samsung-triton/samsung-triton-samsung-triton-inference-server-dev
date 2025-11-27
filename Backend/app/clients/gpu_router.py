@@ -1,7 +1,7 @@
 import subprocess
 import json
 from fastapi import status
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.customException import CustomHTTPException
 from app.common.codes import CustomCode
@@ -34,7 +34,7 @@ async def get_triton_status():
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
         if result.returncode != 0 or not result.stdout.strip():
-            return {"status": "stopped", "started_at": None}
+            return {"status": "stop", "startedAt": None}
 
         info = json.loads(result.stdout)[0]
         state = info.get("State", {})
@@ -44,11 +44,13 @@ async def get_triton_status():
         # 변환
         started_at = None
         if started_at_raw and started_at_raw != "0001-01-01T00:00:00Z":
-            started_at = datetime.fromisoformat(started_at_raw.replace("Z", "+00:00")).astimezone(TIMEZONE).isoformat()
+            started_at = (
+                datetime.fromisoformat(started_at_raw.replace("Z", "+00:00")).astimezone(timezone.utc).isoformat()
+            )
 
         return {
-            "status": "ready" if is_running else "stopped",
-            "started_at": started_at,
+            "status": "start" if is_running else "stop",
+            "startedAt": started_at,
         }
 
     except Exception as e:
@@ -64,16 +66,16 @@ async def start_triton():
     """Triton 컨테이너 시작"""
     cmd = f"docker compose {_compose_path()} up -d"
     _run_compose(cmd)
-    return {"status": "ready", "started_at": datetime.now(TIMEZONE).isoformat()}
+    return {"status": "start", "startedAt": datetime.now(TIMEZONE).isoformat()}
 
 
 async def stop_triton():
     cmd = f"docker compose {_compose_path()} down"
     _run_compose(cmd)
-    return {"status": "stopped"}
+    return {"status": "stop"}
 
 
 async def restart_triton():
     cmd = f"docker compose {_compose_path()} restart"
     _run_compose(cmd)
-    return {"status": "ready", "started_at": datetime.now(TIMEZONE).isoformat()}
+    return {"status": "restart", "startedAt": datetime.now(TIMEZONE).isoformat()}

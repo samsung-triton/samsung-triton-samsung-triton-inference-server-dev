@@ -9,8 +9,8 @@ from app.common.codes import CustomCode
 from app.common.messages import Messages
 
 
-def varify_mastekey_service(masterKey: int, db: Session) -> BaseResponse:
-    mk = db.query(MasterKey).filter(MasterKey.key == masterKey).first()
+def varify_mastekey_service(master_key: int, db: Session) -> BaseResponse:
+    mk = db.query(MasterKey).filter(MasterKey.key == master_key).first()
     if not mk:
         raise CustomHTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

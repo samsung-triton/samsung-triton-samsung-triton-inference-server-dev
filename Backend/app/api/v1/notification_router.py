@@ -60,6 +60,7 @@ async def error_sse(db=Depends(get_clickhouse_db)):
         for r in rows
     ]
 
+
     async def event_stream():
         queue = error_log_channel.subscribe()
 
