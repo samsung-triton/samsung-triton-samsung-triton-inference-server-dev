@@ -11,4 +11,4 @@ user_router = APIRouter(prefix="/auth", tags=["User"])
 
 @user_router.post("/login", response_model=BaseResponse)
 def login_user(request: UserLoginRequest, db: Session = Depends(get_db)):
-    return login_user_service(request.loginId, request.password, db)
+    return login_user_service(request.login_id, request.password, db)
