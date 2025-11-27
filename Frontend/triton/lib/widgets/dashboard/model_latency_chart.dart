@@ -1,4 +1,4 @@
-// lib/widgets/dashboard/model_latency_chart.dart
+// 모델 지연 시간(LineChart) 패널
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,8 +19,10 @@ class ModelLatencyChart extends StatefulWidget {
 }
 
 class _ModelLatencyChartState extends State<ModelLatencyChart> {
+  // 선택된 인덱스 (툴팁 표시용)
   int? touchedIndex;
 
+  // 최소 Y축 범위
   static const double minYAxisRange = 100;
 
   @override
@@ -35,6 +37,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
 
       final len = queue.length;
 
+      // 데이터 로딩 중
       if (len == 0) {
         return const CommonInfoCardBase(
           title: 'Model Latency',
@@ -42,19 +45,28 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
         );
       }
 
+      // 총 지연시간 리스트
       final totalLatencies = List.generate(len, (i) => queue[i] + input[i] + infer[i] + output[i]);
 
+      // 전체 지연시간 중 가장 큰 값
       final maxVal = totalLatencies.reduce(math.max);
+
+      // 그래프 Y축 상한선
       final niceMaxY = _calcNiceMaxY(maxVal);
+
+      // Y축 간격 라인 간격(단위 간격)
       final intervalY = _calcNiceInterval(niceMaxY);
 
       return CommonInfoCardBase(
         title: 'Model Latency',
         child: Padding(
           padding: const EdgeInsets.all(16),
+
+          // 좌측: 차트 / 우측: 상세 툴팁
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // LineChart 영역
               Expanded(
                 flex: 7,
                 child: Padding(
@@ -66,6 +78,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                       minX: 0,
                       maxX: (len - 1).toDouble(),
 
+                      // 그리드
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
@@ -73,6 +86,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                         getDrawingHorizontalLine: (v) => FlLine(color: lightGray.withOpacity(0.4), strokeWidth: 1),
                       ),
 
+                      // 축 라벨
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -113,6 +127,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
 
                       borderData: FlBorderData(show: false),
 
+                      // 라인 차트
                       lineBarsData: [
                         LineChartBarData(
                           isCurved: false,
@@ -126,6 +141,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                         ),
                       ],
 
+                      // 라인 터치 이벤트
                       lineTouchData: LineTouchData(
                         enabled: true,
                         handleBuiltInTouches: true,
@@ -142,6 +158,8 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                             setState(() => touchedIndex = idx);
                           }
                         },
+
+                        // 라인 호버 툴팁
                         touchTooltipData: LineTouchTooltipData(
                           getTooltipColor: (_) => primaryNormal.withOpacity(0.85),
                           tooltipMargin: 8,
@@ -149,10 +167,8 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                           fitInsideVertically: true,
                           getTooltipItems: (spots) {
                             if (spots.isEmpty) return [];
-
                             final idx = spots.first.x.toInt();
                             final rawTotal = queue[idx] + input[idx] + infer[idx] + output[idx];
-
                             return [LineTooltipItem(rawTotal.toStringAsFixed(0), T.t12(color: white, bold: true))];
                           },
                         ),
@@ -164,6 +180,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
 
               const SizedBox(width: 12),
 
+              // 우측: 지연시간 상세 패널
               Expanded(
                 flex: 3,
                 child: Container(
@@ -173,6 +190,8 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: primaryNormal.withOpacity(0.4)),
                   ),
+
+                  // 포인트 선택 시 상세 표시
                   child: touchedIndex != null
                       ? _buildTooltip(
                           queue: queue[touchedIndex!],
@@ -192,6 +211,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
     });
   }
 
+  // maxY 계산 (그래프 보기 좋은 범위 설정)
   double _calcNiceMaxY(double maxVal) {
     final effectiveMax = maxVal < minYAxisRange ? minYAxisRange : maxVal;
 
@@ -215,6 +235,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
     return maxY < minYAxisRange ? minYAxisRange : maxY;
   }
 
+  // Y축 간격 계산
   double _calcNiceInterval(double maxY) {
     final effectiveMax = maxY < minYAxisRange ? minYAxisRange : maxY;
 
@@ -230,6 +251,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
     return 10 * magnitude;
   }
 
+  // 우측 상세 패널
   Widget _buildTooltip({required double queue, required double input, required double infer, required double output}) {
     final total = queue + input + infer + output;
 
@@ -248,6 +270,7 @@ class _ModelLatencyChartState extends State<ModelLatencyChart> {
     );
   }
 
+  // 상세 항목 행
   Widget _buildRow(String label, double val) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

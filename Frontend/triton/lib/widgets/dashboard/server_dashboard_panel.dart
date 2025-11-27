@@ -1,4 +1,4 @@
-// lib/widgets/dashboard/server_dashboard_panel.dart
+// 서버 대시보드 패널
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -21,19 +21,21 @@ class ServerDashboardPanel extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.all(gap),
+
+      // 상단 헤더 + GPU 영역 + CPU/RAM 영역
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          /// Header (Reset Time / Update 버튼)
+          // 상단 헤더 (Reset Time / Update)
           CommonMetricHeaderBar(onRefresh: () => serverCtrl.restartSse()),
 
           const SizedBox(height: gap),
 
-          /// Upper Row — GPU Utilization + GPU VRAM
+          // 상단: GPU Utilization + GPU VRAM
           Expanded(
             child: Row(
               children: [
-                /// GPU Utilization
+                // GPU Utilization 카드
                 Expanded(
                   child: Obx(() {
                     if (serverCtrl.gpuError.value != null) {
@@ -53,7 +55,7 @@ class ServerDashboardPanel extends StatelessWidget {
 
                 const SizedBox(width: gap),
 
-                /// GPU VRAM Chart
+                // GPU VRAM 카드
                 Expanded(
                   child: Obx(() {
                     if (serverCtrl.vramError.value != null) {
@@ -76,11 +78,11 @@ class ServerDashboardPanel extends StatelessWidget {
 
           const SizedBox(height: gap),
 
-          /// Lower Row — CPU + RAM
+          // 하단: CPU + RAM
           Expanded(
             child: Row(
               children: [
-                /// CPU Usage
+                // CPU Usage 카드
                 Expanded(
                   child: Obx(() {
                     if (serverCtrl.cpuError.value != null) {
@@ -100,7 +102,7 @@ class ServerDashboardPanel extends StatelessWidget {
 
                 const SizedBox(width: gap),
 
-                /// RAM Usage
+                // RAM Usage 카드
                 Expanded(
                   child: Obx(() {
                     if (serverCtrl.ramError.value != null) {

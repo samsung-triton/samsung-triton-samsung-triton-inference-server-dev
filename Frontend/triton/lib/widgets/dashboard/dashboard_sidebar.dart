@@ -1,4 +1,5 @@
-// lib/widgets/dashboard/dashboard_sidebar.dart
+// 대시보드 사이드바
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/widgets/sidebar/sidebar_base.dart';
@@ -12,10 +13,11 @@ class DashboardSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<DashboardController>();
 
+    // 사이드바는 SSE 기반 모델 리스트를 실시간 표시
     return Obx(() {
       return SidebarBase(
         children: [
-          /// Triton Server Header
+          // Triton Server 카드(헤더)
           CommonSidebarCard(
             type: SidebarCardType.header,
             title: 'Triton Server',
@@ -23,12 +25,11 @@ class DashboardSidebar extends StatelessWidget {
             onTap: () => controller.changeType(DashboardType.server),
           ),
 
-          /// Model List (SSE 실시간 모델 목록)
+          // 모델 리스트 (SSE 실시간 업데이트)
           ...controller.modelList.map((m) {
             return CommonSidebarCard(
               type: SidebarCardType.normal,
               title: m.modelName,
-              status: m.okRatio > 0.9,
               active: controller.selectedModelId.value == m.modelId,
               current: m.inferenceOk,
               total: m.inferenceTotal,
