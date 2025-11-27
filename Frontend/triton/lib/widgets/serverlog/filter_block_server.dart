@@ -1,3 +1,4 @@
+//서버 로그 필터블럭
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/theme/app_colors.dart';
@@ -45,6 +46,7 @@ class _FilterBlockServerState extends State<FilterBlockServer> {
             children: [
               FilterText(label: 'period'),
               SizedBox(width: 8),
+              //시작일 선택
               Obx(
                 () => MiniDatePicker(
                   initialDate: controller.startDate.value,
@@ -60,6 +62,7 @@ class _FilterBlockServerState extends State<FilterBlockServer> {
               SizedBox(width: 8),
               Text('~', style: TextStyle(color: black)),
               SizedBox(width: 8),
+              //종료일 선택
               Obx(
                 () => MiniDatePicker(
                   initialDate: controller.endDate.value,
@@ -68,8 +71,8 @@ class _FilterBlockServerState extends State<FilterBlockServer> {
                 ),
               ),
               const Spacer(), // 오른쪽으로 밀기
-
               ButtonSmall(
+                //리셋 버튼
                 text: 'reset',
                 backgroundColor: primaryNormal,
                 textColor: white,
@@ -88,6 +91,7 @@ class _FilterBlockServerState extends State<FilterBlockServer> {
               FilterText(label: 'log type'),
               SizedBox(width: 8),
               Obx(
+                //로그 타입 드롭다운
                 () => Dropdown(
                   key: ValueKey(controller.logType.value),
                   items: [
@@ -121,6 +125,7 @@ class _FilterBlockServerState extends State<FilterBlockServer> {
               const FilterText(label: 'search'),
               const SizedBox(width: 8),
               Obx(() {
+                //sort 드롭다운
                 return Dropdown(
                   key: ValueKey(controller.sort.value),
                   items: const ['all', 'user name', 'description'],
@@ -134,10 +139,12 @@ class _FilterBlockServerState extends State<FilterBlockServer> {
               }),
               const SizedBox(width: 8),
               SizedBox(
+                //키워드 인풋
                 child: InputSmall(hintText: 'Enter keyword', width: 424, height: 28, controller: keywordCtrl),
               ),
               const SizedBox(width: 8),
               ButtonSmall(
+                //필터 적용 버튼
                 text: 'ok',
                 backgroundColor: primaryNormal,
                 textColor: white,

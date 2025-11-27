@@ -1,3 +1,4 @@
+//모델 로그 테이블의 열
 import 'package:flutter/material.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
@@ -20,12 +21,13 @@ class ModelLogTableRow extends StatelessWidget {
         children: [
           _textCell(log.ts, width: 120),
           _textCell(log.level, width: 120),
-          _textCell(log.message, expanded: true, textAlign: TextAlign.left),
+          _textCell(log.message, expanded: true, textAlign: TextAlign.left), //expanded 처리
         ],
       ),
     );
   }
 
+  //textcell 위젯
   Widget _textCell(String text, {double? width, bool expanded = false, TextAlign textAlign = TextAlign.center}) {
     final child = Text(text, style: T.t10(), softWrap: true, textAlign: textAlign);
 

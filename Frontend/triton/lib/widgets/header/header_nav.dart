@@ -1,4 +1,4 @@
-// 헤더 좌측 메뉴 바
+// 헤더 좌측 네이게이션 바
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triton/router.dart';

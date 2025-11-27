@@ -1,3 +1,4 @@
+//트리톤 로그 테이블
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
@@ -25,13 +26,14 @@ class _TritonLogTableState extends State<TritonLogTable> {
 
     scrollController.addListener(() {
       final tritonServerLogController = Get.find<TritonServerLogController>();
-      final modelController = Get.find<ModelLogController>();
 
+      final modelController = Get.find<ModelLogController>();
       final tritonController = Get.find<TritonLogController>();
 
       if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
         final model = tritonController.modelName.value;
 
+        //Triton Server 선택 경우와 AI 모델 선택 경우로 분기
         if (model == 'Triton Server') {
           tritonServerLogController.fetchMoreLogs();
         } else {
@@ -59,6 +61,7 @@ class _TritonLogTableState extends State<TritonLogTable> {
             child: Obx(() {
               final model = tritonInferController.modelName.value;
 
+              //로딩 상태
               if (tritonServerLogController.isLoading.value && tritonServerLogController.filteredLogs.isEmpty ||
                   modelController.isLoading.value && modelController.filteredLogs.isEmpty) {
                 return Center(
@@ -66,22 +69,26 @@ class _TritonLogTableState extends State<TritonLogTable> {
                 );
               }
 
+              //선택된 모델이 없을 경우
               if (model.isEmpty) {
                 return Center(
                   child: Text('Please select a model.', style: T.t12(color: gray)),
                 );
               }
 
+              //Triton Server 선택 경우와 AI 모델 선택 경우로 분기
               final logs = (model == 'Triton Server')
                   ? tritonServerLogController.filteredLogs
                   : modelController.filteredLogs;
 
+              //필터링 된 조건의 결과가 없을 경우
               if (logs.isEmpty) {
                 return Center(
                   child: Text('There are no logs matching the selected conditions.', style: T.t12(color: gray)),
                 );
               }
 
+              //스크롤 바
               return RawScrollbar(
                 thumbColor: lightGray,
                 radius: const Radius.circular(4),

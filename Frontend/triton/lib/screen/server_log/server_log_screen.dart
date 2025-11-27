@@ -1,4 +1,4 @@
-// 서버 로그 화면 위젯
+// 서버 로그 화면
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/server_log/server_log_controller.dart';
@@ -30,7 +30,6 @@ class _ServerLogScreenState extends State<ServerLogScreen> {
 
   @override
   void dispose() {
-    // 페이지 나갈 때 컨트롤러 메모리 해제
     Get.delete<ServerLogController>();
     super.dispose();
   }

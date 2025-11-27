@@ -1,9 +1,11 @@
+//서버 로그 컨트롤러
 import 'package:get/get.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/show_alert.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_util' as js_util;
 
+//서버 로그 아이템 DTO
 class ServerLogItem {
   final String date;
   final String username;
@@ -38,6 +40,7 @@ class ServerLogItem {
   }
 }
 
+//서버 로그 필터링 함수
 class ServerLogController extends GetxController {
   late final ApiClient _api;
 
@@ -62,21 +65,23 @@ class ServerLogController extends GetxController {
   String get safeSort => sort.value ?? "";
   String get safeKeyword => keyword.value;
 
-  // 데이터
+  // 필터링 결과
   final filteredLogs = <ServerLogItem>[].obs;
 
-  // 페이지네이션
+  // 페이지네이션 관련 변수
   int currentPage = 1;
   final int pageSize = 200;
   final RxBool isLoading = false.obs;
   final RxBool hasMore = true.obs;
 
+  //날짜 포맷팅
   String _formatDate(DateTime date) {
     return "${date.year.toString().padLeft(4, '0')}-"
         "${date.month.toString().padLeft(2, '0')}-"
         "${date.day.toString().padLeft(2, '0')}";
   }
 
+  //필터 적용 함수
   Future<void> applyFilter() async {
     currentPage = 1;
     hasMore.value = true;
@@ -85,6 +90,7 @@ class ServerLogController extends GetxController {
     await fetchMoreLogs();
   }
 
+  //로그 무한 스크롤 처리 함수
   Future<void> fetchMoreLogs() async {
     if (isLoading.value || !hasMore.value) return;
 
@@ -109,6 +115,7 @@ class ServerLogController extends GetxController {
         grobalSearch: globalFilter,
       );
 
+      //응답 파싱
       final items = res['items'] as List<dynamic>? ?? [];
 
       if (items.isEmpty) {
@@ -129,6 +136,7 @@ class ServerLogController extends GetxController {
     isLoading.value = false;
   }
 
+  //필터 리셋 함수
   void resetFilter() {
     final now = DateTime.now();
     startDate.value = DateTime(now.year, now.month, now.day, 0, 0);
@@ -139,6 +147,7 @@ class ServerLogController extends GetxController {
   }
 }
 
+//로그 다운로드 함수
 extension FilterExportExtension on ServerLogController {
   Future<void> exportFilteredLogsAsTxt() async {
     if (filteredLogs.isEmpty) {
@@ -146,6 +155,7 @@ extension FilterExportExtension on ServerLogController {
       return;
     }
 
+    //파일 내부 양식
     final buffer = StringBuffer();
     buffer.writeln('=== Server Logs Export ===');
     buffer.writeln('Created at: ${DateTime.now()}');
@@ -160,6 +170,7 @@ extension FilterExportExtension on ServerLogController {
 
     final url = web.URL.createObjectURL(blob);
 
+    //다운로드 양식 지정
     web.HTMLAnchorElement()
       ..href = url
       ..download = 'Server_logs_${DateTime.now().toIso8601String()}.txt'
