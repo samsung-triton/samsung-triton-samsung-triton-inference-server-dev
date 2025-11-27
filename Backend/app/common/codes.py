@@ -26,9 +26,9 @@ class CustomCode(str, Enum):
     # 대시보드 관리
     DASH_001 = "DASH-001"  # 서버 gpu, cpu util 조회 성공
     DASH_002 = "DASH-002"  # 서버 ram, vram 조회 성공
-    DASH_003 = "DASH-003"  # 모델별 추론 결과 조회 성공
-    DASH_004 = "DASH-004"  # 모델별 추론 레이턴시 조회 성공
-    DASH_005 = "DASH-005"  # 대시보드 모델 목록 조회 성공
+    DASH_003 = "DASH-003"  # 대시보드 모델 목록 조회 성공
+    DASH_004 = "DASH-004"  # 모델별 추론 결과 조회 성공
+    DASH_005 = "DASH-005"  # 모델별 추론 레이턴시 조회 성공
 
     # 기준 시간 관리
     STANDARD_TIME_001 = "STANDARD-TIME-001"  # 기준 시간 조회 성공
@@ -61,6 +61,11 @@ class CustomCode(str, Enum):
     INFERENCE_001 = "INFERENCE-001"  # 추론 전 입력 데이터 저장 성공
     INFERENCE_002 = "INFERENCE-002"  # 추론 후 결과 데이터 저장 성공
     INFERENCE_003 = "INFERENCE-003"  # 추론 후 결과 바이너리 데이터 저장 성공
+
+    #SSE
+    SSE_DOCKER_002 = "SSE-TRITON-START"
+    SSE_DOCKER_003 = "SSE-TRITON-STOP"
+    SSE_DOCKER_004 = "SSE-TRITON-RESTART"
 
     # Heartbeat
     HEARTBEAT_001 = "HEARTBEAT-001"  # heartbeat 응답 완료

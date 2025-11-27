@@ -195,20 +195,18 @@ async def get_server_metrics_service() -> BaseResponse:
 
     except CustomHTTPException:
         raise
-    except Exception:
+    except Exception as e:
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.SERVER_METRIC_FAIL.value,
-            data=None,
+            data={"error": str(e)},
         )
 
 
 # ============================================================
 # 2. GPU 메모리 / CPU 메모리 시계열
 # ============================================================
-
-
 async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
     """
     GPU/CPU 메모리 사용률(%) 시계열
@@ -287,16 +285,95 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
-            message=f"{Messages.SERVER_METRIC_FAIL.value}: {e}",
-            data=None,
+            message=Messages.SERVER_METRIC_FAIL.value,
+            data={"error": str(e)},
         )
 
 
 # ============================================================
-# 3. model_id 기반 모델 통계
+# 3. 대시보드 모델 목록 조회
 # ============================================================
+async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
+    # 1. 서버 상태 확인
+    try:
+        triton_alive = triton_client.is_server_ready()
+    except Exception:
+        triton_alive = False
+
+    if not triton_alive:
+        return create_response(
+            code=CustomCode.DASH_003.value,
+            message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+            data={"models": []},
+        )
+
+    # 2. Triton 모델 READY 리스트 가져오기
+    try:
+        resp = triton_client.list_models()
+        triton_models = resp.get("models", [])
+
+        ready_names = {m["name"] for m in triton_models if m.get("state") == "READY"}
+
+        if not ready_names:
+            return create_response(
+                CustomCode.DASH_003.value,
+                Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+                {"models": []},
+            )
+
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.MODEL_LIST_FETCH_ERROR.value,
+            data={"error": str(e)},
+        )
+
+    # 3. DB 모델 매핑
+    db_models = db.query(Model).filter(Model.name.in_(ready_names)).all()
+
+    results = []
+
+    base_time_str = current_standard_time()
+    start_time, end_time = get_aggregation_window_from_str(base_time_str)
+    for m in db_models:
+        q = (
+            db.query(
+                func.count().filter(InferenceLogs.request_status == "SUCCESS").label("request_success"),
+                func.count().filter(InferenceLogs.inference_status == "OK").label("inference_ok"),
+                func.count().filter(InferenceLogs.inference_status == "NG").label("inference_ng"),
+            )
+            .filter(InferenceLogs.model_id == m.model_id)
+            .filter(InferenceLogs.completed_at >= start_time)
+            .filter(InferenceLogs.completed_at < end_time)
+        )
+
+        row = q.first()
+
+        inference_total = row.request_success or 0
+        inference_ok = row.inference_ok or 0
+        ok_ratio = round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0
+
+        results.append(
+            {
+                "modelId": m.model_id,
+                "modelName": m.name,
+                "inference_total": inference_total,
+                "inference_ok": inference_ok,
+                "ok_ratio": ok_ratio,
+            }
+        )
+
+    return create_response(
+        code=CustomCode.DASH_003.value,
+        message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+        data={"models": results},
+    )
 
 
+# ============================================================
+# 4. model_id 기반 모델 통계
+# ============================================================
 def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseResponse:
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
@@ -336,8 +413,8 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
     avg_ms = round(inferenceData.avg_latency or 0, 2)
 
     return create_response(
-        code=CustomCode.DASH_003.value,
-        message=f"{model.name} 통계 조회 성공",
+        code=CustomCode.DASH_004.value,
+        message=Messages.MODEL_STATS_FETCH_SUCCESS.value,
         data={
             "modelName": model.name,
             "baseTime": base_time_str,  # "HH:MM"
@@ -357,10 +434,8 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
 
 
 # ============================================================
-# 4. model_id 기반 모델 latency
+# 5. model_id 기반 모델 latency
 # ============================================================
-
-
 async def get_model_per_inference_latency_service(
     model_id: int,
     end_iso: Optional[str],
@@ -433,8 +508,8 @@ async def get_model_per_inference_latency_service(
         }
 
         return create_response(
-            code=CustomCode.DASH_003.value,
-            message=f"{model.name} 레이턴시 조회 성공",
+            code=CustomCode.DASH_005.value,
+            message=Messages.MODEL_LATENCY_FETCH_SUCCESS.value,
             data=data,
         )
 
@@ -444,89 +519,6 @@ async def get_model_per_inference_latency_service(
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
-            message=f"Failed: {e}",
-            data=None,
-        )
-
-
-# ============================================================
-# 5. 대시보드 모델 목록 조회
-# ============================================================
-
-
-async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
-    # 1. 서버 상태 확인
-    try:
-        triton_alive = triton_client.is_server_ready()
-    except Exception:
-        triton_alive = False
-
-    if not triton_alive:
-        return create_response(
-            code=CustomCode.DASH_005.value,
-            message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
-            data={"models": []},
-        )
-
-    # 2. Triton 모델 READY 리스트 가져오기
-    try:
-        resp = triton_client.list_models()
-        triton_models = resp.get("models", [])
-
-        ready_names = {m["name"] for m in triton_models if m.get("state") == "READY"}
-
-        if not ready_names:
-            return create_response(
-                CustomCode.DASH_005.value,
-                Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
-                {"models": []},
-            )
-
-    except Exception as e:
-        raise CustomHTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            code=CustomCode.ERR_500.value,
-            message=Messages.MODEL_LIST_FETCH_ERROR.value,
+            message=Messages.MODEL_LATENCY_FETCH_ERROR.value,
             data={"error": str(e)},
         )
-
-    # 3. DB 모델 매핑
-    db_models = db.query(Model).filter(Model.name.in_(ready_names)).all()
-
-    results = []
-
-    base_time_str = current_standard_time()
-    start_time, end_time = get_aggregation_window_from_str(base_time_str)
-    for m in db_models:
-        q = (
-            db.query(
-                func.count().filter(InferenceLogs.request_status == "SUCCESS").label("request_success"),
-                func.count().filter(InferenceLogs.inference_status == "OK").label("inference_ok"),
-                func.count().filter(InferenceLogs.inference_status == "NG").label("inference_ng"),
-            )
-            .filter(InferenceLogs.model_id == m.model_id)
-            .filter(InferenceLogs.completed_at >= start_time)
-            .filter(InferenceLogs.completed_at < end_time)
-        )
-
-        row = q.first()
-
-        inference_total = row.request_success or 0
-        inference_ok = row.inference_ok or 0
-        ok_ratio = round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0
-
-        results.append(
-            {
-                "modelId": m.model_id,
-                "modelName": m.name,
-                "inference_total": inference_total,
-                "inference_ok": inference_ok,
-                "ok_ratio": ok_ratio,
-            }
-        )
-
-    return create_response(
-        code=CustomCode.DASH_005.value,
-        message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
-        data={"models": results},
-    )
