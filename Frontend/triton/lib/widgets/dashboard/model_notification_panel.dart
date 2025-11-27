@@ -1,4 +1,4 @@
-// lib/widgets/dashboard/model_notification_panel.dart
+// 모델 알림 패널
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,6 +17,7 @@ class ModelNotificationPanel extends StatelessWidget {
     final c = Get.find<ModelDashboardController>();
     final scrollController = ScrollController();
 
+    // 리스트 최대 높이 제한
     const double itemHeight = 78;
     const double maxHeight = itemHeight * 10;
 
@@ -24,11 +25,14 @@ class ModelNotificationPanel extends StatelessWidget {
       title: "Server Notifications",
       child: SizedBox(
         height: maxHeight,
+
+        // 알림 리스트
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Obx(() {
             final items = c.serverNotifications;
 
+            // 알림 없음
             if (items.isEmpty) {
               return const Center(child: Text("No notifications available"));
             }
@@ -40,8 +44,12 @@ class ModelNotificationPanel extends StatelessWidget {
                 controller: scrollController,
                 itemCount: items.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 6),
+
+                // 로그 아이템
                 itemBuilder: (_, index) {
                   final log = items[index];
+
+                  // ANSI 색 코드 제거
                   final cleanMessage = log.message.replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '');
 
                   return Container(
@@ -51,12 +59,15 @@ class ModelNotificationPanel extends StatelessWidget {
                       border: Border(left: BorderSide(color: _levelColor(log.level), width: 3)),
                       borderRadius: BorderRadius.circular(6),
                     ),
+
+                    // 로그 내용
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(log.level, style: T.t12(color: _levelColor(log.level), bold: true)),
                         const SizedBox(height: 4),
 
+                        // 클릭하면 전체 메시지 팝업
                         MouseRegion(
                           cursor: SystemMouseCursors.click,
                           child: GestureDetector(
@@ -86,10 +97,7 @@ class ModelNotificationPanel extends StatelessWidget {
     );
   }
 
-  // -------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------
-
+  // 로그 레벨 색상
   Color _levelColor(String level) {
     switch (level.toUpperCase()) {
       case "ERROR":
@@ -102,6 +110,7 @@ class ModelNotificationPanel extends StatelessWidget {
     }
   }
 
+  // 로그 시간 포맷
   String _formatDateTime(DateTime ts) {
     return "${ts.year}-${ts.month.toString().padLeft(2, '0')}-"
         "${ts.day.toString().padLeft(2, '0')} "

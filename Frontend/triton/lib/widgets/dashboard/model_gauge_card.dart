@@ -1,14 +1,20 @@
-// lib/widgets/dashboard/model_gauge_card.dart
+// 모델 게이지 카드 (성능 비율 시각화)
+
 import 'package:flutter/material.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'dart:math' as math;
 
 class ModelGaugeCard extends StatelessWidget {
+  // 카드 제목
   final String title;
+
+  // 전체 건수 / 성공 / 실패
   final int total;
   final int success;
   final int fail;
+
+  // 성공 비율(%)
   final double percent;
 
   const ModelGaugeCard({
@@ -30,11 +36,11 @@ class ModelGaugeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: lightGray),
       ),
+
+      // 좌측 정보 / 우측 반원 게이지
       child: Row(
         children: [
-          /// ------------------------------
-          /// Left Text Column
-          /// ------------------------------
+          // 좌측 정보 영역
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -58,9 +64,7 @@ class ModelGaugeCard extends StatelessWidget {
             ),
           ),
 
-          /// ------------------------------
-          /// Right Gauge
-          /// ------------------------------
+          // 우측 반원 게이지
           SizedBox(
             width: 160,
             height: 70,
@@ -77,6 +81,7 @@ class ModelGaugeCard extends StatelessWidget {
     );
   }
 
+  // 성공/실패 태그
   Widget _tag(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -87,7 +92,9 @@ class ModelGaugeCard extends StatelessWidget {
 }
 
 class _HalfGaugePainter extends CustomPainter {
+  // 퍼센트(%)
   final double percent;
+
   _HalfGaugePainter(this.percent);
 
   @override
@@ -95,22 +102,22 @@ class _HalfGaugePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height);
     final radius = size.width / 2 - 10;
 
+    // 배경 반원
     final backgroundPaint = Paint()
       ..color = const Color(0xFFF7EBE1)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 14
       ..strokeCap = StrokeCap.round;
 
+    // 실제 퍼센트 반원
     final foregroundPaint = Paint()
       ..color = statusGreen
       ..style = PaintingStyle.stroke
       ..strokeWidth = 14
       ..strokeCap = StrokeCap.round;
 
-    // 배경 반원
     canvas.drawArc(Rect.fromCircle(center: center, radius: radius), math.pi, math.pi, false, backgroundPaint);
 
-    // 퍼센트 반원
     final sweep = math.pi * (percent / 100);
     canvas.drawArc(Rect.fromCircle(center: center, radius: radius), math.pi, sweep, false, foregroundPaint);
   }

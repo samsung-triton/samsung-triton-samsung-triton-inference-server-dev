@@ -1,4 +1,4 @@
-// lib/controller/dashboard/server_dashboard_controller.dart
+// 서버 대시보드 컨트롤러
 
 import 'dart:async';
 import 'dart:convert';
@@ -9,39 +9,39 @@ import 'package:triton/utils/api_client.dart';
 import 'package:triton/widgets/dashboard/server_metrics.dart';
 
 class ServerDashboardController extends GetxController {
-  // initial snapshot
+  // 현재 서버 스냅샷
   final metrics = ServerMetrics(cpuUsage: 0, ramUsage: 0, gpuUtilization: 0, gpuVram: 0, models: const []).obs;
 
-  // Time-series (VRAM / RAM)
+  // VRAM / RAM 시간 시리즈
   final gpuVramSeries = <FlSpot>[].obs;
   final ramSeries = <FlSpot>[].obs;
 
+  // 타임스탬프
   final gpuVramTimestamps = <DateTime>[].obs;
   final ramTimestamps = <DateTime>[].obs;
 
-  // Error states
+  // 에러 상태
   final cpuError = RxnString();
   final gpuError = RxnString();
   final vramError = RxnString();
   final ramError = RxnString();
 
-  // Subscriptions
+  // SSE 구독
   StreamSubscription<String>? _metricsSub;
   StreamSubscription<String>? _timeseriesSub;
 
   late final ApiClient _api;
 
-  // ==============================================================
   @override
   void onInit() {
     super.onInit();
     _api = Get.find<ApiClient>();
-    restartSse(); // start SSE immediately
+
+    // 초기 SSE 시작
+    restartSse();
   }
 
-  // ==============================================================
-  // SSE 재시작 (server dashboard)
-  // ==============================================================
+  // SSE 재시작
   void restartSse() {
     _metricsSub?.cancel();
     _timeseriesSub?.cancel();
@@ -50,9 +50,7 @@ class ServerDashboardController extends GetxController {
     _startTimeseriesSse();
   }
 
-  // ==============================================================
-  // 1) METRICS SSE (CPU / GPU Utilization)
-  // ==============================================================
+  // 서버 메트릭 SSE
   void _startMetricsSse() {
     _metricsSub = _api.listenServerMetrics().listen((raw) {
       try {
@@ -63,13 +61,16 @@ class ServerDashboardController extends GetxController {
         cpuError.value = null;
         gpuError.value = null;
 
+        // CPU
         final cpu = (data['cpu_utilization'] ?? 0).toDouble();
 
+        // GPU Utilization (단일 GPU 기준)
         final gpuList = data['gpu'] as List? ?? [];
         final gpuUtil = gpuList.isNotEmpty ? (gpuList.first['gpu_util'] ?? 0).toDouble() : 0.0;
 
         final prev = metrics.value;
 
+        // 스냅샷 갱신
         metrics.value = ServerMetrics(
           cpuUsage: cpu,
           ramUsage: prev.ramUsage,
@@ -84,9 +85,7 @@ class ServerDashboardController extends GetxController {
     });
   }
 
-  // ==============================================================
-  // 2) TIMESERIES SSE (VRAM / RAM)
-  // ==============================================================
+  // VRAM / RAM 시간 시리즈 SSE
   void _startTimeseriesSse() {
     _timeseriesSub = _api.listenServerTimeSeries().listen((raw) {
       try {
@@ -97,7 +96,7 @@ class ServerDashboardController extends GetxController {
         vramError.value = null;
         ramError.value = null;
 
-        // ---------------- VRAM ----------------
+        // ---- VRAM ----
         final vramList = data['vram'];
         if (vramList is! List || vramList.isEmpty || vramList.first is! Map) {
           vramError.value = "Invalid vram format";
@@ -116,7 +115,7 @@ class ServerDashboardController extends GetxController {
           List.generate(vramValues.length, (i) => FlSpot(i.toDouble(), (vramValues[i]['value'] ?? 0).toDouble())),
         );
 
-        // ---------------- RAM ----------------
+        // ---- RAM ----
         final ramList = data['ram'];
         if (ramList is! List || ramList.isEmpty || ramList.first is! Map) {
           ramError.value = "Invalid ram format";
@@ -135,7 +134,7 @@ class ServerDashboardController extends GetxController {
           List.generate(ramValues.length, (i) => FlSpot(i.toDouble(), (ramValues[i]['value'] ?? 0).toDouble())),
         );
 
-        // Snapshot 업데이트
+        // 스냅샷 갱신
         final prev = metrics.value;
 
         metrics.value = ServerMetrics(
@@ -152,7 +151,6 @@ class ServerDashboardController extends GetxController {
     });
   }
 
-  // ==============================================================
   @override
   void onClose() {
     _metricsSub?.cancel();
@@ -160,9 +158,7 @@ class ServerDashboardController extends GetxController {
     super.onClose();
   }
 
-  // ==============================================================
-  // COMPUTED SNAPSHOT GETTERS
-  // ==============================================================
+  // 최신 메트릭 getter
   double get latestCpuUsage => metrics.value.cpuUsage;
   double get latestGpuUtil => metrics.value.gpuUtilization;
   double get latestGpuVram => gpuVramSeries.isNotEmpty ? gpuVramSeries.last.y : metrics.value.gpuVram;

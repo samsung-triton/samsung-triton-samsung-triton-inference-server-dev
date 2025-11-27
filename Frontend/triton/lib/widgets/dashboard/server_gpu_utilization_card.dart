@@ -1,4 +1,4 @@
-// lib/widgets/dashboard/server_gpu_utilization_chart.dart
+// 서버 GPU Utilization 차트
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,16 +14,26 @@ class ServerGpuUtilizationChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<ServerDashboardController>();
 
+    // GPU 사용률 파이차트로 표시
     return Obx(() {
       final gpu = controller.metrics.value.gpuUtilization;
 
       return Center(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            // 차트 크기 기준값
             final side = constraints.biggest.shortestSide;
+
+            // 차트 반지름
             final radius = side / 4;
+
+            // 파이 두께
             final ringThickness = 10;
+
+            // 가운데 공간 크기
             final centerSpaceRadius = radius - ringThickness;
+
+            // 섹션 간격
             final sectionGap = side * 0.01;
 
             return Stack(
@@ -37,6 +47,8 @@ class ServerGpuUtilizationChart extends StatelessWidget {
                       startDegreeOffset: -90,
                       centerSpaceRadius: centerSpaceRadius,
                       sectionsSpace: sectionGap,
+
+                      // GPU 사용률 / 잔여 비율
                       sections: [
                         PieChartSectionData(color: primaryNormal, value: gpu, title: '', radius: radius),
                         PieChartSectionData(
@@ -49,6 +61,8 @@ class ServerGpuUtilizationChart extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                // 중앙 텍스트 표시
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

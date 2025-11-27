@@ -1,4 +1,4 @@
-// lib/widgets/dashboard/server_ram_usage_chart.dart
+// 서버 RAM 시계열 사용량 차트
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -15,14 +15,17 @@ class ServerRamUsageChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<ServerDashboardController>();
 
+    // RAM 사용률 시계열 데이터
     return Obx(() {
       final data = controller.ramSeries;
       final timestamps = controller.ramTimestamps;
 
+      // 데이터 없음 처리
       if (data.isEmpty) {
         return const Center(child: Text('No RAM data available'));
       }
 
+      // X축 범위
       final minX = 0.0;
       final maxX = (data.length - 1).toDouble();
 
@@ -35,6 +38,7 @@ class ServerRamUsageChart extends StatelessWidget {
             minY: 0,
             maxY: 100,
 
+            // 그리드 (가로/세로 라인)
             gridData: FlGridData(
               show: true,
               drawHorizontalLine: true,
@@ -47,17 +51,24 @@ class ServerRamUsageChart extends StatelessWidget {
                   FlLine(color: darkGray.withOpacity(0.25), strokeWidth: 1, dashArray: [6, 6]),
             ),
 
+            // 터치 및 툴팁
             lineTouchData: LineTouchData(
               enabled: true,
-              getTouchedSpotIndicator: (barData, indexes) => indexes.map((index) {
-                return TouchedSpotIndicatorData(FlLine(color: primaryNormal, dashArray: [3, 3]), FlDotData(show: true));
-              }).toList(),
+              getTouchedSpotIndicator: (barData, indexes) => indexes
+                  .map(
+                    (index) => TouchedSpotIndicatorData(
+                      FlLine(color: primaryNormal, dashArray: [3, 3]),
+                      FlDotData(show: true),
+                    ),
+                  )
+                  .toList(),
               touchTooltipData: LineTouchTooltipData(
                 getTooltipItems: (spots) =>
                     spots.map((s) => LineTooltipItem('${s.y.toStringAsFixed(2)}%', T.t12(color: white))).toList(),
               ),
             ),
 
+            // 축 라벨
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
@@ -83,10 +94,11 @@ class ServerRamUsageChart extends StatelessWidget {
                 ),
               ),
 
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
 
+            // 라인 차트 데이터
             lineBarsData: [
               LineChartBarData(
                 spots: data,
@@ -94,6 +106,8 @@ class ServerRamUsageChart extends StatelessWidget {
                 color: primaryNormal,
                 barWidth: 1.2,
                 dotData: FlDotData(show: false),
+
+                // 하단 그라데이션 영역
                 belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(

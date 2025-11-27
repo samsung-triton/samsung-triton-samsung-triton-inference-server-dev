@@ -1,4 +1,4 @@
-// lib/widgets/dashboard/server_cpu_usage_chart.dart
+// 서버 CPU 사용률 차트
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,16 +14,26 @@ class ServerCpuUsageChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<ServerDashboardController>();
 
+    // CPU 사용률을 파이차트로 표시
     return Obx(() {
       final usage = controller.metrics.value.cpuUsage;
 
       return Center(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            // 차트 크기 기준값
             final side = constraints.biggest.shortestSide;
+
+            // 차트 반지름
             final radius = side / 4;
+
+            // 파이 두께
             final ringThickness = 10;
+
+            // 가운데 여백 크기
             final centerSpaceRadius = radius - ringThickness;
+
+            // 섹션 간격
             final sectionGap = side * 0.01;
 
             return Stack(
@@ -37,13 +47,10 @@ class ServerCpuUsageChart extends StatelessWidget {
                       startDegreeOffset: -90,
                       centerSpaceRadius: centerSpaceRadius,
                       sectionsSpace: sectionGap,
+
+                      // 사용률 / 나머지 비율
                       sections: [
-                        PieChartSectionData(
-                          color: Colors.green, // 필요시 primaryNormal로 변경 가능
-                          value: usage,
-                          title: '',
-                          radius: radius,
-                        ),
+                        PieChartSectionData(color: Colors.green, value: usage, title: '', radius: radius),
                         PieChartSectionData(
                           color: lightGray,
                           value: (100 - usage).clamp(0, 100).toDouble(),
@@ -54,6 +61,8 @@ class ServerCpuUsageChart extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                // CPU Usage 텍스트
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

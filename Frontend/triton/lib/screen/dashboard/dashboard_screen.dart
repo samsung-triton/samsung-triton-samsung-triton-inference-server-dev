@@ -1,4 +1,4 @@
-// lib/screens/dashboard/dashboard_screen.dart
+// 대시보드 화면
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -30,9 +30,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     dashboardController = Get.put(DashboardController());
 
-    // 진입 시 SSE 재연결
+    // 초기 진입 시 SSE 재연결
     Get.find<ServerDashboardController>().restartSse();
 
+    // 모델 탭 진입 시 모델 SSE 재연결
     final modelId = dashboardController.selectedModelId.value;
     if (modelId != null) {
       Get.find<ModelDashboardController>().restartSse(modelId);
@@ -41,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
-    // 대시보드를 떠날 때 SSE 종료
+    // 화면 종료 시 대시보드 컨트롤러 제거
     if (Get.isRegistered<DashboardController>()) {
       Get.delete<DashboardController>(force: true);
     }
@@ -52,10 +53,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+
+      // 좌측: 사이드바 / 우측: 패널 영역
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const DashboardSidebar(),
+
           Expanded(
             child: Obx(() {
               switch (dashboardController.selectedType.value) {
