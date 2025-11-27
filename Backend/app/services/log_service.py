@@ -100,7 +100,7 @@ def get_web_log_service(
             "page": page,
             "size": size,
             "total": total,
-            "total_pages": total_pages,
+            "totalPages": total_pages,
         },
     )
 
@@ -196,8 +196,8 @@ def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id
                 "ts": r[1],  # iso_utc
                 "level": r[2],
                 "message": r[3],
-                "request_id": r[4],
-                "model_name": r[5],
+                "requestId": r[4],
+                "modelMame": r[5],
                 "uid": r[6],
             }
         )
@@ -210,7 +210,7 @@ def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id
         Messages.INFER_LOG_FETCH_SUCCESS,
         {
             "logs": logs,
-            "next_cursor": next_cursor,
+            "nextCursor": next_cursor,
         },
     )
 
@@ -282,6 +282,6 @@ def get_server_logs_service(db, start, end, level, cursor, global_search, limit)
         Messages.SERVER_LOG_FETCH_SUCCESS,
         {
             "logs": logs,
-            "next_cursor": next_cursor,
+            "nextCursor": next_cursor,
         },
     )

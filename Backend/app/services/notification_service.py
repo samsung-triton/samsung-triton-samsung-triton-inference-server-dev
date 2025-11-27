@@ -38,7 +38,7 @@ def get_inference_notification_service(db: Session, page: int, size: int) -> Bas
             {
                 "ts": row.ts.isoformat() if hasattr(row.ts, "isoformat") else str(row.ts),
                 "level": row.level,
-                "error_message": row.error_message,
+                "errorMessage": row.error_message,
             }
             for row in rows
         ]
@@ -67,6 +67,6 @@ def get_inference_notification_service(db: Session, page: int, size: int) -> Bas
             "page": page,
             "size": size,
             "total": total,
-            "total_pages": total_pages,
+            "totalPages": total_pages,
         },
     )

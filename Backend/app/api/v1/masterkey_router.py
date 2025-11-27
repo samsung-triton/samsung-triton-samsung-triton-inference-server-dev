@@ -11,4 +11,4 @@ mastekey_router = APIRouter(prefix="/masterkey", tags=["MasterKey"])
 
 @mastekey_router.post("/verify", response_model=BaseResponse)
 def varify_mastekey(request: MasterKeyVarifyRequest, db: Session = Depends(get_db)):
-    return varify_mastekey_service(request.masterKey, db)
+    return varify_mastekey_service(request.master_key, db)

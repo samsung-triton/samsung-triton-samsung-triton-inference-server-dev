@@ -27,8 +27,8 @@ async def get_config_history_with_selected(
 async def update_model_config(model_id: int, request: ConfigUpdateRequest, db: Session = Depends(get_db)):
     return update_model_config_service(
         model_id=model_id,
-        login_id=request.loginId,
-        config_content=request.configContent,
+        login_id=request.login_id,
+        config_content=request.config_content,
         description=request.description,
         db=db,
     )
@@ -40,5 +40,5 @@ async def delete_selected_config(
     model_id: int, config_id: int, request: ConfigDeleteRequest, db: Session = Depends(get_db)
 ):
     return await delete_selected_config_service(
-        db, model_id, config_id, login_id=request.loginId, description=request.description
+        db, model_id, config_id, login_id=request.login_id, description=request.description
     )

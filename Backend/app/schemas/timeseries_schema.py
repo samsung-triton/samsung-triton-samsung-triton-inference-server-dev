@@ -8,7 +8,7 @@ class ValueItem(BaseModel):
 
 
 class SeriesItem(BaseModel):
-    gpu_uuid: str
+    gpuUuid: str
     values: List[ValueItem]
 
 

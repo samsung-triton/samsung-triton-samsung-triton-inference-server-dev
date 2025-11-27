@@ -1,18 +1,17 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
 from fastapi import Form
 from typing import Optional
 from app.models.model import ModelType
+from app.schemas.base_schema import BaseRequest
 
-# ========== Request (요청) ==========
 
-
-class ModelRegisterRequest(BaseModel):
+class ModelRegisterRequest(BaseRequest):
     """모델 등록 (파일 제외)"""
 
-    modelName: str = Field(..., description="모델 이름")
-    modelType: ModelType = Field(..., description="모델 타입")
+    model_name: str = Field(..., description="모델 이름")
+    model_type: ModelType = Field(..., description="모델 타입")
     description: str = Field(None, description="등록 사유")
-    LoginId: str = Field(..., description="등록자 ID")
+    login_id: str = Field(..., description="등록자 ID")
 
     @classmethod
     def as_form(
@@ -20,16 +19,16 @@ class ModelRegisterRequest(BaseModel):
         modelName: str = Form(...),
         modelType: ModelType = Form(...),
         description: Optional[str] = Form(None),
-        LoginId: str = Form(...),
+        loginId: str = Form(...),
     ):
         return cls(
-            modelName=modelName,
-            modelType=modelType,
+            model_name=modelName,
+            model_type=modelType,
             description=description,
-            LoginId=LoginId,
+            login_id=loginId,
         )
 
 
-class ModelDeleteRequest(BaseModel):
-    loginId: str = Field(..., description="요청자 로그인 ID")
+class ModelDeleteRequest(BaseRequest):
+    login_id: str = Field(..., description="요청자 로그인 ID")
     description: Optional[str] = Field(None, description="삭제 이유")
