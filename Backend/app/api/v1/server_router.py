@@ -58,12 +58,7 @@ async def stream_status():
                 try:
                     payload = await asyncio.wait_for(queue.get(), timeout=30)
 
-                    json_str = create_response(
-                        CustomCode.DOCKER_001.value,
-                        Messages.SERVER_READY.value,
-                        data=payload,
-                    ).model_dump_json()
-
+                    json_str = json.dumps(payload)
                     yield f"data: {json_str}\n\n"
 
                 except asyncio.TimeoutError:
