@@ -24,6 +24,7 @@ from app.schemas.base_schema import BaseResponse
 from app.models.model import Model
 from app.models.inference_logs import InferenceLogs
 from app.clients.triton_client import triton_client
+from app.common.utils import to_utc_z
 
 
 # ============================================================
@@ -45,7 +46,7 @@ def parse_end_iso(end_iso: Optional[str]) -> datetime:
         end_dt = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
         if end_dt.tzinfo is None:
             end_dt = end_dt.replace(tzinfo=TIMEZONE)
-        return end_dt
+        return end_dt.astimezone(TIMEZONE)
 
     return datetime.now(TIMEZONE)
 
@@ -80,7 +81,7 @@ def parse_prometheus_values(series: dict, skip_invalid: bool = True) -> List[Val
             v = float(val)
             if skip_invalid and (math.isnan(v) or math.isinf(v)):
                 continue
-            points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
+            points.append(ValueItem(ts=to_utc_z(ts_dt), value=round(v, 2)))
         except Exception:
             continue
 
@@ -182,8 +183,8 @@ async def get_server_metrics_service() -> BaseResponse:
                 cpu_util = float(val[1])
 
         data = {
-            "timestamp": datetime.now(TIMEZONE).isoformat(),
-            "cpuUtilization": round(cpu_util, 2),
+            "timestamp": to_utc_z(datetime.now(TIMEZONE)),
+            "cpu_utilization": round(cpu_util, 2),
             "gpu": gpu_data,
         }
 
@@ -262,8 +263,8 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             )
 
         time_window = TimeWindow(
-            start=start_dt.isoformat(),
-            end=end_dt.isoformat(),
+            start=to_utc_z(start_dt),
+            end=to_utc_z(end_dt),
             step="10m",
         )
 
@@ -416,19 +417,19 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
         code=CustomCode.DASH_004.value,
         message=Messages.MODEL_STATS_FETCH_SUCCESS.value,
         data={
-            "modelName": model.name,
-            "baseTime": base_time_str,  # "HH:MM"
-            "aggregationStart": start_time.isoformat(),
-            "aggregationEnd": end_time.isoformat(),
-            "requestTotal": request_total,
-            "requestSuccess": request_success,
-            "requestFail": request_fail,
-            "inferenceTotal": inference_total,
-            "inferenceOk": inference_ok,
-            "inferenceNg": inference_ng,
-            "inferenceError": inference_error,
-            "okRatio": round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0,
-            "avgLatencyMs": avg_ms,
+            "model_name": model.name,
+            "base_time": base_time_str,  # "HH:MM"
+            "aggregation_start": to_utc_z(start_time),
+            "aggregation_end": to_utc_z(end_time),
+            "request_total": request_total,
+            "request_success": request_success,
+            "request_fail": request_fail,
+            "inference_total": inference_total,
+            "inference_ok": inference_ok,
+            "inference_ng": inference_ng,
+            "inference_error": inference_error,
+            "ok_ratio": round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0,
+            "avg_latency_ms": avg_ms,
         },
     )
 
@@ -491,8 +492,8 @@ async def get_model_per_inference_latency_service(
         output_series = convert(latency_results["output"])
 
         time_window = TimeWindow(
-            start=start_dt.isoformat(),
-            end=end_dt.isoformat(),
+            start=to_utc_z(start_dt),
+            end=to_utc_z(end_dt),
             step="10m",
         )
 

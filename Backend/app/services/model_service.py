@@ -10,7 +10,7 @@ from app.clients.triton_client import triton_client
 from app.core.config import settings
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
-from app.common.utils import get_user_or_404, safe_name, save_model_config_file, save_model_file
+from app.common.utils import get_user_or_404, safe_name, save_model_config_file, save_model_file, to_utc_z
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.models.model import (
@@ -179,7 +179,7 @@ def get_model_detail_service(model_id: int, db: Session):
         )
 
     # 현재 Config 조회
-    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
+    config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).first()
 
     config_data = None
     if config:
@@ -188,7 +188,7 @@ def get_model_detail_service(model_id: int, db: Session):
             "version": config.version,
             "filePath": config.file_path,
             "content": config.content,
-            "createdAt": config.created_at.strftime("%y-%m-%d %H:%M:%S"),
+            "createdAt": to_utc_z(config.created_at),
         }
 
     # 모델 타입별 분기
@@ -218,7 +218,7 @@ def get_model_detail_service(model_id: int, db: Session):
                 "version": mv.version,
                 "fileName": mv.represent_file_name,
                 "userName": user.name if user else None,
-                "createdAt": mv.created_at.strftime("%y-%m-%d %H:%M:%S"),
+                "createdAt": to_utc_z(mv.created_at),
             }
             for mv, user in versions
         ]
@@ -332,7 +332,7 @@ def register_model_service(
         # config.pbtxt가 존재할 때만 Config 테이블 버전 생성
         if cfg_entry and cfg_entry.exists():
             config_text = cfg_entry.read_text(encoding="utf-8", errors="ignore")
-            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True).update(
+            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current).update(
                 {"is_current": False}, synchronize_session=False
             )
             save_model_config(db, model.model_id, 1, config_text, str(cfg_entry), user.user_id)
@@ -508,9 +508,7 @@ def register_model_assets_service(
         if config_file and cfg_entry:
             # DB에서 기존 최신 config 조회
             prev_cfg = (
-                db.query(ModelConfig)
-                .filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True)
-                .first()
+                db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current).first()
             )
             if prev_cfg:
                 cfg_entry.write_text(prev_cfg.content, encoding="utf-8")
@@ -558,7 +556,7 @@ def register_model_assets_service(
             config_text = cfg_entry.read_text(encoding="utf-8", errors="ignore")
 
             # 기존 is_current 해제
-            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True).update(
+            db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current).update(
                 {"is_current": False}, synchronize_session=False
             )
 
@@ -585,9 +583,7 @@ def register_model_assets_service(
         if config_file and cfg_entry:
             # DB에서 기존 최신 config 조회
             prev_cfg = (
-                db.query(ModelConfig)
-                .filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current == True)
-                .first()
+                db.query(ModelConfig).filter(ModelConfig.model_id == model.model_id, ModelConfig.is_current).first()
             )
             if prev_cfg:
                 cfg_entry.write_text(prev_cfg.content, encoding="utf-8")
