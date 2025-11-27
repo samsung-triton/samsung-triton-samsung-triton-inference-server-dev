@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from fastapi import status
-from datetime import datetime
 
 from app.clients.gpu_router import (
     get_triton_status,

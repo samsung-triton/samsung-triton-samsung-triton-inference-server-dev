@@ -7,12 +7,14 @@ from sqlalchemy.orm import Session
 from fastapi import status, UploadFile
 from pathlib import Path
 from typing import List, Dict
+from datetime import datetime
 
 from app.core.customException import CustomHTTPException
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.models.user import User
 from app.core.config import settings
+from app.core.config import TIMEZONE
 
 
 def get_user_or_404(db: Session, login_id: str) -> User:
@@ -252,3 +254,23 @@ def save_model_file(model_name: str, version: int, model_file: UploadFile) -> Li
             rel = p.relative_to(version_dir)
             out.append({"fileName": str(rel), "filePath": str(p)})
     return out
+
+
+def to_utc_z(ts) -> str:
+    """
+    아무 타입이나 들어와도 UTC 기준 ISO8601 Z 형식으로 변환:
+    예) 2025-11-27T10:00:00Z
+    """
+    if isinstance(ts, datetime):
+        # tz 정보 없으면 UTC라고 가정
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=TIMEZONE)
+
+        # 혹시 다른 타임존이면 UTC로 변환
+        ts_utc = ts.astimezone(TIMEZONE)
+
+        # 마이크로초 제거 + Z 형식으로 고정
+        return ts_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # datetime 이 아니면 그냥 문자열로
+    return str(ts)

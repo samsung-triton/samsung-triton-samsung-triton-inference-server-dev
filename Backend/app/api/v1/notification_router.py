@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 import asyncio
 import json
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 from sqlalchemy import text
 from fastapi.responses import StreamingResponse
 
@@ -12,6 +12,7 @@ from app.common.sse_channels import error_log_channel
 from app.core.response_utils import create_response
 from app.common.codes import CustomCode
 from app.common.messages import Messages
+from app.common.utils import to_utc_z
 
 notification_router = APIRouter(prefix="/notifications", tags=["Notification"])
 
@@ -40,15 +41,24 @@ async def push_error_event(event: dict):
 @notification_router.get("/stream")
 async def error_sse(db=Depends(get_clickhouse_db)):
     rows = db.execute(
-        text("""
+        text(
+            """
         SELECT toDateTime64(ts, 6) AS ts, level, error_message
         FROM logs.triton_error_logs
         ORDER BY ts DESC
         LIMIT 10
-    """)
+    """
+        )
     ).fetchall()
 
-    history = [{"ts": str(r.ts), "level": r.level, "error_message": r.error_message} for r in rows]
+    history = [
+        {
+            "ts": to_utc_z(r.ts),  # ★ UTC Z 형식으로 통일
+            "level": r.level,
+            "error_message": r.error_message,
+        }
+        for r in rows
+    ]
 
     async def event_stream():
         queue = error_log_channel.subscribe()
@@ -71,7 +81,7 @@ async def error_sse(db=Depends(get_clickhouse_db)):
                     if isinstance(data, str):
                         try:
                             data = json.loads(data)
-                        except:
+                        except:  # noqa: E722
                             pass
 
                     json_str = create_response(

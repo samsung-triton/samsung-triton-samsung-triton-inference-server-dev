@@ -11,13 +11,15 @@ from app.models.server import Server
 from app.models.model import ModelRelease
 from app.models.user import User
 from app.core.customException import CustomHTTPException
+from app.core.config import TIMEZONE
+from app.common.utils import to_utc_z
 
 
 def get_web_log_service(
     start_date, end_date, username, type, description, global_search, page: int, size: int, db: Session
 ) -> BaseResponse:
-    start_dt = datetime.combine(start_date, datetime.min.time())
-    end_dt = datetime.combine(end_date, datetime.max.time())
+    start_dt = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=TIMEZONE)
+    end_dt = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=TIMEZONE)
 
     if end_date < start_date:
         raise CustomHTTPException(
@@ -38,7 +40,7 @@ def get_web_log_service(
         log_type = f"TRITON-{server.status.value}"
         server_result.append(
             {
-                "date": server.created_at,
+                "date": to_utc_z(server.created_at),  # ★
                 "username": user.name,
                 "type": log_type,
                 "description": server.description,
@@ -57,7 +59,7 @@ def get_web_log_service(
         log_type = f"{release.type.value}-{release.action.value}"
         release_result.append(
             {
-                "date": release.created_at,
+                "date": to_utc_z(release.created_at),  # ★
                 "username": user.name,
                 "type": log_type,
                 "description": release.reason,

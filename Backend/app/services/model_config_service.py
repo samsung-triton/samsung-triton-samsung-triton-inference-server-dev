@@ -14,6 +14,7 @@ from app.models.model_config import ModelConfig
 from app.models.user import User
 from app.common.codes import CustomCode
 from app.common.messages import Messages
+from app.common.utils import to_utc_z
 
 
 async def get_config_history_with_selected_service(db: Session, model_id: int):
@@ -38,7 +39,7 @@ async def get_config_history_with_selected_service(db: Session, model_id: int):
         {
             "configId": cfg.config_id,
             "version": cfg.version,
-            "createdAt": cfg.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "createdAt": to_utc_z(cfg.created_at),
             "userName": user.name if user else None,
             "isCurrent": cfg.is_current,
             "content": cfg.content,
@@ -84,9 +85,7 @@ def update_model_config_service(
         )
 
     # 2. 기존 config (DB 기준) 가져오기 → 파일 롤백용
-    previous_config = (
-        db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).first()
-    )
+    previous_config = db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).first()
 
     if not previous_config:
         raise CustomHTTPException(
@@ -119,7 +118,7 @@ def update_model_config_service(
     # STEP 2: DB 업데이트 (여기서 실패하면 파일 롤백 + DB rollback)
     try:
         # 기존 최신 버전 inactive
-        db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current == True).update(
+        db.query(ModelConfig).filter(ModelConfig.model_id == model_id, ModelConfig.is_current).update(
             {"is_current": False}, synchronize_session=False
         )
 
@@ -179,7 +178,7 @@ def update_model_config_service(
             "version": new_config.version,
             "filePath": str(cfg_path),
             "createdBy": user.name,
-            "createdAt": new_config.created_at,
+            "createdAt": to_utc_z(new_config.created_at),
             "isCurrent": True,
         },
     )
@@ -237,7 +236,7 @@ async def delete_selected_config_service(
 
         db.commit()
 
-    except Exception as e:
+    except Exception:
         db.rollback()
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
