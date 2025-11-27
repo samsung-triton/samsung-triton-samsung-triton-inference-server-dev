@@ -43,15 +43,21 @@ class Messages(str, Enum):
 
     # ---- DashBoard ----
     # ---- Metrics ----
-    DASHBOARD_MODEL_LIST_SUCCESS = "대시보드용 모델 목록 조회 성공"
-    SERVER_METRICS_FETCH_SUCCESS = "서버 실시간 메트릭 조회 성공"
-    RESOURCE_TIMESERIES_FETCH_SUCCESS = "리소스 시계열 데이터 조회 성공"
-    METRICS_INVALID_PERIOD = "지원하지 않는 period 값입니다. (허용: 1h, 6h, 24h)"
-    PROMETHEUS_RANGE_QUERY_ERROR = "Prometheus Range Query 중 오류가 발생했습니다."
-    SERVER_METRIC_FAIL = "서버 메트릭 조회 실패"
-    PROMETHEUS_BAD_STATUS = "Prometheus 응답 상태가 올바르지 않습니다."
-    PROMETHEUS_QUERY_FAIL = "Prometheus 메트릭 수집 중 오류 발생"
-    MODEL_PER_STATUS_FETCH_SUCCESS = "모델 별 요청 통계 조회 성공"
+    # DASHBOARD_MODEL_LIST_SUCCESS = "대시보드용 모델 목록 조회 성공"
+    # SERVER_METRICS_FETCH_SUCCESS = "서버 실시간 메트릭 조회 성공"
+    # RESOURCE_TIMESERIES_FETCH_SUCCESS = "리소스 시계열 데이터 조회 성공"
+    # SERVER_METRIC_FAIL = "서버 메트릭 조회 실패"
+    # PROMETHEUS_BAD_STATUS = "Prometheus 응답 상태가 올바르지 않습니다."
+    # PROMETHEUS_QUERY_FAIL = "Prometheus 메트릭 수집 중 오류 발생"
+    SERVER_METRIC_FAIL = "Failed to fetch server metrics."
+    PROMETHEUS_BAD_STATUS = "Prometheus returned an invalid response status."
+    PROMETHEUS_QUERY_FAIL = "An error occurred while querying Prometheus metrics."
+    SERVER_METRICS_FETCH_SUCCESS = "Server realtime CPU/GPU metrics fetched successfully."
+    RESOURCE_TIMESERIES_FETCH_SUCCESS = "Server RAM/VRAM timeseries metrics fetched successfully."
+    DASHBOARD_MODEL_LIST_SUCCESS = "Dashboard model list fetched successfully."
+    MODEL_STATS_FETCH_SUCCESS = "Model inference statistics fetched successfully."
+    MODEL_LATENCY_FETCH_SUCCESS = "Model inference latency timeseries fetched successfully."
+    MODEL_LATENCY_FETCH_ERROR = "Failed to fetch model latency metrics."
 
     # ---- STANDARD TIME ----
     # STANDARD_TIME_FETCH_SUCCESS = "집계 기준 시각 조회 성공"
