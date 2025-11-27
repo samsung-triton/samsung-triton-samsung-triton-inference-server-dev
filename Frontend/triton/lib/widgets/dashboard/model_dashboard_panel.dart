@@ -1,4 +1,4 @@
-// lib/widgets/dashboard/model_dashboard_panel.dart
+// 모델 대시보드 패널
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -26,7 +26,6 @@ class _ModelDashboardPanelState extends State<ModelDashboardPanel> {
     final dashCtrl = Get.find<DashboardController>();
     final modelCtrl = Get.find<ModelDashboardController>();
 
-    // 화면 진입 시 SSE 자동 시작
     final id = dashCtrl.selectedModelId.value;
     if (id != null) {
       modelCtrl.restartSse(id);
@@ -35,10 +34,8 @@ class _ModelDashboardPanelState extends State<ModelDashboardPanel> {
 
   @override
   void dispose() {
-    // 화면 떠날 때 SSE 자동 해제
     final modelCtrl = Get.find<ModelDashboardController>();
     modelCtrl.onClose();
-
     super.dispose();
   }
 
@@ -52,10 +49,12 @@ class _ModelDashboardPanelState extends State<ModelDashboardPanel> {
 
     return Padding(
       padding: const EdgeInsets.all(gap),
+
+      // 상단 헤더 + 좌측 통계 / 우측 알림 패널
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          /// Header
+          // 상단 헤더 (Reset Time / Last Updated / Update)
           CommonMetricHeaderBar(
             onRefresh: () {
               final id = dashCtrl.selectedModelId.value;
@@ -67,12 +66,12 @@ class _ModelDashboardPanelState extends State<ModelDashboardPanel> {
 
           const SizedBox(height: gap),
 
-          /// Main Body
+          // 메인 영역
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// Left (Inference Stats + Latency Chart)
+                // 좌측: 추론 통계 + 지연시간 차트
                 Expanded(
                   child: Column(
                     children: [
@@ -85,7 +84,7 @@ class _ModelDashboardPanelState extends State<ModelDashboardPanel> {
 
                 const SizedBox(width: gap),
 
-                /// Right (Notifications Panel)
+                // 우측: 알림 패널
                 const SizedBox(width: rightPanelW, child: ModelNotificationPanel()),
               ],
             ),

@@ -1,4 +1,4 @@
-// lib/widgets/dashboard/common_metric_header_bar.dart
+// 대시보드 메트릭 상단 헤더바 (Reset Time / Last Updated / Update 버튼)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,13 +7,15 @@ import 'package:triton/controller/dashboard/dashboard_controller.dart' as dash;
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/input/dropdown.dart';
+import 'package:triton/widgets/button/button_small.dart';
 
-/// Reset Time / Last Updated / Update 버튼을 포함한 상단 공통 헤더
 class CommonMetricHeaderBar extends StatelessWidget {
+  // 외부에서 전달받는 Refresh 콜백
   final VoidCallback? onRefresh;
 
   const CommonMetricHeaderBar({super.key, this.onRefresh});
 
+  // 읽기 전용 드롭다운(비개발자용)
   Widget _fakeDropdown(String text, double width) {
     return Container(
       width: width,
@@ -41,10 +43,12 @@ class CommonMetricHeaderBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: black, width: 0.5),
       ),
+
+      // 좌측: Reset Time  / 우측: Last Updated + Update 버튼
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          /// Reset Time 설정 영역
+          // Reset Time 설정 영역
           Obx(() {
             final isDevel = dashboard.isDevel;
             final hh = dashboard.resetHour.value.toString().padLeft(2, '0');
@@ -55,6 +59,7 @@ class CommonMetricHeaderBar extends StatelessWidget {
                 Text("Reset Time", style: T.t16(color: primaryDarker, bold: true)),
                 const SizedBox(width: 8),
 
+                // 시(hour)
                 isDevel
                     ? Dropdown(
                         width: 76,
@@ -91,6 +96,7 @@ class CommonMetricHeaderBar extends StatelessWidget {
 
                 const SizedBox(width: 4),
 
+                // 분(minute)
                 isDevel
                     ? Dropdown(
                         width: 76,
@@ -101,33 +107,32 @@ class CommonMetricHeaderBar extends StatelessWidget {
                     : _fakeDropdown(mm, 76),
 
                 if (isDevel) const SizedBox(width: 8),
+
+                // Apply 버튼 (개발자 전용)
                 if (isDevel)
-                  SizedBox(
+                  // Reset Time 적용 버튼
+                  ButtonSmall(
+                    text: 'Set',
+                    width: 56,
                     height: 28,
-                    child: ElevatedButton(
-                      onPressed: dashboard.updateResetTime,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: white,
-                        foregroundColor: primaryDarker,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: lightGray),
-                        ),
-                      ),
-                      child: Text('Apply', style: T.t12(color: primaryDarker, bold: true)),
-                    ),
+                    backgroundColor: white,
+                    textColor: primaryDarker,
+                    borderColor: lightGray,
+                    borderRadius: 8,
+                    isbold: true,
+                    onPressed: dashboard.updateResetTime,
                   ),
               ],
             );
           }),
 
-          /// Last Updated / Update 버튼 영역
+          // Last Updated + Update 버튼
           Row(
             children: [
               Text("Last Updated", style: T.t16(color: primaryDarker, bold: true)),
               const SizedBox(width: 8),
 
+              // 갱신 시간 표시
               Obx(() {
                 final text = dashboard.formattedLastUpdated;
 
@@ -144,6 +149,7 @@ class CommonMetricHeaderBar extends StatelessWidget {
 
               const SizedBox(width: 8),
 
+              // Update 버튼
               SizedBox(
                 height: 28,
                 child: ElevatedButton(
@@ -176,6 +182,7 @@ class CommonMetricHeaderBar extends StatelessWidget {
     );
   }
 
+  // 날짜/시간 태그
   Widget _timeTag(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
