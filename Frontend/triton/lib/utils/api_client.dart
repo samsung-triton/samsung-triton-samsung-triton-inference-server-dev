@@ -124,16 +124,13 @@ class ApiClient extends GetConnect {
 
   // 서버 시작
   Future<dynamic> startServer({required String userLoginId}) {
-    return _postJson('/api/v1/server/start', {
-      'user_login_id': userLoginId,
-      'description': null,
-    }, apiName: 'startServer');
+    return _postJson('/api/v1/server/start', {'loginId': userLoginId, 'description': null}, apiName: 'startServer');
   }
 
   // 서버 중지
   Future<dynamic> stopServer({required String userLoginId, required String description}) {
     return _postJson('/api/v1/server/stop', {
-      'user_login_id': userLoginId,
+      'loginId': userLoginId,
       'description': description,
     }, apiName: 'stopServer');
   }
@@ -141,7 +138,7 @@ class ApiClient extends GetConnect {
   // 서버 재시작
   Future<dynamic> restartServer({required String userLoginId, required String description}) {
     return _postJson('/api/v1/server/restart', {
-      'user_login_id': userLoginId,
+      'loginId': userLoginId,
       'description': description,
     }, apiName: 'restartServer');
   }
@@ -300,7 +297,7 @@ class ApiClient extends GetConnect {
 
   //triton 로그에서 모델 목록 조회
   Future<dynamic> getLogModelList() {
-    return _get('/api/v1/logs/model-list', apiName: 'getLogModelList');
+    return _get('/api/v1/logs/models', apiName: 'getLogModelList');
   }
 
   // 모델 추론 로그 조회 & 필터링
@@ -315,15 +312,15 @@ class ApiClient extends GetConnect {
     int limit = 200,
   }) async {
     final raw = await httpClient.post(
-      '/api/v1/logs/model',
+      '/api/v1/logs/infer',
       body: jsonEncode({
-        'model_name': modelName,
+        'modelName': modelName,
         'cursor': cursor,
         'requestId': requestId,
-        'start_date': startDate,
-        'end_date': endDate,
+        'start': startDate,
+        'end': endDate,
         'level': level,
-        'global_search': grobalSearch,
+        'globalSearch': grobalSearch,
         'limit': limit,
       }),
       contentType: 'application/json',
@@ -341,13 +338,13 @@ class ApiClient extends GetConnect {
     int limit = 200,
   }) async {
     final raw = await httpClient.post(
-      '/api/v1/logs/system',
+      '/api/v1/logs/server',
       body: jsonEncode({
         'cursor': cursor,
         'start': startDate,
         'end': endDate,
         'level': level,
-        'global_search': grobalSearch,
+        'globalSearch': grobalSearch,
         'limit': limit,
       }),
       contentType: 'application/json',
@@ -371,15 +368,15 @@ class ApiClient extends GetConnect {
     String? grobalSearch,
   }) async {
     final res = await _requestRaw(
-      '/api/v1/logs/api?page=$page&size=$size',
+      '/api/v1/logs/web?page=$page&size=$size',
       'POST',
       body: jsonEncode({
-        'start_date': startDate,
-        'end_date': endDate,
+        'startDate': startDate,
+        'endDate': endDate,
         'username': username,
         'type': type,
         'description': description,
-        'global_search': grobalSearch,
+        'globalSearch': grobalSearch,
       }),
       apiName: 'getApiLog',
     );
