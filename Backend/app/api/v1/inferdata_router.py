@@ -27,7 +27,7 @@ def save_input_before_infer(
 
 @inferdata_router.post("/save/after", response_model=BaseResponse)
 def save_output_after_infer(request: SaveInferenceResultRequest, db: Session = Depends(get_db)):
-    return save_output_after_infer_service(request.uid, request.isOk, request.result, db)
+    return save_output_after_infer_service(request.uid, request.is_ok, request.result, db)
 
 
 @inferdata_router.post("/save-binay/after", response_model=BaseResponse)

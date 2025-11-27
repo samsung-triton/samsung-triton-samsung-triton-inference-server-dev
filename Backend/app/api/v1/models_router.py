@@ -38,7 +38,15 @@ def register_model(
     setupFile: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    return register_model_service(req=req, model_file=modelFile, config_file=setupFile, db=db)
+    return register_model_service(
+        model_name=req.model_name,
+        model_type=req.model_type,
+        description=req.description,
+        login_id=req.login_id,
+        model_file=modelFile,
+        config_file=setupFile,
+        db=db,
+    )
 
 
 @model_router.post("/ensemble", response_model=BaseResponse)
@@ -49,7 +57,14 @@ def register_ensemble_model(
     ),
     db: Session = Depends(get_db),
 ):
-    return register_ensemble_service(req=req, config_file=setupFile, db=db)
+    return register_ensemble_service(
+        model_name=req.model_name,
+        model_type=req.model_type,
+        description=req.description,
+        login_id=req.login_id,
+        config_file=setupFile,
+        db=db,
+    )
 
 
 @model_router.post("/{model_id}/versions", response_model=BaseResponse)
