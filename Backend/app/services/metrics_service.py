@@ -487,7 +487,7 @@ async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_LIST_FETCH_ERROR.value,
-            data={"detail": str(e)},
+            data={"error": str(e)},
         )
 
     # 3. DB 모델 매핑

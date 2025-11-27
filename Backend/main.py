@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, status, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
@@ -9,6 +10,9 @@ from app.core.DB.database import SessionLocal
 from app.core.DB.clickhouse import ch_engine
 from app.core.customException import CustomHTTPException
 from app.core.config import settings
+from app.common.codes import CustomCode
+from app.common.messages import Messages
+
 
 import asyncio
 import logging
@@ -75,6 +79,13 @@ def create_app():
     # =====================
     # 예외 핸들러
     # =====================
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"code": CustomCode.ERR_400.value, "message": Messages.INVALID_PARAM.value, "data": None},
+        )
+
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
         if isinstance(exc, CustomHTTPException):

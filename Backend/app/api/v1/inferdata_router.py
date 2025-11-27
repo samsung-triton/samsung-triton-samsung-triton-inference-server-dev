@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, Form, status, Query, Request
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Query, Request
 
 from sqlalchemy.orm import Session
 from app.core.DB.database import get_db
@@ -15,7 +15,7 @@ from app.schemas.inferoutput_schema import SaveInferenceResultRequest
 inferdata_router = APIRouter(prefix="/infer", tags=["InferData"])
 
 
-@inferdata_router.post("/save/before", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+@inferdata_router.post("/save/before", response_model=BaseResponse)
 def save_input_before_infer(
     clientId: str = Form(..., description="추론 전 입력 데이터 저장"),
     modelName: str = Form(..., description="추론할 모델 id"),
@@ -25,19 +25,19 @@ def save_input_before_infer(
     return save_input_before_infer_service(clientId, modelName, dataFiles, db)
 
 
-@inferdata_router.post("/save/after", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+@inferdata_router.post("/save/after", response_model=BaseResponse)
 def save_output_after_infer(request: SaveInferenceResultRequest, db: Session = Depends(get_db)):
-    return save_output_after_infer_service(request.uid, request.is_ok, request.result, db)
+    return save_output_after_infer_service(request.uid, request.isOk, request.result, db)
 
 
-@inferdata_router.post("/save-binay/after")
+@inferdata_router.post("/save-binay/after", response_model=BaseResponse)
 async def save_binay_output_after_infer(
     request: Request,
     uid: str = Query(...),
-    is_ok: bool = Query(...),
+    isOk: bool = Query(...),
     extension: str = Query(...),
     db: Session = Depends(get_db),
 ):
     binary_data = await request.body()
 
-    return save_binary_output_after_infer_service(uid, is_ok, extension, binary_data, db)
+    return save_binary_output_after_infer_service(uid, isOk, extension, binary_data, db)
