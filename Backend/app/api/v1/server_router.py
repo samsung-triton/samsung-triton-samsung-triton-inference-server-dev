@@ -24,8 +24,8 @@ server_router = APIRouter(prefix="/server", tags=["Server Management"])
 
 
 @server_router.get("/status", response_model=BaseResponse)
-async def get_server_status(db: Session = Depends(get_db)):
-    return await get_server_status_service(db)
+async def get_server_status():
+    return await get_server_status_service()
 
 
 @server_router.post("/start", response_model=BaseResponse)

@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from fastapi import status
 import asyncio
 import json
 from sqlalchemy import text
@@ -14,10 +13,10 @@ from app.core.response_utils import create_response
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 
-notification_router = APIRouter(prefix="/noti", tags=["Notification"])
+notification_router = APIRouter(prefix="/notifications", tags=["Notification"])
 
 
-@notification_router.get("", response_model=BaseResponse, status_code=status.HTTP_200_OK)
+@notification_router.get("", response_model=BaseResponse)
 def get_inference_notification(
     page: int = Query(1, ge=1),
     size: int = Query(8, ge=1, le=100),
@@ -38,20 +37,18 @@ async def push_error_event(event: dict):
 
 
 # SSE endpoint
-@notification_router.get("/error-sse")
+@notification_router.get("/stream")
 async def error_sse(db=Depends(get_clickhouse_db)):
-
-    rows = db.execute(text("""
+    rows = db.execute(
+        text("""
         SELECT toDateTime64(ts, 6) AS ts, level, error_message
         FROM logs.triton_error_logs
         ORDER BY ts DESC
         LIMIT 10
-    """)).fetchall()
+    """)
+    ).fetchall()
 
-    history = [
-        {"ts": str(r.ts), "level": r.level, "error_message": r.error_message}
-        for r in rows
-    ]
+    history = [{"ts": str(r.ts), "level": r.level, "error_message": r.error_message} for r in rows]
 
     async def event_stream():
         queue = error_log_channel.subscribe()

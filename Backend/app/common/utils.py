@@ -30,7 +30,7 @@ def get_user_or_404(db: Session, login_id: str) -> User:
 # ==============================
 # 공통 설정
 # ==============================
-MODEL_REPO_ROOT = Path(settings.TRITON_MODEL_REPO)
+MODEL_REPO_ROOT = Path(settings.TRITON_MODEL_PATH)
 
 # =====================================================
 # 안전한 파일/모델명 치환 (영문/숫자/_만 허용)
@@ -189,7 +189,7 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dic
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.ARCHIVE_EXTRACTION_ERROR.value,
-            data=str(e),
+            data={"error": str(e)},
         )
 
     # # 4) 압축 해제 후 model_root 바로 아래 파일만 수집
@@ -203,7 +203,7 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dic
 # =====================================================
 # 3. 모델 파일 저장 (ZIP, TAR 포함 가능)
 # =====================================================
-def store_model_file(model_name: str, version: int, model_file: UploadFile) -> List[Dict[str, str]]:
+def save_model_file(model_name: str, version: int, model_file: UploadFile) -> List[Dict[str, str]]:
     """
     모델 파일 저장 (ZIP, TAR.GZ, TAR 및 일반 파일 지원)
     - /models/{model_name}/{version}/ 내부에 직접 저장
@@ -242,7 +242,7 @@ def store_model_file(model_name: str, version: int, model_file: UploadFile) -> L
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.ARCHIVE_EXTRACTION_ERROR.value,
-            data=str(e),
+            data={"error": str(e)},
         )
 
     # 파일 목록 수집 (버전 디렉토리 기준 상대경로)

@@ -13,7 +13,7 @@ from app.models.user import User
 from app.core.customException import CustomHTTPException
 
 
-def get_api_log_service(
+def get_web_log_service(
     start_date, end_date, username, type, description, global_search, page: int, size: int, db: Session
 ) -> BaseResponse:
     start_dt = datetime.combine(start_date, datetime.min.time())
@@ -21,9 +21,9 @@ def get_api_log_service(
 
     if end_date < start_date:
         raise CustomHTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            code=CustomCode.ERR_400.value,
-            detail=Messages.ERR_END_DATE_BEFORE_START_DATE.value,
+            status.HTTP_400_BAD_REQUEST,
+            CustomCode.ERR_400.value,
+            Messages.ERR_END_DATE_BEFORE_START_DATE.value,
         )
 
     server_logs = (
@@ -94,7 +94,7 @@ def get_api_log_service(
 
     return create_response(
         code=CustomCode.LOG_001.value,
-        message=Messages.MODEL_API_LOG_FETCH_SUCCESS.value,
+        message=Messages.WEB_LOG_FETCH_SUCCESS.value,
         data={
             "items": paginated_items,
             "page": page,
@@ -120,7 +120,7 @@ def get_model_name_list_service(db):
 
     return create_response(
         CustomCode.LOG_002,
-        Messages.MODEL_LOG_MODEL_NAME_LIST_FETCH_SUCCESS,
+        Messages.INFER_LOG_MODEL_NAME_LIST_FETCH_SUCCESS,
         {"models": model_names},
     )
 
@@ -130,7 +130,7 @@ def _add_cond(where: list, cond: str | None):
         where.append(cond)
 
 
-def get_model_logs_service(db, model_name, start, end, level, cursor, request_id, global_search, limit):
+def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id, global_search, limit):
     # 날짜 유효성 체크
     if (start and not end) or (end and not start):
         return create_response(
@@ -207,7 +207,7 @@ def get_model_logs_service(db, model_name, start, end, level, cursor, request_id
 
     return create_response(
         CustomCode.LOG_003,
-        Messages.MODEL_LOG_FETCH_SUCCESS,
+        Messages.INFER_LOG_FETCH_SUCCESS,
         {
             "logs": logs,
             "next_cursor": next_cursor,

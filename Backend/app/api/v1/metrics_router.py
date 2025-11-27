@@ -76,7 +76,6 @@ server_timeseries_channel = PollingSSEChannel(
 async def stream_server_timeseries():
     """
     서버 리소스 시계열 메트릭 SSE 스트림.
-    - 클라이언트: GET /api/v1/dashboard/server/timeseries/stream
     """
     return StreamingResponse(
         sse_event_stream(server_timeseries_channel),

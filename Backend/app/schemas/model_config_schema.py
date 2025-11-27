@@ -14,3 +14,8 @@ class ConfigUpdateRequest(BaseModel):
     loginId: str
     description: str | None = None
     configContent: str
+
+
+class ConfigDeleteRequest(BaseModel):
+    loginId: str
+    description: str | None = None

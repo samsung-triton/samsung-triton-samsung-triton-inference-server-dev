@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, status, Path, Form, Body
+from fastapi import APIRouter, UploadFile, File, Depends, Path, Form, Body
 from typing import Annotated
 from sqlalchemy.orm import Session
 
@@ -18,12 +18,20 @@ from app.schemas.model_schema import ModelRegisterRequest, ModelDeleteRequest
 model_router = APIRouter(prefix="/models", tags=["models"])
 
 
-@model_router.get("", response_model=BaseResponse, status_code=status.HTTP_200_OK, summary="모델 목록 (전체) 조회")
+@model_router.get("", response_model=BaseResponse)
 def list_models(db: Session = Depends(get_db)):
     return list_models_service(db=db)
 
 
-@model_router.post("", summary="단일 모델 최초 등록")
+@model_router.get("/{model_id}", response_model=BaseResponse)
+def get_model_detail(
+    model_id: int = Path(..., description="모델 ID"),
+    db: Session = Depends(get_db),
+):
+    return get_model_detail_service(model_id=model_id, db=db)
+
+
+@model_router.post("/normal", response_model=BaseResponse)
 def register_model(
     req: Annotated[ModelRegisterRequest, Depends(ModelRegisterRequest.as_form)],
     modelFile: UploadFile = File(...),
@@ -33,7 +41,7 @@ def register_model(
     return register_model_service(req=req, model_file=modelFile, config_file=setupFile, db=db)
 
 
-@model_router.post("/register/ensemble", summary="앙상블 모델 등록")
+@model_router.post("/ensemble", response_model=BaseResponse)
 def register_ensemble_model(
     req: Annotated[ModelRegisterRequest, Depends(ModelRegisterRequest.as_form)],
     setupFile: UploadFile = File(
@@ -44,7 +52,7 @@ def register_ensemble_model(
     return register_ensemble_service(req=req, config_file=setupFile, db=db)
 
 
-@model_router.post("/{model_id}/assets", summary="모델 관련 파일 추가 (버전·설정 통합)")
+@model_router.post("/{model_id}/versions", response_model=BaseResponse)
 def register_model_version(
     model_id: int = Path(..., description="모델 ID"),
     loginId: str = Form(..., description="등록자 LoginId"),
@@ -63,7 +71,7 @@ def register_model_version(
     )
 
 
-@model_router.delete("/{model_id}/versions/{version}", summary="모델 버전 삭제")
+@model_router.delete("/{model_id}/versions/{version}", response_model=BaseResponse)
 def delete_model_version(
     model_id: int = Path(..., description="모델 ID"),
     version: int = Path(..., description="삭제할 버전 번호"),
@@ -78,7 +86,7 @@ def delete_model_version(
     )
 
 
-@model_router.delete("/{model_id}", summary="모델 전체 삭제")
+@model_router.delete("/{model_id}", response_model=BaseResponse)
 def delete_model(
     model_id: int = Path(..., description="모델 ID"),
     req: ModelDeleteRequest = Body(...),
@@ -89,11 +97,3 @@ def delete_model(
         req=req,
         db=db,
     )
-
-
-@model_router.get("/{model_id}", summary="모델 상세 (버전 + Config) 조회")
-def get_model_detail(
-    model_id: int = Path(..., description="모델 ID"),
-    db: Session = Depends(get_db),
-):
-    return get_model_detail_service(model_id=model_id, db=db)
