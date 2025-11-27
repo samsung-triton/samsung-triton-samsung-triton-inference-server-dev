@@ -1,3 +1,4 @@
+//서버 로그 화면 헤더
 import 'package:flutter/material.dart';
 import 'package:triton/widgets/modellog/DownloadIconButton.dart';
 import 'package:triton/theme/app_colors.dart';
@@ -31,7 +32,7 @@ class _ServerLogHeaderState extends State<ServerLogHeader> with SingleTickerProv
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              //왼쪽 :Model Log
+              //왼쪽 : Server Log
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [

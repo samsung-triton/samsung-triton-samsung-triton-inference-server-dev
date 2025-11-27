@@ -1,3 +1,4 @@
+//모델 로그 필터블록
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
@@ -45,6 +46,7 @@ class _FilterBlockModelState extends State<FilterBlockModel> {
             children: [
               FilterText(label: 'period'),
               SizedBox(width: 8),
+              //시작일 선택
               Obx(
                 () => MiniDatePicker(
                   initialDate: controller.startDate.value,
@@ -57,10 +59,10 @@ class _FilterBlockModelState extends State<FilterBlockModel> {
                   },
                 ),
               ),
-
               SizedBox(width: 8),
               Text('~', style: TextStyle(color: black)),
               SizedBox(width: 8),
+              //종료일 선택
               Obx(
                 () => MiniDatePicker(
                   initialDate: controller.endDate.value,
@@ -69,8 +71,8 @@ class _FilterBlockModelState extends State<FilterBlockModel> {
                 ),
               ),
               const Spacer(), // 오른쪽으로 밀기
-
               ButtonSmall(
+                //리셋 버튼
                 text: 'reset',
                 backgroundColor: primaryNormal,
                 textColor: white,
@@ -88,6 +90,7 @@ class _FilterBlockModelState extends State<FilterBlockModel> {
             children: [
               FilterText(label: 'log level'),
               SizedBox(width: 8),
+              //로그 레벨 선택
               Obx(
                 () => Dropdown(
                   key: ValueKey(controller.logLevel.value),
@@ -109,9 +112,11 @@ class _FilterBlockModelState extends State<FilterBlockModel> {
               const FilterText(label: 'search'),
               const SizedBox(width: 8),
               SizedBox(
+                //키워드 인풋
                 child: InputSmall(hintText: 'Enter keyword', width: 424, height: 28, controller: keywordCtrl),
               ),
               const SizedBox(width: 8),
+              //필터 적용 버튼
               ButtonSmall(
                 text: 'ok',
                 backgroundColor: primaryNormal,
@@ -120,7 +125,7 @@ class _FilterBlockModelState extends State<FilterBlockModel> {
                 onPressed: () {
                   controller.keyword.value = keywordCtrl.text.trim();
 
-                  controller.applyFilter(); // Infer 로그 API 호출
+                  controller.applyFilter(); // API 호출
                 },
               ),
             ],

@@ -1,3 +1,4 @@
+//서버 로그 테이블
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/theme/app_colors.dart';
@@ -23,6 +24,7 @@ class _ServerLogTableState extends State<ServerLogTable> {
     scrollController.addListener(() {
       final serverController = Get.find<ServerLogController>();
 
+      //무한 스크롤 트리거 위치 조정
       if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
         serverController.fetchMoreLogs();
       }
@@ -34,7 +36,6 @@ class _ServerLogTableState extends State<ServerLogTable> {
     final serverController = Get.find<ServerLogController>();
 
     return Container(
-      //margin: EdgeInsets.symmetric(vertical: 2),
       padding: const EdgeInsets.all(8),
       color: white,
       child: Column(
@@ -42,8 +43,9 @@ class _ServerLogTableState extends State<ServerLogTable> {
           const ServerLogTableHeader(),
           Expanded(
             child: Obx(() {
-              final logs = serverController.filteredLogs; // 필터링된 로그 가져오기
+              final logs = serverController.filteredLogs;
 
+              //로딩 상태
               if (serverController.isLoading.value && serverController.filteredLogs.isEmpty) {
                 return Center(
                   child: Text("Loading...", style: T.t12(color: gray, bold: false)),
@@ -59,6 +61,8 @@ class _ServerLogTableState extends State<ServerLogTable> {
                   ),
                 );
               }
+
+              //스크롤 바
               return RawScrollbar(
                 thumbColor: lightGray, // 스크롤 색상 지정
                 radius: const Radius.circular(4), // 둥근 모서리
