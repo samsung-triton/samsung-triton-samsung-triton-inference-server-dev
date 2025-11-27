@@ -62,5 +62,10 @@ class CustomCode(str, Enum):
     INFERENCE_002 = "INFERENCE-002"  # 추론 후 결과 데이터 저장 성공
     INFERENCE_003 = "INFERENCE-003"  # 추론 후 결과 바이너리 데이터 저장 성공
 
+    #SSE
+    SSE_DOCKER_002 = "SSE-TRITON-START"
+    SSE_DOCKER_003 = "SSE-TRITON-STOP"
+    SSE_DOCKER_004 = "SSE-TRITON-RESTART"
+
     # Heartbeat
     HEARTBEAT_001 = "HEARTBEAT-001"  # heartbeat 응답 완료
