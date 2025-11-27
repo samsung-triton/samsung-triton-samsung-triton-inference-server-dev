@@ -1,3 +1,4 @@
+//트리톤 서버 로그의 열
 import 'package:flutter/material.dart';
 import 'package:triton/controller/model_log/triton_server_log_controller.dart';
 import 'package:triton/theme/app_colors.dart';
@@ -26,6 +27,7 @@ class TritonServerLogTableRow extends StatelessWidget {
     );
   }
 
+  //textCell 위젯
   Widget _textCell(String text, {double? width, bool expanded = false, TextAlign textAlign = TextAlign.center}) {
     final child = Text(text, style: T.t10(), softWrap: true, textAlign: textAlign);
 

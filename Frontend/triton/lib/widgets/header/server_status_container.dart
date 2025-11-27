@@ -1,4 +1,4 @@
-// 츠리톤 서버 상태 배지
+// 트리톤 서버 상태 좋회
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/server/server_controller.dart';

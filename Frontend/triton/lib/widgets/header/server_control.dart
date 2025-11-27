@@ -1,4 +1,4 @@
-// 트리톤 서버 컨트롤
+// 트리톤 서버 컨트롤러
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';

@@ -1,3 +1,4 @@
+//트리톤 로그 테이블 헤더
 import 'package:flutter/material.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
@@ -20,6 +21,7 @@ class TritonLogTableHeader extends StatelessWidget {
     );
   }
 
+  //headerText 위젯
   Widget _headerText(String label) {
     return Text(
       label,

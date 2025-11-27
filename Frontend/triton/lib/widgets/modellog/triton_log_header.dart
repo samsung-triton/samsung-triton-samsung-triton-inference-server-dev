@@ -1,3 +1,4 @@
+//트리톤 로그 화면 헤더
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
@@ -29,15 +30,13 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
     return Column(
       children: [
         const SizedBox(height: 8),
-
-        // 상단 헤더
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              //왼쪽 :Model Log + Dropdown
+              //왼쪽 : Triton Log + Dropdown
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -45,7 +44,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                   const SizedBox(width: 12),
                   Obx(() {
                     return Dropdown(
-                      items: tritonController.modelList.toList(), // API + 'triton' 포함된 동적 리스트
+                      items: tritonController.modelList.toList(),
                       width: 244,
                       hintText: "model name",
                       onChanged: (value) {
@@ -53,8 +52,9 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                         modelController.modelName.value = value ?? '';
                         tritonController.modelName.value = value ?? '';
 
+                        //Triton Server 선택 경우와 AI 모델 선택 경우로 분기
                         if (value == "Triton Server") {
-                          tritonServerLogController.applyFilter(); // 서로 다른 흐름이면 분기
+                          tritonServerLogController.applyFilter();
                         } else {
                           modelController.applyFilter();
                         }
@@ -64,6 +64,7 @@ class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProv
                   const SizedBox(width: 12),
                   DownloadIconButton(
                     onPressed: () {
+                      //Triton Server 선택 경우와 AI 모델 선택 경우로 분기
                       if (tritonController.modelName.value == 'Triton Server') {
                         tritonServerLogController.exportFilteredLogsAsTxt(); // Triton 로그 다운로드
                       } else {
