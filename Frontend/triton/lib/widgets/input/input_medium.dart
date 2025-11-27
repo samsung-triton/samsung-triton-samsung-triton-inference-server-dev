@@ -1,7 +1,8 @@
+// 중간 텍스트 인풋
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
 import 'package:flutter/services.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
 class InputMedium extends StatefulWidget {
   final String hintText;
@@ -18,7 +19,7 @@ class InputMedium extends StatefulWidget {
   final bool obscureText;
 
   const InputMedium({
-    Key? key,
+    super.key,
     this.hintText = '',
     this.controller,
     this.enabled = true,
@@ -31,7 +32,7 @@ class InputMedium extends StatefulWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     this.maxLength = 200,
     this.obscureText = false,
-  }) : super(key: key);
+  });
 
   @override
   State<InputMedium> createState() => _InputMediumState();
@@ -62,7 +63,7 @@ class _InputMediumState extends State<InputMedium> {
   Widget build(BuildContext context) {
     return Container(
       width: widget.width,
-      height: widget.height, // ✅ 높이 고정 가능
+      height: widget.height,
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         color: white,

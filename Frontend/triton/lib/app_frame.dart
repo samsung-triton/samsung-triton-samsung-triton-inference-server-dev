@@ -1,10 +1,9 @@
-// 프로젝트 공통 프레임: 헤더 고정
+// 프로젝트 공통 프레임 (헤더 고정)
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:triton/router.dart';
+import 'package:triton/widgets/header/header_bar.dart';
 import 'package:triton/widgets/modal/modal_alert.dart';
-
-import 'router.dart';
-import './widgets/header/header_bar.dart';
 
 class AppFrame extends StatelessWidget {
   const AppFrame({super.key, required this.child});
@@ -60,7 +59,8 @@ class AppFrame extends StatelessWidget {
                             child: SizedBox(
                               width: targetW,
                               height: usableH,
-                              child: child, // 라우트된 자식 페이지
+                              // 라우트된 자식 페이지
+                              child: child,
                             ),
                           ),
                         )

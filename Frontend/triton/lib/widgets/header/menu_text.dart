@@ -1,9 +1,8 @@
-//메뉴 텍스트
+// 네비게이션 메뉴 텍스트
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../theme/typography.dart';
-import '../../theme/app_colors.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
 class MenuText extends StatelessWidget {
   final String label;
@@ -21,7 +20,6 @@ class MenuText extends StatelessWidget {
         width: 140,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        //margin: const EdgeInsets.only(right: 8),
         child: selected
             ? Text(label, style: T.t16(color: primaryNormal, bold: true))
             : Text(label, style: T.t16(color: black, bold: false)),

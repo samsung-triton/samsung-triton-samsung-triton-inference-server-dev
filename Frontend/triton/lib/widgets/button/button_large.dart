@@ -1,6 +1,7 @@
+// 큰 크기 버튼
 import 'package:flutter/material.dart';
-import '../../theme/typography.dart';
-import '../../theme/app_colors.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
 class ButtonLarge extends StatelessWidget {
   final String text;
@@ -14,7 +15,7 @@ class ButtonLarge extends StatelessWidget {
   final VoidCallback? onPressed;
 
   const ButtonLarge({
-    Key? key,
+    super.key,
     required this.text,
     this.backgroundColor = primaryNormal,
     this.textColor = Colors.white,
@@ -24,7 +25,7 @@ class ButtonLarge extends StatelessWidget {
     this.borderRadius = 4,
     this.isbold = false,
     this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

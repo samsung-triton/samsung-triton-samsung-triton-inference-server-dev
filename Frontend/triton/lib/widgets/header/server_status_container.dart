@@ -1,13 +1,10 @@
-// lib/widgets/header/server_status_chip.dart
+// 츠리톤 서버 상태 배지
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:triton/controller/server/server_controller.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
-import '../../theme/typography.dart';
-import '../../theme/app_colors.dart';
-
-/// 서버 상태 배지
 class ServerStatusContainer extends StatelessWidget {
   const ServerStatusContainer({super.key});
 
@@ -25,12 +22,15 @@ class ServerStatusContainer extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // on/off 색상
             Container(
               width: 16,
               height: 16,
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(color: running ? statusGreen : statusRed, shape: BoxShape.circle),
             ),
+
+            // 서버 작동 시간
             Text(
               running ? serverController.uptimeHms.value : 'stopped',
               style: T.t16(color: running ? white : black, bold: false),

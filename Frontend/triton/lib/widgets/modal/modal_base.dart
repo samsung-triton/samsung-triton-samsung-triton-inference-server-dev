@@ -1,7 +1,8 @@
+// 모달 전체 베이스
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
 class ModalBase extends StatelessWidget {
   final String title;
@@ -44,12 +45,12 @@ class ModalBase extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // ───── 제목 + 내용 ─────
+            // 제목 + 내용
             Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ───── 제목 (중앙 정렬) ─────
+                // 제목
                 Center(
                   child: Text(
                     title,
@@ -60,21 +61,20 @@ class ModalBase extends StatelessWidget {
 
                 const SizedBox(height: 4),
 
-                // ───── 구분선 ─────
+                // 구분선
                 if (showDivider)
                   Center(
                     child: Container(width: width - 32, height: 1, color: dividerColor),
                   ),
 
-                // ───── 본문 간격 ─────
                 if (contentSpacing != null) SizedBox(height: contentSpacing),
 
-                // ───── 모달 본문 삽입 영역 ─────
+                // 모달 본문 영역
                 ...children,
               ],
             ),
 
-            // ───── 오른쪽 상단 X 버튼 (절대 위치) ─────
+            // 오른쪽 상단 X 버튼
             Positioned(
               right: 4,
               child: InkWell(

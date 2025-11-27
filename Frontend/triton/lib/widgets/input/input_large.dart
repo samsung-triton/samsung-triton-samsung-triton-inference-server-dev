@@ -1,7 +1,8 @@
+// 큰 텍스트 인풋
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
 import 'package:flutter/services.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
 class InputLarge extends StatefulWidget {
   final String hintText;
@@ -14,7 +15,7 @@ class InputLarge extends StatefulWidget {
   final int maxLength;
 
   const InputLarge({
-    Key? key,
+    super.key,
     this.hintText = '',
     this.controller,
     this.enabled = true,
@@ -23,7 +24,7 @@ class InputLarge extends StatefulWidget {
     this.borderRadius = 4,
     this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
     this.maxLength = 500,
-  }) : super(key: key);
+  });
 
   @override
   State<InputLarge> createState() => _InputLargeState();
@@ -78,7 +79,7 @@ class _InputLargeState extends State<InputLarge> {
           border: InputBorder.none,
           isCollapsed: true,
           contentPadding: EdgeInsets.zero,
-          counterText: '', // 글자수 표시 숨김
+          counterText: '',
         ),
       ),
     );
