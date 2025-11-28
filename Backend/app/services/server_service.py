@@ -9,6 +9,7 @@ from app.clients.gpu_router import (
 )
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
+from app.core.logger import extract_error
 from app.models.server import Server, ServerStatus
 from app.common.codes import CustomCode
 from app.common.messages import Messages
@@ -32,7 +33,7 @@ async def get_server_status_service():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.SERVER_STATUS_FETCH_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
 
@@ -88,7 +89,7 @@ async def _execute_server_action(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=error_message_map[success_status],
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
 

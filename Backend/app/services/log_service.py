@@ -135,17 +135,17 @@ def _add_cond(where: list, cond: str | None):
 def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id, global_search, limit):
     # 날짜 유효성 체크
     if (start and not end) or (end and not start):
-        return create_response(
-            CustomCode.ERR_400,
-            Messages.ERR_END_DATE_TOGETHER_START_DATE,
-            None,
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=Messages.ERR_END_DATE_TOGETHER_START_DATE.value,
         )
 
     if start and end and end < start:
-        return create_response(
-            CustomCode.ERR_400,
-            Messages.ERR_END_DATE_BEFORE_START_DATE,
-            None,
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=Messages.ERR_END_DATE_BEFORE_START_DATE.value,
         )
 
     # WHERE 조건 생성
@@ -220,17 +220,17 @@ def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id
 def get_server_logs_service(db, start, end, level, cursor, global_search, limit):
     # 날짜 유효성 체크
     if (start and not end) or (end and not start):
-        return create_response(
-            CustomCode.ERR_400,
-            Messages.ERR_END_DATE_TOGETHER_START_DATE,
-            None,
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=Messages.ERR_END_DATE_TOGETHER_START_DATE.value,
         )
 
     if start and end and end < start:
-        return create_response(
-            CustomCode.ERR_400,
-            Messages.ERR_END_DATE_BEFORE_START_DATE,
-            None,
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=Messages.ERR_END_DATE_BEFORE_START_DATE.value,
         )
 
     # WHERE 조건 구성

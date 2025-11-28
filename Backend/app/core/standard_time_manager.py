@@ -46,7 +46,6 @@ def update_standard_time(new_time: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
             message=Messages.INVALID_STANDARD_TIME_FORMAT.value,
-            data=None,
         )
 
     STANDARD_TIME_FILE.parent.mkdir(parents=True, exist_ok=True)

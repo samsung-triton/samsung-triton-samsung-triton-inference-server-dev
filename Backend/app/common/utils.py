@@ -13,8 +13,8 @@ from app.core.customException import CustomHTTPException
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.models.user import User
-from app.core.config import settings
-from app.core.config import TIMEZONE
+from app.core.config import settings, TIMEZONE
+from app.core.logger import extract_error
 
 
 def get_user_or_404(db: Session, login_id: str) -> User:
@@ -191,7 +191,7 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dic
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.ARCHIVE_EXTRACTION_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # # 4) 압축 해제 후 model_root 바로 아래 파일만 수집
@@ -244,7 +244,7 @@ def save_model_file(model_name: str, version: int, model_file: UploadFile) -> Li
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.ARCHIVE_EXTRACTION_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # 파일 목록 수집 (버전 디렉토리 기준 상대경로)

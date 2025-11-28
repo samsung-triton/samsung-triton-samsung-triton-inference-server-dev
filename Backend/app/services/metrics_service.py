@@ -11,6 +11,7 @@ from app.core.config import settings, TIMEZONE
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.core.standard_time_manager import current_standard_time
+from app.core.logger import extract_error
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.schemas.timeseries_schema import (
@@ -106,7 +107,6 @@ async def prom_query(promql: str):
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     code=CustomCode.ERR_500.value,
                     message=Messages.PROMETHEUS_BAD_STATUS.value,
-                    data=None,
                 )
 
             return data["data"]["result"]
@@ -117,8 +117,8 @@ async def prom_query(promql: str):
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
-            message=f"{Messages.PROMETHEUS_QUERY_FAIL.value}: {e}",
-            data=None,
+            message=Messages.PROMETHEUS_QUERY_FAIL.value,
+            data={"error": extract_error(e)},
         )
 
 
@@ -201,7 +201,7 @@ async def get_server_metrics_service() -> BaseResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.SERVER_METRIC_FAIL.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
 
@@ -287,7 +287,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.SERVER_METRIC_FAIL.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
 
@@ -327,7 +327,7 @@ async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_LIST_FETCH_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # 3. DB 모델 매핑
@@ -521,5 +521,5 @@ async def get_model_per_inference_latency_service(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_LATENCY_FETCH_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )

@@ -10,6 +10,7 @@ from app.clients.triton_client import triton_client
 from app.core.config import settings
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
+from app.core.logger import extract_error
 from app.common.utils import get_user_or_404, safe_name, save_model_config_file, save_model_file, to_utc_z
 from app.common.codes import CustomCode
 from app.common.messages import Messages
@@ -117,7 +118,7 @@ def list_models_service(db: Session) -> Dict[str, Any]:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 code=CustomCode.ERR_500.value,
                 message=Messages.MODEL_LIST_FETCH_ERROR.value,
-                data={"error": str(e)},
+                data={"error": extract_error(e)},
             )
 
     # DB 모델 데이터 조회
@@ -316,7 +317,7 @@ def register_model_service(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_LOAD_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # 3) DB 기록
@@ -356,7 +357,7 @@ def register_model_service(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             CustomCode.ERR_500.value,
             Messages.MODEL_REGISTER_DB_ERROR.value,
-            {"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     return create_response(CustomCode.MODEL_002.value, Messages.MODEL_REGISTER_SUCCESS.value, None)
@@ -411,7 +412,7 @@ def register_ensemble_service(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_LOAD_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # === 3. DB 기록 ===
@@ -440,7 +441,7 @@ def register_ensemble_service(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             CustomCode.ERR_500.value,
             Messages.MODEL_REGISTER_DB_ERROR.value,
-            {"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     return create_response(CustomCode.MODEL_003.value, Messages.ENSEMBLE_REGISTER_SUCCESS.value, None)
@@ -519,7 +520,7 @@ def register_model_assets_service(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             CustomCode.ERR_500.value,
             Messages.MODEL_LOAD_ERROR.value,
-            {"error": str(e)},
+            {"error": extract_error(e)},
         )
 
     # === 3. DB 기록 ===
@@ -592,7 +593,7 @@ def register_model_assets_service(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_REGISTER_DB_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     return create_response(CustomCode.MODEL_004.value, Messages.MODEL_ASSET_ADD_SUCCESS.value, None)
@@ -624,7 +625,7 @@ def _delete_version_files_and_db(model, version: int, db: Session):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_DELETE_DB_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # 파일 삭제 (DB 성공 후만 수행)
@@ -693,7 +694,7 @@ def delete_model_version_service(model_id: int, version: int, login_id: str, des
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.TRITON_CONNECTION_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # === 6. 삭제 이력 기록 ===
@@ -747,7 +748,7 @@ def delete_model_service(model_id: int, login_id: str, description: str | None, 
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_DELETE_DB_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # === 4. 파일 삭제 ===

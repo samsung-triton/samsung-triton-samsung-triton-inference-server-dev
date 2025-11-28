@@ -6,6 +6,7 @@ from pathlib import Path
 
 from app.clients.triton_client import triton_client
 from app.core.customException import CustomHTTPException
+from app.core.logger import extract_error
 from app.models.model import Model, ReleaseAction, ReleaseType
 from app.services.model_service import save_model_config, save_model_release
 from app.services.server_service import get_user_or_404
@@ -112,7 +113,7 @@ def update_model_config_service(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             CustomCode.ERR_500.value,
             Messages.MODEL_LOAD_ERROR.value,
-            {"error": str(e)},
+            {"error": extract_error(e)},
         )
 
     # STEP 2: DB 업데이트 (여기서 실패하면 파일 롤백 + DB rollback)
@@ -166,7 +167,7 @@ def update_model_config_service(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             CustomCode.ERR_500.value,
             Messages.CONFIG_DB_UPDATE_ERROR.value,
-            {"error": str(e)},
+            {"error": extract_error(e)},
         )
 
     # SUCCESS RESPONSE
@@ -236,12 +237,13 @@ async def delete_selected_config_service(
 
         db.commit()
 
-    except Exception:
+    except Exception as e:
         db.rollback()
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.CONFIG_DB_DELETE_ERROR.value,
+            data={"error": extract_error(e)},
         )
 
     return create_response(

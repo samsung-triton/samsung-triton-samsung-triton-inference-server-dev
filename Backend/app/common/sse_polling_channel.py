@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 
 from app.common.sse_base import SSEBase
 from app.core.customException import CustomHTTPException
+from app.core.logger import logger, extract_error
 
 
 class PollingSSEChannel(SSEBase):
@@ -45,8 +46,10 @@ class PollingSSEChannel(SSEBase):
                     resp = await self.fetch_fn()
                     payload = jsonable_encoder(resp)
                 except CustomHTTPException as e:
+                    logger.error(f"SSE Polling CustomError | {extract_error(e)}")
                     payload = {"error": e.message, "code": e.code}
                 except Exception as e:
+                    logger.error(f"SSE Polling Exception | {extract_error(e)}")
                     payload = {"error": str(e)}
 
                 data_str = json.dumps(payload, ensure_ascii=False)

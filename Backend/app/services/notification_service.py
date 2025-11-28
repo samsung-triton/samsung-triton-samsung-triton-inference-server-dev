@@ -5,6 +5,7 @@ from fastapi import status
 from app.schemas.base_schema import BaseResponse
 from app.core.customException import CustomHTTPException
 from app.core.response_utils import create_response
+from app.core.logger import extract_error
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.common.utils import to_utc_z
@@ -52,7 +53,7 @@ def get_inference_notification_service(db: Session, page: int, size: int) -> Bas
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code=CustomCode.ERR_503.value,
             message=Messages.NOTIFICATION_FETCH_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     finally:

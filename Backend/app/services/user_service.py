@@ -16,7 +16,6 @@ def login_user_service(login_id: str, password: str, db: Session) -> BaseRespons
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
             message=Messages.USER_NOT_FOUND.value,
-            data=None,
         )
 
     if user.password != password:
@@ -24,7 +23,6 @@ def login_user_service(login_id: str, password: str, db: Session) -> BaseRespons
             status_code=status.HTTP_401_UNAUTHORIZED,
             code=CustomCode.ERR_401.value,
             message=Messages.INVALID_CREDENTIAL.value,
-            data=None,
         )
 
     return create_response(CustomCode.AUTH_001.value, Messages.LOGIN_SUCCESS.value, {"role": user.role})

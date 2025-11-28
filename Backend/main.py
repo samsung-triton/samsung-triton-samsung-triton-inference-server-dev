@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,17 +11,11 @@ from app.core.DB.database import SessionLocal
 from app.core.DB.clickhouse import ch_engine
 from app.core.customException import CustomHTTPException
 from app.core.config import settings
+from app.core.logger import logger, extract_error
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-
-
-import asyncio
-import logging
-
 from app.api.v1.router import api_router
 from app.common.sse_docker import docker_event_watcher
-
-logger = logging.getLogger("uvicorn")
 
 
 def create_app():
@@ -81,6 +76,8 @@ def create_app():
     # =====================
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        logger.warning(f"{request.method} {request.url.path} | ValidationError | {exc.errors()}")
+
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"code": CustomCode.ERR_400.value, "message": Messages.INVALID_PARAM.value, "data": None},
@@ -88,6 +85,9 @@ def create_app():
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
+        error_msg = extract_error(exc)
+        logger.error(f"{request.method} {request.url.path} | status={exc.status_code} | {error_msg}")
+
         if isinstance(exc, CustomHTTPException):
             content = {
                 "code": exc.code,

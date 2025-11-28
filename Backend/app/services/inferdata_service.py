@@ -14,8 +14,8 @@ from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-from app.core.config import settings
-from app.core.config import TIMEZONE
+from app.core.config import settings, TIMEZONE
+from app.core.logger import extract_error
 
 
 def generate_custom_uid() -> str:
@@ -39,7 +39,6 @@ def save_input_before_infer_service(
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
             message=Messages.MODEL_NOT_FOUND.value,
-            data=None,
         )
 
     try:
@@ -77,12 +76,11 @@ def save_input_before_infer_service(
         )
 
     except Exception as e:
-        logger.error(f"데이터 저장 중 오류 발생: {e}")
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.INPUT_DATA_SAVE_FAIL.value,
-            data=None,
+            data={"error": extract_error(e)},
         )
 
 
@@ -94,7 +92,6 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
             message=Messages.UID_NOT_FOUND.value,
-            data=None,
         )
 
     try:
@@ -127,12 +124,11 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
 
     except Exception as e:
         db.rollback()
-        logger.error(f"데이터 저장 중 오류 발생: {e}")
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.OUTPUT_DATA_SAVE_FAIL.value,
-            data=None,
+            data={"error": extract_error(e)},
         )
 
 
@@ -146,7 +142,6 @@ def save_binary_output_after_infer_service(
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
             message=Messages.UID_NOT_FOUND.value,
-            data=None,
         )
 
     try:
@@ -176,11 +171,9 @@ def save_binary_output_after_infer_service(
 
     except Exception as e:
         db.rollback()
-        logger.error(f"바이너리 데이터 저장 중 오류 발생: {e}")
-
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.OUTPUT_DATA_SAVE_FAIL.value,
-            data=None,
+            data={"error": extract_error(e)},
         )
