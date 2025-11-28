@@ -220,7 +220,7 @@ class ModelManageController extends GetxController {
   }
 
   // 모델 삭제 기능
-  Future<void> deleteModel(int modeld, String description) async {
+  Future<void> deleteModel(int modelId, String description) async {
     // 서버 on/off 확인
     final ok = isServerRunning();
     if (!ok) {
@@ -230,12 +230,6 @@ class ModelManageController extends GetxController {
             'The Triton server is currently not running.\n'
             'Please start the server and try again.',
       );
-      return;
-    }
-
-    final modelId = selectedModel.value?.modelId;
-    if (modelId == null) {
-      ShowAlert.show(message: "Select Model");
       return;
     }
 
