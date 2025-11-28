@@ -147,7 +147,7 @@ class ModelManageController extends GetxController {
     }
 
     final registerId = _authStorage.read<String>('loginedId') ?? '';
-    body.fields.add(MapEntry('LoginId', registerId));
+    body.fields.add(MapEntry('loginId', registerId));
 
     // 노말 모델 등록 API 호출
     final dynamic data = await _api.createModel(body);
@@ -174,7 +174,7 @@ class ModelManageController extends GetxController {
     }
 
     final registerId = _authStorage.read<String>('loginedId') ?? '';
-    body.fields.add(MapEntry('LoginId', registerId));
+    body.fields.add(MapEntry('loginId', registerId));
 
     // 앙상블 모델 등록 API 호출
     final dynamic data = await _api.createEnsembleModel(body);
