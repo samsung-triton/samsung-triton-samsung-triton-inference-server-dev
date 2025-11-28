@@ -70,18 +70,25 @@ class ServerController extends GetxController {
     _sseSub = _api.listenServerStatus().listen((raw) {
       final json = jsonDecode(raw);
 
-      final sseStatus = json['data']?['data']?['status'];
+      final sseStatus = json['data']?['status'];
+      final sseStartedAt = json['data']?['startedAt'];
 
       if (sseStatus == null) return;
 
-      // running으로 판단할 상태들
-      final runningStates = ['start', 'restart'];
+      const runningStates = ['start', 'restart'];
+      final isRunning = runningStates.contains(sseStatus);
 
-      final newStatus = runningStates.contains(sseStatus) ? 'running' : 'stopped';
+      //utc 시간으로 변환
+      DateTime? startedAt;
+      if (sseStartedAt is String && sseStartedAt.isNotEmpty) {
+        final parsed = DateTime.tryParse(sseStartedAt);
+        startedAt = parsed?.toLocal();
+      }
 
-      final now = DateTime.now(); //startAt을 보내지 않기 때문에 현재 시간 사용
-
-      serverStatus.value = ServerStatus(status: newStatus, startedAt: newStatus == 'running' ? now : null);
+      serverStatus.value = ServerStatus(
+        status: isRunning ? 'running' : 'stopped',
+        startedAt: isRunning ? startedAt : null, // stopped면 null
+      );
     });
   }
 
@@ -98,8 +105,8 @@ class ServerController extends GetxController {
       final startedAtString = data['started_at'] ?? data['startedAt'];
       final hasStartedAt = startedAtString != null && startedAtString.isNotEmpty;
 
-      // 서버가 ready 상태이고 startedAt도 있을 때만 running
-      final isRunning = status == 'ready' && hasStartedAt;
+      // 서버가 start 상태이고 startedAt도 있을 때만 running
+      final isRunning = status == 'start' && hasStartedAt;
 
       DateTime? startedAt;
       if (isRunning) {
@@ -136,7 +143,7 @@ class ServerController extends GetxController {
         return false;
       }
 
-      final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
+      final startedAt = DateTime.tryParse(data['startedAt'] ?? '');
       serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
 
       ShowAlert.show(message: "Server started successfully.");
@@ -202,7 +209,7 @@ class ServerController extends GetxController {
         return false;
       }
 
-      final startedAt = DateTime.tryParse(data['started_at'] ?? data['startedAt'] ?? '');
+      final startedAt = DateTime.tryParse(data['startedAt'] ?? '');
       serverStatus.value = ServerStatus(status: 'running', startedAt: startedAt ?? DateTime.now());
       return true;
     } catch (e) {
