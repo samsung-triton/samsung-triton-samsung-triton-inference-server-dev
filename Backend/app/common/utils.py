@@ -17,8 +17,13 @@ from app.core.config import settings, TIMEZONE
 from app.core.logger import extract_error
 
 
+# ============================================================
+# 유저 조회
+# ============================================================
+
+
 def get_user_or_404(db: Session, login_id: str) -> User:
-    # 사용자 조회
+    """유저 조회 또는 404"""
     user = db.query(User).filter(User.login_id == login_id).first()
     if not user:
         raise CustomHTTPException(
@@ -29,31 +34,24 @@ def get_user_or_404(db: Session, login_id: str) -> User:
     return user
 
 
-# ==============================
-# 공통 설정
-# ==============================
+# ============================================================
+# 파일 관련 공통 상수, 함수
+# ============================================================
 MODEL_REPO_ROOT = Path(settings.TRITON_MODEL_PATH)
-
-# =====================================================
-# 안전한 파일/모델명 치환 (영문/숫자/_만 허용)
-# =====================================================
 
 SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.\-]+")
 
 
 def safe_name(name: str) -> str:
+    """영문/숫자/_/- 만 허용하여 파일명 정제"""
     return SAFE_NAME_RE.sub("_", name.strip())
 
 
 # =====================================================
-# 1. 파일 스트림 저장 (대용량 안전)
+# 파일 스트림 저장 (대용량 안전)
 # =====================================================
 def save_stream(dst: Path, up: UploadFile) -> int:
-    """
-    UploadFile 스트림을 로컬 파일로 저장.
-    - chunk 단위 복사로 대용량 안전
-    - 반환: 저장된 파일 크기(byte)
-    """
+    """UploadFile 스트림을 파일로 저장"""
     dst.parent.mkdir(parents=True, exist_ok=True)
     up.file.seek(0)
     with dst.open("wb") as f:
@@ -65,6 +63,7 @@ def save_stream(dst: Path, up: UploadFile) -> int:
 # 압축 풀기
 # =====================================================
 def _extract_zip(zip_path: Path, base_dir: Path):
+    """ZIP 파일을 base_dir에 해제"""
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         # 디렉토리 제외한 "실제 파일" 목록
         file_members = [m for m in zip_ref.infolist() if not m.is_dir()]
@@ -104,6 +103,7 @@ def _extract_zip(zip_path: Path, base_dir: Path):
 
 
 def _extract_tar(tar_path: Path, base_dir: Path):
+    """TAR/TAR.GZ 파일을 base_dir에 해제"""
     with tarfile.open(tar_path, "r:*") as tar_ref:
         file_members = [m for m in tar_ref.getmembers() if m.isfile()]
 
@@ -135,21 +135,15 @@ def _extract_tar(tar_path: Path, base_dir: Path):
 
 
 def _is_conda_pack_filename(lower_name: str) -> bool:
-    # 소문자 기준 python*.tar.gz → conda-pack 간주(압축 해제 X)
+    """소문자 기준 python*.tar.gz → conda-pack 간주(압축 해제 X)"""
     return lower_name.startswith("python") and lower_name.endswith(".tar.gz")
 
 
 # =====================================================
-# 2. config.pbtxt 저장
+# config.pbtxt 저장 (ZIP/TAR/TAR.GZ/TRZ 지원)
 # =====================================================
 def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dict[str, str]]:
-    """
-    설정 파일 저장:
-      - config.pbtxt(단일)  → 모델 루트에 저장 후 경로 반환
-      - zip/tar(.gz)/tgz   → 임시로 풀어 'config.pbtxt' 탐색, 찾으면 루트에 배치 후 경로 반환
-      - 소문자 python*.tar.gz → conda-pack으로 간주, '추출하지 않고' 루트에 그대로 저장 후 그 경로 반환
-        (주의: 이 경우 반환 파일은 config.pbtxt가 아님. 상위 서비스에서 텍스트 읽기 전에 확장자 체크 필요)
-    """
+    """config.pbtxt 또는 config 압축 파일 저장"""
 
     model_root = MODEL_REPO_ROOT / model_name
     model_root.mkdir(parents=True, exist_ok=True)
@@ -194,7 +188,7 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dic
             data={"error": extract_error(e)},
         )
 
-    # # 4) 압축 해제 후 model_root 바로 아래 파일만 수집
+    # 4) 압축 해제 후 model_root 바로 아래 파일만 수집
     for p in model_root.iterdir():
         if p.is_file():
             saved_files.append({"fileName": p.name, "filePath": str(p)})
@@ -203,7 +197,7 @@ def save_model_config_file(model_name: str, config_file: UploadFile) -> List[Dic
 
 
 # =====================================================
-# 3. 모델 파일 저장 (ZIP, TAR 포함 가능)
+# 모델 파일 저장  (ZIP/TAR/TAR.GZ/TRZ 지원)
 # =====================================================
 def save_model_file(model_name: str, version: int, model_file: UploadFile) -> List[Dict[str, str]]:
     """
@@ -256,11 +250,13 @@ def save_model_file(model_name: str, version: int, model_file: UploadFile) -> Li
     return out
 
 
+# ============================================================
+# 시간 UTC Z 변환
+# ============================================================
+
+
 def to_utc_z(ts) -> str:
-    """
-    아무 타입이나 들어와도 UTC 기준 ISO8601 Z 형식으로 변환:
-    예) 2025-11-27T10:00:00Z
-    """
+    """아무 타입이나 들어와도 UTC 기준 ISO8601 Z 형식으로 변환:"""
     if isinstance(ts, datetime):
         # tz 정보 없으면 UTC라고 가정
         if ts.tzinfo is None:

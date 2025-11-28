@@ -1,6 +1,5 @@
 import random
 import shutil
-import logging
 from fastapi import status, UploadFile
 from pathlib import Path
 from typing import List
@@ -19,6 +18,7 @@ from app.core.logger import extract_error
 
 
 def generate_custom_uid() -> str:
+    """커스텀 UID 생성"""
     now = datetime.now(TIMEZONE)
     date_part = now.strftime("%Y%m%d")
     time_part = now.strftime("%H%M%S")
@@ -26,12 +26,10 @@ def generate_custom_uid() -> str:
     return f"{date_part}_{time_part}_{rand_part}"
 
 
-logger = logging.getLogger(__name__)
-
-
 def save_input_before_infer_service(
     client_id: str, model_name: str, data_files: List[UploadFile], db: Session
 ) -> BaseResponse:
+    """Inference 입력 파일 저장"""
     model = db.query(Model).filter(Model.name == model_name).first()
 
     if not model:
@@ -85,6 +83,7 @@ def save_input_before_infer_service(
 
 
 def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Session) -> BaseResponse:
+    """Inference 출력 Text 저장"""
     inferenceData = db.query(InferenceLogs).filter(InferenceLogs.uid == uid).first()
 
     if not inferenceData:
@@ -135,6 +134,7 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
 def save_binary_output_after_infer_service(
     uid: str, is_ok: bool, extension: str, binary_data: bytes, db: Session
 ) -> BaseResponse:
+    """Inference 출력 바이너리 저장"""
     inferenceData = db.query(InferenceLogs).filter(InferenceLogs.uid == uid).first()
 
     if not inferenceData:

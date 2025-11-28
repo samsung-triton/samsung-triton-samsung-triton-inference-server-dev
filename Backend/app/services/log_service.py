@@ -18,6 +18,7 @@ from app.common.utils import to_utc_z
 def get_web_log_service(
     start_date, end_date, username, type, description, global_search, page: int, size: int, db: Session
 ) -> BaseResponse:
+    """웹 로그 조회"""
     start_dt = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=TIMEZONE)
     end_dt = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=TIMEZONE)
 
@@ -108,6 +109,7 @@ def get_web_log_service(
 
 
 def get_model_name_list_service(db):
+    """ClickHouse 모델명 목록 조회"""
     sql = text(
         """
         SELECT DISTINCT model_name
@@ -133,6 +135,7 @@ def _add_cond(where: list, cond: str | None):
 
 
 def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id, global_search, limit):
+    """추론 로그 조회"""
     # 날짜 유효성 체크
     if (start and not end) or (end and not start):
         raise CustomHTTPException(
@@ -218,6 +221,7 @@ def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id
 
 
 def get_server_logs_service(db, start, end, level, cursor, global_search, limit):
+    """서버 로그 조회"""
     # 날짜 유효성 체크
     if (start and not end) or (end and not start):
         raise CustomHTTPException(

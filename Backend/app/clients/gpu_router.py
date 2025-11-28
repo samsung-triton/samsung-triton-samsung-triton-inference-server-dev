@@ -74,12 +74,14 @@ async def start_triton():
 
 
 async def stop_triton():
+    """Triton 중지"""
     cmd = f"docker compose {_compose_path()} down"
     _run_compose(cmd)
     return {"status": "stop"}
 
 
 async def restart_triton():
+    """Triton 재시작"""
     cmd = f"docker compose {_compose_path()} restart"
     _run_compose(cmd)
     return {"status": "restart", "startedAt": to_utc_z(datetime.now(timezone.utc))}

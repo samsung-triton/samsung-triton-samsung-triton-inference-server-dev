@@ -10,6 +10,7 @@ from app.common.messages import Messages
 
 
 def login_user_service(login_id: str, password: str, db: Session) -> BaseResponse:
+    """유저 로그인 검증"""
     user = get_user_or_404(db, login_id)
     if not user:
         raise CustomHTTPException(

@@ -23,17 +23,22 @@ def get_inference_notification(
     size: int = Query(8, ge=1, le=100),
     db: Session = Depends(get_clickhouse_db),
 ):
+    """추론 에러 로그 조회"""
     return get_inference_notification_service(db=db, page=page, size=size)
 
 
-# Vector → FastAPI PUSH endpoint
+# ==============================
+# Vector → FastAPI (Push)
+# ==============================
 @notification_router.post("/error-event", response_model=BaseResponse)
 async def push_error_event(event: dict):
     await error_log_channel.publish(event)
     return {"ok": True}
 
 
-# SSE endpoint
+# ==============================
+# Frontend → SSE Stream
+# ==============================
 @notification_router.get("/stream")
 async def error_sse(db=Depends(get_clickhouse_db)):
     rows = db.execute(

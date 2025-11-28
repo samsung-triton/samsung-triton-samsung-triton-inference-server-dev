@@ -12,11 +12,7 @@ from app.common.utils import to_utc_z
 
 
 def get_inference_notification_service(db: Session, page: int, size: int) -> BaseResponse:
-    """
-    ClickHouse의 logs.triton_error_logs에서
-    ts, level, error_message만 가져와서
-    페이지네이션해서 반환
-    """
+    """Inference 에러 알림 목록 조회 (페이지네이션)"""
     try:
         offset = (page - 1) * size
 

@@ -10,6 +10,7 @@ from app.common.messages import Messages
 
 
 def varify_mastekey_service(master_key: int, db: Session) -> BaseResponse:
+    """마스터키 검증"""
     mk = db.query(MasterKey).filter(MasterKey.key == master_key).first()
     if not mk:
         raise CustomHTTPException(

@@ -17,6 +17,7 @@ from app.common.utils import get_user_or_404
 
 
 async def get_server_status_service():
+    """Triton 서버 준비 상태 조회"""
     try:
         result = await get_triton_status()
         is_ready = result.get("status") == "ready"
@@ -38,6 +39,7 @@ async def get_server_status_service():
 
 
 def _log_server_action(db: Session, user_id: int, status_enum: ServerStatus, description: str = None):
+    """서버 제어 동작 기록 저장"""
     server_log = Server(actor_id=user_id, status=status_enum, description=description)
     db.add(server_log)
     db.commit()
@@ -50,6 +52,7 @@ async def _execute_server_action(
     success_status: ServerStatus,
     description: str = None,
 ):
+    """서버 제어 공통 처리 (start/stop/restart 공통 로직)"""
     user = get_user_or_404(db, actor_login_id)
 
     # 상태 → 코드 매핑
@@ -94,6 +97,7 @@ async def _execute_server_action(
 
 
 async def start_server_service(db: Session, actor_login_id: str):
+    """Triton 서버 시작"""
     current = await get_triton_status()
     curr_status = current.get("status")
 
@@ -108,6 +112,7 @@ async def start_server_service(db: Session, actor_login_id: str):
 
 
 async def stop_server_service(db: Session, actor_login_id: str, description: str = None):
+    """Triton 서버 중지"""
     current = await get_triton_status()
     curr_status = current.get("status")
 
@@ -122,6 +127,7 @@ async def stop_server_service(db: Session, actor_login_id: str, description: str
 
 
 async def restart_server_service(db: Session, actor_login_id: str, description: str = None):
+    """Triton 서버 재시작"""
     current = await get_triton_status()
     curr_status = current.get("status")
 

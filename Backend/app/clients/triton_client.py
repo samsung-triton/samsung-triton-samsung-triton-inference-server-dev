@@ -5,6 +5,8 @@ from app.core.config import settings
 
 
 class TritonClient:
+    """Triton GRPC 클라이언트 래퍼"""
+
     def __init__(self, url: str = None, verbose: bool = False):
         self.client = grpcclient.InferenceServerClient(url=url or settings.TRITON_GRPC_URL, verbose=verbose)
 
