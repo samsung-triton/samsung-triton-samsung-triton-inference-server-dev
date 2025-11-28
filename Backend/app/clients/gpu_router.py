@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from app.core.customException import CustomHTTPException
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-from app.core.config import settings, TIMEZONE
+from app.core.config import settings
+from app.core.logger import extract_error
 
 
 def _run_compose(cmd: str):
@@ -20,7 +21,7 @@ def _run_compose(cmd: str):
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code=CustomCode.DOCKER_ERROR.value,
             message=Messages.SERVER_DOCKER_COMMAND_ERROR.value,
-            data={"error": e.stderr.strip()},
+            data={"error": extract_error(e)},
         )
 
 
@@ -61,7 +62,7 @@ async def get_triton_status():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.SERVER_STATUS_FETCH_ERROR.value,
-            data=str(e),
+            data={"error": extract_error(e)},
         )
 
 
@@ -72,14 +73,15 @@ async def start_triton():
     return {"status": "start", "startedAt": to_utc_z(datetime.now(timezone.utc))}
 
 
-
 async def stop_triton():
+    """Triton 중지"""
     cmd = f"docker compose {_compose_path()} down"
     _run_compose(cmd)
     return {"status": "stop"}
 
 
 async def restart_triton():
+    """Triton 재시작"""
     cmd = f"docker compose {_compose_path()} restart"
     _run_compose(cmd)
     return {"status": "restart", "startedAt": to_utc_z(datetime.now(timezone.utc))}

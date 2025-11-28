@@ -22,23 +22,14 @@ def publish_event(message):
 
 
 def convert_status(action: str):
-    """
-    GPU 서버 이벤트(Action) → 통일된 서버 상태로 변환
-    """
-
-    if action == "start":
-        return "start"
-
-    if action == "stop":
-        return "stop"
-
-    if action == "restart":
-        return "restart"
-
+    """GPU 서버 이벤트(Action) → 통일된 서버 상태로 변환"""
+    if action in ("start", "stop", "restart"):
+        return action
     return None
 
 
 def build_response(status: str):
+    """상태 변경을 SSE 응답 형식으로 생성"""
     now_utc = datetime.now(timezone.utc).isoformat()
 
     if status == "start":
@@ -64,6 +55,7 @@ def build_response(status: str):
 
 
 async def docker_event_watcher(container_name: str):
+    """Docker 컨테이너 이벤트 감시"""
     client = docker.from_env()
     loop = asyncio.get_event_loop()
 

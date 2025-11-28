@@ -5,15 +5,13 @@ from app.common.sse_base import SSEBase
 
 
 class PushSSEChannel(SSEBase):
-    """
-    Vector → FastAPI → Frontend
-    공통 PUSH SSE 채널
-    """
+    """Push 기반 SSE 채널"""
 
     def __init__(self):
         super().__init__()
 
     async def publish(self, message: dict):
+        """메시지 push"""
         data_str = json.dumps(message, ensure_ascii=False)
 
         dead = []
@@ -27,6 +25,7 @@ class PushSSEChannel(SSEBase):
             self.unsubscribe(dq)
 
     async def generator(self, q: asyncio.Queue):
+        """SSE 제너레이터"""
         try:
             while True:
                 data = await q.get()

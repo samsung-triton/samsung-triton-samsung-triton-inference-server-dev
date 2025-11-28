@@ -93,6 +93,7 @@ class Messages(str, Enum):
     CONFIG_DB_UPDATE_ERROR = "An error occurred while updating configuration data in the database."
     CONFIG_CURRENT_CANNOT_DELETE = "The current configuration cannot be deleted."
     CONFIG_DELETE_SUCCESS = "The selected configuration has been successfully deleted."
+    CONFIG_DELETE_NOT_FOUND = "The requested configuration does not exist or has already been deleted."
     CONFIG_DB_DELETE_ERROR = "An error occurred while deleting the configuration from the database."
 
     # ---- Logs ----
