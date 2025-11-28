@@ -30,7 +30,7 @@ def get_inference_notification(
 # ==============================
 # Vector → FastAPI (Push)
 # ==============================
-@notification_router.post("/error-event", response_model=BaseResponse)
+@notification_router.post("/error-event")
 async def push_error_event(event: dict):
     await error_log_channel.publish(event)
     return {"ok": True}
