@@ -22,11 +22,13 @@ def save_input_before_infer(
     dataFiles: List[UploadFile] = File(..., description="추론 입력 데이터 리스트 (.npy, .ply 등)"),
     db: Session = Depends(get_db),
 ):
+    """추론 전 입력 데이터 저장"""
     return save_input_before_infer_service(clientId, modelName, dataFiles, db)
 
 
 @inferdata_router.post("/save/after", response_model=BaseResponse)
 def save_output_after_infer(request: SaveInferenceResultRequest, db: Session = Depends(get_db)):
+    """추론 텍스트 결과 저장"""
     return save_output_after_infer_service(request.uid, request.is_ok, request.result, db)
 
 
@@ -38,6 +40,7 @@ async def save_binay_output_after_infer(
     extension: str = Query(...),
     db: Session = Depends(get_db),
 ):
+    """추론 바이너리 결과 저장"""
     binary_data = await request.body()
 
     return save_binary_output_after_infer_service(uid, is_ok, extension, binary_data, db)

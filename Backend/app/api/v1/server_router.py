@@ -25,26 +25,31 @@ server_router = APIRouter(prefix="/server", tags=["Server Management"])
 
 @server_router.get("/status", response_model=BaseResponse)
 async def get_server_status():
+    """서버 상태 조회"""
     return await get_server_status_service()
 
 
 @server_router.post("/start", response_model=BaseResponse)
 async def start_server(request: ServerActorRequest, db: Session = Depends(get_db)):
+    """서버 시작"""
     return await start_server_service(db, actor_login_id=request.login_id)
 
 
 @server_router.post("/stop", response_model=BaseResponse)
 async def stop_server(request: ServerActorRequest, db: Session = Depends(get_db)):
+    """서버 중지"""
     return await stop_server_service(db, actor_login_id=request.login_id, description=request.description)
 
 
 @server_router.post("/restart", response_model=BaseResponse)
 async def restart_server(request: ServerActorRequest, db: Session = Depends(get_db)):
+    """서버 재시작"""
     return await restart_server_service(db, actor_login_id=request.login_id, description=request.description)
 
 
 @server_router.get("/status/stream")
 async def stream_status():
+    """서버 상태 SSE 스트림"""
     queue = asyncio.Queue()
     subscribers.add(queue)
 

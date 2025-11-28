@@ -11,6 +11,7 @@ from app.core.config import settings, TIMEZONE
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.core.standard_time_manager import current_standard_time
+from app.core.logger import extract_error
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.schemas.timeseries_schema import (
@@ -33,12 +34,7 @@ from app.common.utils import to_utc_z
 
 
 def parse_end_iso(end_iso: Optional[str]) -> datetime:
-    """
-    end_iso:
-      - None이면 "지금"
-      - 숫자 문자열이면 epoch seconds
-      - 그 외는 ISO8601 (Z → +00:00 치환 후 파싱)
-    """
+    """end_iso 문자열을 datetime으로 변환"""
     if end_iso:
         if end_iso.isdigit():
             return datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
@@ -52,9 +48,7 @@ def parse_end_iso(end_iso: Optional[str]) -> datetime:
 
 
 def get_aggregation_window_from_str(base_time_str: str) -> Tuple[datetime, datetime]:
-    """
-    "HH:MM" 기준 시간 문자열로부터 [base, now] 또는 [어제 base, base) 구간 계산.
-    """
+    """ "HH:MM" 기준 시간 문자열로부터 [base, now] 또는 [어제 base, base) 구간 계산."""
     now = datetime.now(TIMEZONE)
     hh, mm = map(int, base_time_str.split(":"))
     today_base = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
@@ -65,10 +59,7 @@ def get_aggregation_window_from_str(base_time_str: str) -> Tuple[datetime, datet
 
 
 def parse_prometheus_values(series: dict, skip_invalid: bool = True) -> List[ValueItem]:
-    """
-    Prometheus 시계열 1개(series)에서 values/value를 파싱하여 ValueItem 리스트로 변환.
-    - skip_invalid=True면 NaN/Inf 값은 무시.
-    """
+    """Prometheus 시계열 1개(series)에서 values/value를 파싱하여 ValueItem 리스트로 변환."""
     raw_values = series.get("values")
     if raw_values is None:
         v = series.get("value")
@@ -94,6 +85,7 @@ def parse_prometheus_values(series: dict, skip_invalid: bool = True) -> List[Val
 
 
 async def prom_query(promql: str):
+    """Prometheus 단일 시점 쿼리"""
     ep = f"{settings.PROM_URL.rstrip('/')}/api/v1/query"
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -106,7 +98,6 @@ async def prom_query(promql: str):
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     code=CustomCode.ERR_500.value,
                     message=Messages.PROMETHEUS_BAD_STATUS.value,
-                    data=None,
                 )
 
             return data["data"]["result"]
@@ -117,12 +108,13 @@ async def prom_query(promql: str):
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
-            message=f"{Messages.PROMETHEUS_QUERY_FAIL.value}: {e}",
-            data=None,
+            message=Messages.PROMETHEUS_QUERY_FAIL.value,
+            data={"error": extract_error(e)},
         )
 
 
 async def prom_query_range(promql: str, start: datetime, end: datetime, step: str = "600"):
+    """Prometheus 범위 쿼리"""
     ep = f"{settings.PROM_URL.rstrip('/')}/api/v1/query_range"
 
     params = {
@@ -146,6 +138,7 @@ async def prom_query_range(promql: str, start: datetime, end: datetime, step: st
 
 
 async def get_server_metrics_service() -> BaseResponse:
+    """서버 리소스 메트릭 조회"""
     try:
         queries = {
             "cpu_util": "avg(nv_cpu_utilization)",
@@ -201,7 +194,7 @@ async def get_server_metrics_service() -> BaseResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.SERVER_METRIC_FAIL.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
 
@@ -209,11 +202,7 @@ async def get_server_metrics_service() -> BaseResponse:
 # 2. GPU 메모리 / CPU 메모리 시계열
 # ============================================================
 async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
-    """
-    GPU/CPU 메모리 사용률(%) 시계열
-    - 구간: [end-1h, end]
-    - 간격: 10분
-    """
+    """GPU/CPU 메모리 사용률(%) 시계열"""
     try:
         end_dt = parse_end_iso(end_iso)
         start_dt = end_dt - timedelta(hours=1)
@@ -287,7 +276,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.SERVER_METRIC_FAIL.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
 
@@ -295,6 +284,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
 # 3. 대시보드 모델 목록 조회
 # ============================================================
 async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
+    """대시보드 모델 목록 조회"""
     # 1. 서버 상태 확인
     try:
         triton_alive = triton_client.is_server_ready()
@@ -327,7 +317,7 @@ async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_LIST_FETCH_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )
 
     # 3. DB 모델 매핑
@@ -376,6 +366,7 @@ async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
 # 4. model_id 기반 모델 통계
 # ============================================================
 def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseResponse:
+    """모델별 추론 통계 조회"""
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
         raise CustomHTTPException(
@@ -442,6 +433,7 @@ async def get_model_per_inference_latency_service(
     end_iso: Optional[str],
     db: Session,
 ) -> BaseResponse:
+    """모델별 레이턴시 조회"""
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
         raise CustomHTTPException(
@@ -521,5 +513,5 @@ async def get_model_per_inference_latency_service(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.MODEL_LATENCY_FETCH_ERROR.value,
-            data={"error": str(e)},
+            data={"error": extract_error(e)},
         )

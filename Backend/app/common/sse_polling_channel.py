@@ -7,15 +7,11 @@ from fastapi.encoders import jsonable_encoder
 
 from app.common.sse_base import SSEBase
 from app.core.customException import CustomHTTPException
+from app.core.logger import logger, extract_error
 
 
 class PollingSSEChannel(SSEBase):
-    """
-    - fetch_fn: async () -> dict (jsonable_encoder로 인코딩 가능한 객체)
-    - interval_sec: polling 주기
-    - subscribers: 각 클라이언트 별 asyncio.Queue[str] (JSON string)
-    - poll_task: 백그라운드에서 fetch_fn을 주기적으로 호출하는 태스크
-    """
+    """Polling 기반 SSE 채널"""
 
     def __init__(self, fetch_fn, interval_sec: int):
         super().__init__()
@@ -32,21 +28,24 @@ class PollingSSEChannel(SSEBase):
         return self._latest_payload
 
     async def ensure_polling(self):
+        """poll 태스크 보장"""
         async with self._lock:
             # 이미 돌고 있으면 그대로 두고, 없거나 끝났으면 새로 시작
             if self._poll_task is None or self._poll_task.done():
                 self._poll_task = asyncio.create_task(self._poll_loop())
 
     async def _poll_loop(self):
-        # 구독자가 있는 동안만 돈다
-        while self.subscribers:
+        """polling 루프"""
+        while self.subscribers:  # 구독자가 있는 동안만 돈다
             try:
                 try:
                     resp = await self.fetch_fn()
                     payload = jsonable_encoder(resp)
                 except CustomHTTPException as e:
+                    logger.error(f"SSE Polling CustomError | {extract_error(e)}")
                     payload = {"error": e.message, "code": e.code}
                 except Exception as e:
+                    logger.error(f"SSE Polling Exception | {extract_error(e)}")
                     payload = {"error": str(e)}
 
                 data_str = json.dumps(payload, ensure_ascii=False)
@@ -69,6 +68,7 @@ class PollingSSEChannel(SSEBase):
         # subscribers가 0개가 되면 루프 종료 → 다음 ensure_polling에서 다시 시작 가능
 
     async def _broadcast(self, data_str: str):
+        """구독자에게 전파"""
         # queue에 put 실패하는 경우는 거의 없지만, 안전하게 제거
         for q in list(self.subscribers):
             try:
@@ -79,12 +79,7 @@ class PollingSSEChannel(SSEBase):
 
 # 공통 SSE event generator
 async def sse_event_stream(channel: PollingSSEChannel) -> AsyncGenerator[str, None]:
-    """
-    - 채널에 subscribe 하고
-    - 필요 시 polling 태스크 시작하고
-    - latest_payload가 있으면 한 번 보내고
-    - 이후 queue에서 나오는 이벤트를 SSE 포맷으로 yield
-    """
+    """공통 SSE 스트림 제너레이터"""
     queue = channel.subscribe()
     await channel.ensure_polling()
 

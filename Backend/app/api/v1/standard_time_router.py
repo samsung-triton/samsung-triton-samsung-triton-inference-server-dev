@@ -11,6 +11,7 @@ standard_time_router = APIRouter(prefix="/standard-time", tags=["Standard Time"]
 
 @standard_time_router.get("", response_model=BaseResponse)
 def get_current_standard_time():
+    """기준 시각 조회"""
     base_time = current_standard_time()
     return create_response(
         CustomCode.STANDARD_TIME_001.value,
@@ -21,4 +22,5 @@ def get_current_standard_time():
 
 @standard_time_router.post("", response_model=BaseResponse)
 def set_standard_time(new_time: str = Query(..., description="새 기준 시각 (HH:MM 형식, 예: 15:00 또는 09:30)")):
+    """기준 시각 변경"""
     return update_standard_time(new_time)

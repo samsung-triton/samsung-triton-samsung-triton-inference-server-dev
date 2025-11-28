@@ -14,14 +14,11 @@ STANDARD_TIME_FILE = Path("app/state/standard_state.json")
 
 
 def current_standard_time() -> str:
-    """
-    집계 기준 시각 조회 (파일 없으면 현재 시각 기준)
-    날짜는 무시하고 HH:MM 형식만 사용
-    """
+    """집계 기준 시각 조회 (파일 없으면 현재 시각 기준)"""
 
     if not STANDARD_TIME_FILE.exists():
         now = datetime.now(TIMEZONE).replace(second=0, microsecond=0)
-        base_time = now.strftime("%H:%M")  # 시:분만 저장
+        base_time = now.strftime("%H:%M")  # 날짜는 무시하고 HH:MM 형식만 사용
         return base_time
 
     try:
@@ -34,9 +31,7 @@ def current_standard_time() -> str:
 
 
 def update_standard_time(new_time: str):
-    """
-    집계 기준 시각 갱신 (HH:MM 형식)
-    """
+    """집계 기준 시각 갱신 (HH:MM 형식)"""
     # 유효성 검사
     try:
         hour, minute = map(int, new_time.split(":"))
@@ -46,7 +41,6 @@ def update_standard_time(new_time: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             code=CustomCode.ERR_400.value,
             message=Messages.INVALID_STANDARD_TIME_FORMAT.value,
-            data=None,
         )
 
     STANDARD_TIME_FILE.parent.mkdir(parents=True, exist_ok=True)

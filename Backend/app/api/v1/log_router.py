@@ -26,6 +26,7 @@ def get_web_log(
     size: int = Query(30, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
+    """대시보드 웹 로그 조회"""
     return get_web_log_service(
         start_date=request.start_date,
         end_date=request.end_date,
@@ -41,6 +42,7 @@ def get_web_log(
 
 @log_router.get("/models", response_model=BaseResponse)
 def get_model_list(db: Session = Depends(get_clickhouse_db)):
+    """로그의 모델명 목록 조회"""
     return get_model_name_list_service(db)
 
 
@@ -49,6 +51,7 @@ def get_infer_logs(
     request: ModelLogRequest,
     db: Session = Depends(get_clickhouse_db),
 ):
+    """추론 로그 조회"""
     return get_infer_logs_service(
         db=db,
         model_name=request.model_name,
@@ -67,6 +70,7 @@ def get_server_logs(
     request: ServerLogRequest,
     db: Session = Depends(get_clickhouse_db),
 ):
+    """서버 로그 조회"""
     return get_server_logs_service(
         db=db,
         start=request.start,
@@ -79,7 +83,7 @@ def get_server_logs(
 
 
 # ==============================
-# (1) Vector → FastAPI (Push)
+# Vector → FastAPI (Push)
 # ==============================
 @log_router.post("/infer-event")
 async def receive_infer_event(request: Request):
@@ -96,7 +100,7 @@ async def receive_server_event(request: Request):
 
 
 # ==============================
-# (2) Frontend → SSE Stream
+# Frontend → SSE Stream
 # ==============================
 @log_router.get("/infer/stream")
 async def stream_infer_logs():
