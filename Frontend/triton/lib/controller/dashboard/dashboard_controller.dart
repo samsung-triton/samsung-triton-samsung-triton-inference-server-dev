@@ -32,9 +32,9 @@ class DashboardModelItem {
     return DashboardModelItem(
       modelId: json['modelId'],
       modelName: json['modelName'],
-      inferenceTotal: json['inference_total'],
-      inferenceOk: json['inference_ok'],
-      okRatio: (json['ok_ratio'] as num).toDouble(),
+      inferenceTotal: json['inferenceTotal'],
+      inferenceOk: json['inferenceOk'],
+      okRatio: (json['okRatio'] as num).toDouble(),
     );
   }
 }
@@ -113,16 +113,19 @@ class DashboardController extends GetxController {
   }
 
   // 화면 타입 변경(server/model) -> 해당 SSE 재연결
-  void changeType(DashboardType type, {int? modelId}) {
+  Future<void> changeType(DashboardType type, {int? modelId}) async {
+    // 1) 기존 SSE 먼저 종료
+    serverCtrl.stopSse();
+    modelCtrl.stopSse();
+
+    // 2) 선택 상태 갱신
     selectedType.value = type;
     selectedModelId.value = modelId;
 
-    // 서버 패널
+    // 3) 새 SSE 시작
     if (type == DashboardType.server) {
       serverCtrl.restartSse();
-    }
-    // 모델 패널
-    else if (type == DashboardType.model && modelId != null) {
+    } else if (type == DashboardType.model && modelId != null) {
       modelCtrl.restartSse(modelId);
     }
 
@@ -133,7 +136,7 @@ class DashboardController extends GetxController {
   Future<void> fetchResetTime() async {
     try {
       final res = await _api.getStandardTime();
-      resetTime.value = res['base_time'];
+      resetTime.value = res['baseTime'];
 
       final parts = resetTime.value.split(':');
       resetHour.value = int.parse(parts[0]);
