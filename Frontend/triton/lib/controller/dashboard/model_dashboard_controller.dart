@@ -22,16 +22,14 @@ class ServerNotificationItem {
   }
 }
 
-// SSE 기반 모델 대시보드 컨트롤러
 class ModelDashboardController extends GetxController {
   late final ApiClient _api;
 
-  // 요청 통계
+  // 요청 / 추론 통계
   RxInt totalRequests = 0.obs;
   RxInt successRequests = 0.obs;
   RxInt failRequests = 0.obs;
 
-  // 추론 통계
   RxInt totalInference = 0.obs;
   RxInt successInference = 0.obs;
   RxInt failInference = 0.obs;
@@ -42,19 +40,17 @@ class ModelDashboardController extends GetxController {
   // 추론 성공률(%)
   double get inferencePercent => totalInference.value == 0 ? 0 : (successInference.value / totalInference.value) * 100;
 
-  // 지연 시간 (queue/input/infer/output)
+  // 지연 시간 데이터
   RxList<double> queueLatency = <double>[].obs;
   RxList<double> inputLatency = <double>[].obs;
   RxList<double> inferLatency = <double>[].obs;
   RxList<double> outputLatency = <double>[].obs;
-
-  // 지연 시간 타임스탬프
   RxList<DateTime> latencyTimestamps = <DateTime>[].obs;
 
-  // 서버 알림
+  // 서버 알림 리스트
   RxList<ServerNotificationItem> serverNotifications = <ServerNotificationItem>[].obs;
 
-  // SSE 구독
+  // SSE 구독 핸들
   StreamSubscription<String>? _statsSub;
   StreamSubscription<String>? _latencySub;
   StreamSubscription<String>? _notiSub;
@@ -65,12 +61,16 @@ class ModelDashboardController extends GetxController {
     _api = Get.find<ApiClient>();
   }
 
-  // SSE 재연결(모델 변경 시 호출)
-  void restartSse(int modelId) {
+  // SSE 중단
+  void stopSse() {
     _statsSub?.cancel();
     _latencySub?.cancel();
     _notiSub?.cancel();
+  }
 
+  // SSE 재연결
+  void restartSse(int modelId) {
+    stopSse();
     _startStatsSse(modelId);
     _startLatencySse(modelId);
     _startNotificationSse();
@@ -95,7 +95,7 @@ class ModelDashboardController extends GetxController {
     });
   }
 
-  // 지연 시간 SSE
+  // 레이턴시 SSE
   void _startLatencySse(int modelId) {
     _latencySub = _api.listenModelLatency(modelId).listen((raw) {
       try {
@@ -106,28 +106,26 @@ class ModelDashboardController extends GetxController {
         final latency = data['latency'];
         if (latency == null || latency is! Map) return;
 
-        // 값 파싱
-        List<double> _parseValues(dynamic node) {
+        List<double> parseValues(dynamic node) {
           if (node is! List || node.isEmpty || node.first is! Map) return [];
           final values = node.first['values'];
           if (values is! List) return [];
           return values.map<double>((e) => (e['value'] as num?)?.toDouble() ?? 0.0).toList();
         }
 
-        // 타임스탬프 파싱
-        List<DateTime> _parseTimestamps(dynamic node) {
+        List<DateTime> parseTimestamps(dynamic node) {
           if (node is! List || node.isEmpty || node.first is! Map) return [];
           final values = node.first['values'];
           if (values is! List) return [];
           return values.map<DateTime>((e) => DateTime.parse(e['ts'])).toList();
         }
 
-        queueLatency.value = _parseValues(latency['queue']);
-        inputLatency.value = _parseValues(latency['input']);
-        inferLatency.value = _parseValues(latency['infer']);
-        outputLatency.value = _parseValues(latency['output']);
+        queueLatency.value = parseValues(latency['queue']);
+        inputLatency.value = parseValues(latency['input']);
+        inferLatency.value = parseValues(latency['infer']);
+        outputLatency.value = parseValues(latency['output']);
 
-        latencyTimestamps.value = _parseTimestamps(latency['queue']);
+        latencyTimestamps.value = parseTimestamps(latency['queue']);
       } catch (_) {}
     });
   }
@@ -137,21 +135,24 @@ class ModelDashboardController extends GetxController {
     _notiSub = _api.listenModelNotification().listen((raw) {
       try {
         String clean = raw.trim();
-        if (clean.startsWith("data:")) {
-          clean = clean.substring(5).trim();
-        }
+        if (clean.startsWith("data:")) clean = clean.substring(5).trim();
 
-        final json = jsonDecode(raw);
+        final json = jsonDecode(clean);
         final data = json['data'];
         if (data == null) return;
 
-        // heartbeat는 무시
         if (data['heartbeat'] == true) return;
 
-        // 이력 업데이트
         if (data['history'] != null) {
           final list = (data['history'] as List).map((e) => ServerNotificationItem.fromJson(e)).toList();
           serverNotifications.assignAll(list);
+          return;
+        }
+
+        if (data['ts'] != null) {
+          final item = ServerNotificationItem.fromJson(data);
+          serverNotifications.insert(0, item);
+          return;
         }
       } catch (_) {}
     });
@@ -159,9 +160,7 @@ class ModelDashboardController extends GetxController {
 
   @override
   void onClose() {
-    _statsSub?.cancel();
-    _latencySub?.cancel();
-    _notiSub?.cancel();
+    stopSse();
     super.onClose();
   }
 }
