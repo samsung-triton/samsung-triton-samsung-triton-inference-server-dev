@@ -18,7 +18,7 @@ from app.common.messages import Messages
 from app.common.utils import to_utc_z
 
 
-async def get_config_history_with_selected_service(db: Session, model_id: int):
+def get_config_history_with_selected_service(db: Session, model_id: int):
     """특정 모델의 전체 Config 상세 내용 + 이력 조회"""
 
     results = (
@@ -185,7 +185,7 @@ def update_model_config_service(
     )
 
 
-async def delete_selected_config_service(
+def delete_selected_config_service(
     db: Session,
     model_id: int,
     config_id: int,

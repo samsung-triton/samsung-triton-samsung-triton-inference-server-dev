@@ -40,7 +40,7 @@ async def push_error_event(event: dict):
 # Frontend → SSE Stream
 # ==============================
 @notification_router.get("/stream")
-async def error_sse(db=Depends(get_clickhouse_db)):
+async def error_sse(db: Session = Depends(get_clickhouse_db)):
     rows = db.execute(
         text(
             """
