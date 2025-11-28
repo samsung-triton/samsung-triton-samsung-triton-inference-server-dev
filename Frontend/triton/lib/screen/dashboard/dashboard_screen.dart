@@ -7,8 +7,6 @@ import 'package:triton/controller/dashboard/dashboard_controller.dart';
 import 'package:triton/widgets/dashboard/dashboard_sidebar.dart';
 import 'package:triton/widgets/dashboard/model_dashboard_panel.dart';
 import 'package:triton/widgets/dashboard/server_dashboard_panel.dart';
-import 'package:triton/controller/dashboard/server_dashboard_controller.dart';
-import 'package:triton/controller/dashboard/model_dashboard_controller.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -29,15 +27,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       Get.delete<DashboardController>(force: true);
     }
     dashboardController = Get.put(DashboardController());
-
-    // 초기 진입 시 SSE 재연결
-    Get.find<ServerDashboardController>().restartSse();
-
-    // 모델 탭 진입 시 모델 SSE 재연결
-    final modelId = dashboardController.selectedModelId.value;
-    if (modelId != null) {
-      Get.find<ModelDashboardController>().restartSse(modelId);
-    }
   }
 
   @override

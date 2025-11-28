@@ -8,6 +8,8 @@ import 'package:web/web.dart' as html;
 class ApiClient extends GetConnect {
   static const String _baseUrl = 'http://213.181.122.2:53617';
 
+  static int activeSseCount = 0;
+
   // SSE EventSource 핸들
   html.EventSource? _serverMetricsEs;
   html.EventSource? _serverTimeseriesEs;
@@ -64,7 +66,7 @@ class ApiClient extends GetConnect {
     String url, {
     required html.EventSource? Function() getEs,
     required void Function(html.EventSource?) setEs,
-  }) async* {
+  }) {
     final old = getEs();
     if (old != null) {
       try {
@@ -88,8 +90,15 @@ class ApiClient extends GetConnect {
       } catch (_) {}
       setEs(null);
     });
+    // 구독이 cancel 될 때 EventSource도 같이 close
+    controller.onCancel = () {
+      try {
+        es.close();
+      } catch (_) {}
+      setEs(null);
+    };
 
-    yield* controller.stream;
+    return controller.stream;
   }
 
   // ---------------------------------------------------------------------------

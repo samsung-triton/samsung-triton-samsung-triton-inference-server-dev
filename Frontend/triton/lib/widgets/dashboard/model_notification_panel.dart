@@ -112,10 +112,11 @@ class ModelNotificationPanel extends StatelessWidget {
 
   // 로그 시간 포맷
   String _formatDateTime(DateTime ts) {
-    return "${ts.year}-${ts.month.toString().padLeft(2, '0')}-"
-        "${ts.day.toString().padLeft(2, '0')} "
-        "${ts.hour.toString().padLeft(2, '0')}:"
-        "${ts.minute.toString().padLeft(2, '0')}:"
-        "${ts.second.toString().padLeft(2, '0')}";
+    final local = ts.toLocal();
+    return "${local.year}-${local.month.toString().padLeft(2, '0')}-"
+        "${local.day.toString().padLeft(2, '0')} "
+        "${local.hour.toString().padLeft(2, '0')}:"
+        "${local.minute.toString().padLeft(2, '0')}:"
+        "${local.second.toString().padLeft(2, '0')}";
   }
 }
