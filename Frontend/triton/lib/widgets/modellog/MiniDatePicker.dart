@@ -1,3 +1,4 @@
+//날짜 선택 인풋
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -7,7 +8,7 @@ import 'package:triton/theme/typography.dart';
 class MiniDatePicker extends StatefulWidget {
   final ValueChanged<DateTime>? onDateSelected;
   final DateTime? firstDate;
-  final DateTime? initialDate; // UI에 표시될 날짜 (Controller가 관리)
+  final DateTime? initialDate; // UI에 표시될 날짜
 
   const MiniDatePicker({super.key, this.onDateSelected, this.firstDate, this.initialDate});
 
@@ -48,6 +49,7 @@ class _MiniDatePickerState extends State<MiniDatePicker> {
     }
   }
 
+  //화면 위에 겹쳐서 띄옴
   void _showOverlay() {
     final renderBox = _buttonKey.currentContext!.findRenderObject() as RenderBox;
     final offset = renderBox.localToGlobal(Offset.zero);

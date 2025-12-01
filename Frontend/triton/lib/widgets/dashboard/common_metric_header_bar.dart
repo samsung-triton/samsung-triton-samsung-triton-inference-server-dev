@@ -1,3 +1,5 @@
+// 대시보드 메트릭 상단 헤더바 (Reset Time / Last Updated / Update 버튼)
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -5,13 +7,15 @@ import 'package:triton/controller/dashboard/dashboard_controller.dart' as dash;
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
 import 'package:triton/widgets/input/dropdown.dart';
+import 'package:triton/widgets/button/button_small.dart';
 
 class CommonMetricHeaderBar extends StatelessWidget {
-  final VoidCallback? onRefresh; // 🔥 추가
+  // 외부에서 전달받는 Refresh 콜백
+  final VoidCallback? onRefresh;
 
   const CommonMetricHeaderBar({super.key, this.onRefresh});
 
-  // 🔹 일반 계정용 Fake Dropdown (모양만, 클릭 불가)
+  // 읽기 전용 드롭다운(비개발자용)
   Widget _fakeDropdown(String text, double width) {
     return Container(
       width: width,
@@ -20,19 +24,18 @@ class CommonMetricHeaderBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: white,
-        border: Border.all(color: lightGray, width: 1),
+        border: Border.all(color: lightGray),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(text, style: T.t12(color: gray, bold: false)),
+      child: Text(text, style: T.t12(color: gray)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final dashboardController = Get.find<dash.DashboardController>();
+    final dashboard = Get.find<dash.DashboardController>();
 
     return Container(
-      width: double.infinity,
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -40,23 +43,23 @@ class CommonMetricHeaderBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: black, width: 0.5),
       ),
+
+      // 좌측: Reset Time  / 우측: Last Updated + Update 버튼
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          /// ------------------------------------------
-          /// 🔹 왼쪽 영역 (Reset Time)
-          /// ------------------------------------------
+          // Reset Time 설정 영역
           Obx(() {
-            final isDevel = dashboardController.isDevel;
-            final hourText = dashboardController.resetHour.value.toString().padLeft(2, '0');
-            final minuteText = dashboardController.resetMinute.value.toString().padLeft(2, '0');
+            final isDevel = dashboard.isDevel;
+            final hh = dashboard.resetHour.value.toString().padLeft(2, '0');
+            final mm = dashboard.resetMinute.value.toString().padLeft(2, '0');
 
             return Row(
               children: [
                 Text("Reset Time", style: T.t16(color: primaryDarker, bold: true)),
                 const SizedBox(width: 8),
 
-                /// 🔹 Hour Dropdown
+                // 시(hour)
                 isDevel
                     ? Dropdown(
                         width: 76,
@@ -86,102 +89,75 @@ class CommonMetricHeaderBar extends StatelessWidget {
                           '22',
                           '23',
                         ],
-                        hintText: hourText,
-                        onChanged: (value) {
-                          dashboardController.setResetHour(value!);
-                        },
+                        hintText: hh,
+                        onChanged: (v) => dashboard.setResetHour(v!),
                       )
-                    : _fakeDropdown(hourText, 76),
+                    : _fakeDropdown(hh, 76),
 
                 const SizedBox(width: 4),
 
-                /// 🔹 Minute Dropdown
+                // 분(minute)
                 isDevel
                     ? Dropdown(
                         width: 76,
                         items: const ['00', '10', '20', '30', '40', '50'],
-                        hintText: minuteText,
-                        onChanged: (value) {
-                          dashboardController.setResetMinute(value!);
-                        },
+                        hintText: mm,
+                        onChanged: (v) => dashboard.setResetMinute(v!),
                       )
-                    : _fakeDropdown(minuteText, 76),
+                    : _fakeDropdown(mm, 76),
 
-                /// 🔹 Apply 버튼 (DEVEL만 표시)
                 if (isDevel) const SizedBox(width: 8),
+
+                // Apply 버튼 (개발자 전용)
                 if (isDevel)
-                  SizedBox(
+                  // Reset Time 적용 버튼
+                  ButtonSmall(
+                    text: 'Set',
+                    width: 56,
                     height: 28,
-                    child: ElevatedButton(
-                      onPressed: () => dashboardController.updateResetTime(),
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        backgroundColor: white,
-                        foregroundColor: primaryDarker,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: lightGray),
-                        ),
-                      ),
-                      child: Text('Apply', style: T.t12(color: primaryDarker, bold: true)),
-                    ),
+                    backgroundColor: white,
+                    textColor: primaryDarker,
+                    borderColor: lightGray,
+                    borderRadius: 8,
+                    isbold: true,
+                    onPressed: dashboard.updateResetTime,
                   ),
               ],
             );
           }),
 
-          /// ------------------------------------------
-          /// 🔹 오른쪽 영역 (Last Updated + Update 버튼)
-          /// ------------------------------------------
+          // Last Updated + Update 버튼
           Row(
             children: [
               Text("Last Updated", style: T.t16(color: primaryDarker, bold: true)),
               const SizedBox(width: 8),
 
+              // 갱신 시간 표시
               Obx(() {
-                final text = dashboardController.formattedLastUpdated;
+                final text = dashboard.formattedLastUpdated;
 
                 if (text == '-') {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: lightGray, borderRadius: BorderRadius.circular(12)),
-                    child: Text("--:--", style: T.t12(color: black)),
-                  );
+                  return _timeTag("--:--");
                 }
 
                 final parts = text.split('•');
                 final date = parts.first.trim();
-                final time = parts.length > 1 ? parts.last.trim() : '';
+                final time = parts.last.trim();
 
-                return Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: lightGray, borderRadius: BorderRadius.circular(12)),
-                      child: Text(date, style: T.t12(color: black)),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: lightGray, borderRadius: BorderRadius.circular(12)),
-                      child: Text(time, style: T.t12(color: black)),
-                    ),
-                  ],
-                );
+                return Row(children: [_timeTag(date), const SizedBox(width: 4), _timeTag(time)]);
               }),
 
               const SizedBox(width: 8),
 
+              // Update 버튼
               SizedBox(
                 height: 28,
                 child: ElevatedButton(
                   onPressed: () {
-                    dashboardController.manualUpdate(); // 기존 유지
-                    onRefresh?.call(); // 🔥 추가: Panel에서 넘겨준 API 호출
+                    dashboard.manualUpdate();
+                    onRefresh?.call();
                   },
                   style: ElevatedButton.styleFrom(
-                    elevation: 0,
                     backgroundColor: white,
                     foregroundColor: primaryDarker,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -191,7 +167,6 @@ class CommonMetricHeaderBar extends StatelessWidget {
                     ),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text('Update', style: T.t12(color: primaryDarker, bold: true)),
                       const SizedBox(width: 6),
@@ -204,6 +179,15 @@ class CommonMetricHeaderBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // 날짜/시간 태그
+  Widget _timeTag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: lightGray, borderRadius: BorderRadius.circular(12)),
+      child: Text(text, style: T.t12(color: black)),
     );
   }
 }

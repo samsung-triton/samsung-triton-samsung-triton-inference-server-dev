@@ -1,5 +1,6 @@
+// 중간 크기 버튼
 import 'package:flutter/material.dart';
-import '../../theme/typography.dart';
+import 'package:triton/theme/typography.dart';
 
 class ButtonMedium extends StatelessWidget {
   final String text;
@@ -13,7 +14,7 @@ class ButtonMedium extends StatelessWidget {
   final VoidCallback? onPressed;
 
   const ButtonMedium({
-    Key? key,
+    super.key,
     required this.text,
     this.backgroundColor = Colors.black,
     this.textColor = Colors.white,
@@ -23,7 +24,7 @@ class ButtonMedium extends StatelessWidget {
     this.borderRadius = 4,
     this.isbold = false,
     this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

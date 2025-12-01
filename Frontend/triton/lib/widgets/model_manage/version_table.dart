@@ -1,20 +1,17 @@
 // 버전 관리 테이블
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controller/model_manage/version_manage_controller.dart';
-
-import '../../theme/typography.dart';
-import '../../theme/app_colors.dart';
-
-import '../../utils/modal_util.dart';
-
-import 'version_table_row.dart';
-
-import '../../widgets/modal/modal_description.dart';
+import 'package:triton/controller/model_manage/version_manage_controller.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
+import 'package:triton/utils/modal_util.dart';
+import 'package:triton/widgets/modal/modal_description.dart';
+import 'package:triton/widgets/model_manage/version_table_row.dart';
 
 class VersionTable extends StatelessWidget {
   const VersionTable({super.key});
 
+  // 버전 테이블 헤더 높이
   static const double _headerH = 44.0;
 
   // 삭제 모달 열기
@@ -28,6 +25,8 @@ class VersionTable extends StatelessWidget {
         confirmMsg: "Are you sure you want to delete it?",
         onOK: () async {
           final versionManageController = Get.find<VersionManageController>();
+
+          // 버전 삭제 기능 호출
           await versionManageController.deleteSelectedVersion(descCtrl.text);
           descCtrl.dispose();
         },
@@ -81,6 +80,7 @@ class VersionTable extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
+              // 버전 테이블 헤더
               Container(
                 height: _headerH,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -118,6 +118,8 @@ class VersionTable extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // 버전 테이블 리스트,
               Expanded(
                 child: RadioGroup<int>(
                   groupValue: selectedId,
@@ -148,7 +150,7 @@ class VersionTable extends StatelessWidget {
     });
   }
 
-  /// 헤더 텍스트
+  // 테이블 헤더 텍스트
   Widget _headerText(String label) {
     return Text(
       label,

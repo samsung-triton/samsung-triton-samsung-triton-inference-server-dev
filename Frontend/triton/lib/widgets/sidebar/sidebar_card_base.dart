@@ -1,6 +1,6 @@
 // 사이드바 카드 베이스
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
+import 'package:triton/theme/app_colors.dart';
 
 class SidebarCardBase extends StatelessWidget {
   final Widget child;
@@ -21,7 +21,6 @@ class SidebarCardBase extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        // 카드 디자인
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
@@ -30,7 +29,6 @@ class SidebarCardBase extends StatelessWidget {
             boxShadow: const [BoxShadow(color: gray, offset: Offset(4, 4), blurRadius: 4)],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          // 카드 내용
           child: child,
         ),
       ),

@@ -1,10 +1,11 @@
-//Triton Log 의 모델 추론 로그를 모델별로 필터링
+//모델 로그 컨트롤러
 import 'package:get/get.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/show_alert.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_util' as js_util;
 
+//모델 로그 아이템 DTO
 class ModelLogItem {
   final String ts;
   final String level;
@@ -19,8 +20,7 @@ class ModelLogItem {
 
     String formattedDate;
     try {
-      final d = DateTime.parse(rawDate); //DB와 동일
-      //final d = DateTime.parse(rawDate).toLocal();
+      final d = DateTime.parse(rawDate).toLocal();
       formattedDate =
           "${d.year.toString().padLeft(4, '0')}-"
           "${d.month.toString().padLeft(2, '0')}-"
@@ -29,7 +29,7 @@ class ModelLogItem {
           "${d.minute.toString().padLeft(2, '0')}:"
           "${d.second.toString().padLeft(2, '0')}";
     } catch (_) {
-      formattedDate = rawDate; // 파싱 실패하면 raw 그대로
+      formattedDate = rawDate;
     }
 
     return ModelLogItem(
@@ -41,9 +41,9 @@ class ModelLogItem {
   }
 }
 
+//모델 로그 필터링 컨트롤러
 class ModelLogController extends GetxController {
-  final modellogs = <ModelLogItem>[].obs;
-
+  //로딩 상태 표시
   final RxBool isLoading = false.obs;
 
   late final ApiClient _api;
@@ -59,27 +59,29 @@ class ModelLogController extends GetxController {
 
   // 필터 입력값
   final modelName = ''.obs;
-  final logLevel = RxnString(); //null 허용
-  final keyword = ''.obs;
   final startDate = Rxn<DateTime>();
   final endDate = Rxn<DateTime>();
+  final logLevel = RxnString(); //null 허용
+  final keyword = ''.obs;
+  final RxString cursor = ''.obs; // 다음 cursor 값
 
-  final RxString cursor = ''.obs; // 백엔드에서 받은 다음 cursor 값
   final RxBool isLoadingMore = false.obs; // 중복 호출 방지
 
   String get safeLogevel => logLevel.value ?? ""; //null 안전하게 처리
   String get safeKeyword => keyword.value;
   final RxBool hasMore = true.obs; // 데이터 더 있는지 여부
 
-  /// 필터링 결과 (UI에 바인딩)
+  /// 필터링 결과
   final filteredLogs = <ModelLogItem>[].obs;
 
+  //날짜 포맷팅
   String _formatDate(DateTime date) {
     return "${date.year.toString().padLeft(4, '0')}-"
         "${date.month.toString().padLeft(2, '0')}-"
         "${date.day.toString().padLeft(2, '0')}";
   }
 
+  //필터 적용 함수
   Future<void> applyFilter() async {
     cursor.value = '';
     filteredLogs.clear();
@@ -88,11 +90,12 @@ class ModelLogController extends GetxController {
     await fetchMoreLogs();
   }
 
+  //로그 무한 스크롤 처리 함수
   Future<void> fetchMoreLogs() async {
+    //더이상 로딩 할 게 없으면 종료
     if (isLoadingMore.value || !hasMore.value) return;
 
     isLoadingMore.value = true;
-
     isLoading.value = true;
 
     try {
@@ -105,19 +108,20 @@ class ModelLogController extends GetxController {
         cursor: cursor.value.isEmpty ? "" : cursor.value,
       );
 
-      // 서버 응답에서 logs 추가
+      //응답 파싱
       final data = res['data'] ?? {};
 
       final List<dynamic> raw = data['logs'] ?? [];
       final newLogs = raw.map((e) => ModelLogItem.fromJson(e)).toList();
       filteredLogs.addAll(newLogs);
 
+      //커서 값 덮어쓰기
       final next = data['next_cursor'];
 
       if (next == null || next == "") {
         hasMore.value = false;
       } else {
-        cursor.value = next; // 다음 스크롤 요청시 그대로 사용
+        cursor.value = next;
       }
     } catch (e) {
       ShowAlert.show(message: "Failed to retrieve Triton logs.");
@@ -127,8 +131,9 @@ class ModelLogController extends GetxController {
     isLoading.value = false;
   }
 
+  //필터 리셋 함수
   void resetFilter() {
-    // 리셋될 때도 디폴트값 지정
+    // 디폴트값 지정
     final now = DateTime.now();
     startDate.value = DateTime(now.year, now.month, now.day, 0, 0, 0);
     endDate.value = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -137,7 +142,7 @@ class ModelLogController extends GetxController {
   }
 }
 
-// 로그 다운로드 기능
+// 로그 다운로드
 extension FilterExportExtension on ModelLogController {
   Future<void> exportFilteredLogsAsTxt() async {
     if (filteredLogs.isEmpty) {
@@ -145,8 +150,9 @@ extension FilterExportExtension on ModelLogController {
       return;
     }
 
+    //파일 내 양식
     final buffer = StringBuffer();
-    buffer.writeln('=== Infer Logs Export ===');
+    buffer.writeln('=== Model Logs Export ===');
     buffer.writeln('Created at: ${DateTime.now()}');
     buffer.writeln('');
 
@@ -158,6 +164,7 @@ extension FilterExportExtension on ModelLogController {
 
     final blob = web.Blob(js_util.jsify([buffer.toString()]));
 
+    //다운로드 양식
     final url = web.URL.createObjectURL(blob);
     web.HTMLAnchorElement()
       ..href = url

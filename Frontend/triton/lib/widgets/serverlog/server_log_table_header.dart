@@ -1,3 +1,4 @@
+//서버 로그 태이블의 헤더
 import 'package:flutter/material.dart';
 import 'package:triton/theme/app_colors.dart';
 import 'package:triton/theme/typography.dart';
@@ -21,6 +22,7 @@ class ServerLogTableHeader extends StatelessWidget {
     );
   }
 
+  //headerText 위젯
   Widget _headerText(String label) {
     return Text(
       label,

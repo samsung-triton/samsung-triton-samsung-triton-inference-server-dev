@@ -7,7 +7,7 @@ import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/server_guard.dart';
 import 'package:triton/utils/show_alert.dart';
 
-// 롤백 엔트리 모델
+// 롤백 아이템 모델
 class RollbackItem {
   final int configId;
   final int version;
@@ -30,9 +30,10 @@ class ConfigController extends GetxController {
   // 에디터
   final editorCtrl = TextEditingController();
 
-  // 롤백 목록 & 선택
+  // 롤백 목록
   final rollbacks = <RollbackItem>[].obs;
-  final selectedConfig = Rxn<RollbackItem>(); // 선택된 롤백 항목
+  // 선택된 롤백
+  final selectedConfig = Rxn<RollbackItem>();
 
   // 공통 API 클라이언트 사용
   late final ApiClient _api;
@@ -53,7 +54,7 @@ class ConfigController extends GetxController {
 
     final modelManageController = Get.find<ModelManageController>();
 
-    // 모델이 바뀌면 "사용자 선택 여부" 초기화
+    // 모델이 바뀌면 선택 여부 초기화
     _modelWatcher = ever<ModelItem?>(modelManageController.selectedModel, (_) {
       _hasUserSelectedOnce = false;
     });
@@ -71,23 +72,23 @@ class ConfigController extends GetxController {
     return Get.find<ModelManageController>().selectedModel.value?.modelId;
   }
 
-  // 외부에서 에디터 내용만 주입
+  // 외부에서 에디터 내용만 주입 (모델 관리 컨트롤러에서 이용)
   void setEditorCtrlText({required String text}) {
     editorCtrl.text = text;
   }
 
-  // 롤백 선택 함수
+  // 롤백 선택 기능
   void selectRollback(int configId) {
     if (selectedConfig.value?.configId == configId) return;
     selectedConfig.value = rollbacks.firstWhereOrNull((rollback) => rollback.configId == configId);
   }
 
-  // 롤백 목록 로드
+  // 롤백 목록 로드 기능
   Future<void> loadRollbacks() async {
     final modelId = _currentModelId();
     if (modelId == null) return;
 
-    // API 호출
+    // 롤백 목록 API 호출
     final dynamic data = await _api.getConfigHistory(modelId: modelId);
 
     // 데이터가 String이면 에러 메시지로 간주
@@ -157,9 +158,10 @@ class ConfigController extends GetxController {
     }
   }
 
-  // 저장
+  // 저장 기능
   Future<bool> save(String description) async {
-    final ok = await isServerRunning();
+    // 서버 on/off 확인
+    final ok = isServerRunning();
     if (!ok) {
       ShowAlert.show(
         title: 'Server Not Running',
@@ -174,10 +176,10 @@ class ConfigController extends GetxController {
     if (modelId == null) return false;
 
     final content = editorCtrl.text;
+
     final saveId = _authStorage.read<String>('loginedId') ?? '';
 
-    print(content);
-
+    // config 저장 API 호출
     final dynamic data = await _api.applyConfig(
       modelId: modelId,
       loginId: saveId,
@@ -194,9 +196,10 @@ class ConfigController extends GetxController {
     return true;
   }
 
-  // 롤백 삭제
+  // 롤백 삭제 기능
   Future<bool> deleteRollback(String description) async {
-    final ok = await isServerRunning();
+    // 서버 on/off 확인
+    final ok = isServerRunning();
     if (!ok) {
       ShowAlert.show(
         title: 'Server Not Running',
@@ -229,6 +232,7 @@ class ConfigController extends GetxController {
 
     final deleteId = _authStorage.read<String>('loginedId') ?? '';
 
+    // 롤백 삭제 API 호출
     final dynamic data = await _api.deleteConfig(
       modelId: modelId,
       configId: target.configId,
@@ -267,7 +271,7 @@ class ConfigController extends GetxController {
     return true;
   }
 
-  // 에디터에 반영
+  // 에디터에 반영 기능
   void getRollback() {
     // 아무것도 선택 안 돼 있으면 current 기준으로 한 번 선택
     if (selectedConfig.value == null) {

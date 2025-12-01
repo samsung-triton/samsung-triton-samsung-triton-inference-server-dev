@@ -1,3 +1,5 @@
+// 모델 추론 통계 카드
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/widgets/dashboard/common_info_card_base.dart';
@@ -11,6 +13,7 @@ class ModelInferenceStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<ModelDashboardController>();
 
+    // 요청 / 추론 통계를 게이지로 표시
     return Obx(() {
       return CommonInfoCardBase(
         title: "Model Inference Statistics",
@@ -18,7 +21,7 @@ class ModelInferenceStatsCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             children: [
-              // ---- Requests ----
+              // 요청(Request) 통계
               Expanded(
                 child: ModelGaugeCard(
                   title: "Requests",
@@ -29,7 +32,7 @@ class ModelInferenceStatsCard extends StatelessWidget {
                 ),
               ),
 
-              // ---- Inference ----
+              // 추론(Inference) 통계
               Expanded(
                 child: ModelGaugeCard(
                   title: "Inference",

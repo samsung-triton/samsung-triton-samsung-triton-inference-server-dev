@@ -6,6 +6,7 @@ import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/server_guard.dart';
 import 'package:triton/utils/show_alert.dart';
 
+// 버전 아이템 모델
 class VersionItem {
   final int versionId;
   final int version;
@@ -40,21 +41,22 @@ class VersionManageController extends GetxController {
     _api = Get.find<ApiClient>();
   }
 
-  // 버전 목록 받기
+  // 버전 목록 받기 (모델 관리 컨트롤러에서 이용)
   void setVersions(List<VersionItem> versionList) {
     versions.assignAll(versionList);
     selectedVersion.value = versions.isNotEmpty ? versions.first : null;
   }
 
-  // 버전 선택
+  // 버전 선택 기능
   void selectVersion(int versionId) {
     if (selectedVersion.value?.versionId == versionId) return;
     selectedVersion.value = versions.firstWhereOrNull((version) => version.versionId == versionId);
   }
 
-  // 선택된 버전 삭제
+  // 선택된 버전 삭제 기능
   Future<void> deleteSelectedVersion(String description) async {
-    final ok = await isServerRunning();
+    // 서버 on/off 확인
+    final ok = isServerRunning();
     if (!ok) {
       ShowAlert.show(
         title: 'Server Not Running',
@@ -69,7 +71,7 @@ class VersionManageController extends GetxController {
     if (version == null) return;
 
     final deleteId = _authStorage.read<String>('loginedId') ?? '';
-    // 버전 채워 넣기
+
     final modelManageController = Get.find<ModelManageController>();
     final modelId = modelManageController.selectedModel.value?.modelId;
     if (modelId == null) {
@@ -77,12 +79,14 @@ class VersionManageController extends GetxController {
       return;
     }
 
+    // 버전 삭제 API 호출
     final dynamic data = await _api.deleteModelVersion(
       modelId: modelId,
       version: version,
       loginId: deleteId,
       description: description,
     );
+
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
       ShowAlert.show(message: "Failed to Delete version.\nPlease retry or restart the server.");

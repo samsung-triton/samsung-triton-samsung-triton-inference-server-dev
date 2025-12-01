@@ -1,3 +1,5 @@
+// 서버 대시보드 패널
+
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:triton/theme/typography.dart';
@@ -19,24 +21,21 @@ class ServerDashboardPanel extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.all(gap),
+
+      // 상단 헤더 + GPU 영역 + CPU/RAM 영역
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          CommonMetricHeaderBar(
-            onRefresh: () {
-              serverCtrl.fetchAll();
-            },
-          ),
+          // 상단 헤더 (Reset Time / Update)
+          CommonMetricHeaderBar(onRefresh: () => serverCtrl.restartSse()),
 
           const SizedBox(height: gap),
 
-          // 🔼 상단: GPU Util + GPU VRAM
+          // 상단: GPU Utilization + GPU VRAM
           Expanded(
             child: Row(
               children: [
-                // ---------------------------
-                // 🔥 GPU Utilization
-                // ---------------------------
+                // GPU Utilization 카드
                 Expanded(
                   child: Obx(() {
                     if (serverCtrl.gpuError.value != null) {
@@ -56,9 +55,7 @@ class ServerDashboardPanel extends StatelessWidget {
 
                 const SizedBox(width: gap),
 
-                // ---------------------------
-                // 🔥 GPU VRAM (에러 처리 추가)
-                // ---------------------------
+                // GPU VRAM 카드
                 Expanded(
                   child: Obx(() {
                     if (serverCtrl.vramError.value != null) {
@@ -81,13 +78,11 @@ class ServerDashboardPanel extends StatelessWidget {
 
           const SizedBox(height: gap),
 
-          // 🔽 하단: CPU + RAM
+          // 하단: CPU + RAM
           Expanded(
             child: Row(
               children: [
-                // ---------------------------
-                // 🔥 CPU Usage
-                // ---------------------------
+                // CPU Usage 카드
                 Expanded(
                   child: Obx(() {
                     if (serverCtrl.cpuError.value != null) {
@@ -107,9 +102,7 @@ class ServerDashboardPanel extends StatelessWidget {
 
                 const SizedBox(width: gap),
 
-                // ---------------------------
-                // 🔥 RAM (에러 처리 추가)
-                // ---------------------------
+                // RAM Usage 카드
                 Expanded(
                   child: Obx(() {
                     if (serverCtrl.ramError.value != null) {
