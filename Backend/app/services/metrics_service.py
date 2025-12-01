@@ -11,6 +11,7 @@ from app.core.config import settings, TIMEZONE
 from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.core.standard_time_manager import current_standard_time
+from app.core.logger import extract_error
 from app.common.codes import CustomCode
 from app.common.messages import Messages
 from app.schemas.timeseries_schema import (
@@ -24,6 +25,7 @@ from app.schemas.base_schema import BaseResponse
 from app.models.model import Model
 from app.models.inference_logs import InferenceLogs
 from app.clients.triton_client import triton_client
+from app.common.utils import to_utc_z
 
 
 # ============================================================
@@ -32,12 +34,7 @@ from app.clients.triton_client import triton_client
 
 
 def parse_end_iso(end_iso: Optional[str]) -> datetime:
-    """
-    end_iso:
-      - None이면 "지금"
-      - 숫자 문자열이면 epoch seconds
-      - 그 외는 ISO8601 (Z → +00:00 치환 후 파싱)
-    """
+    """end_iso 문자열을 datetime으로 변환"""
     if end_iso:
         if end_iso.isdigit():
             return datetime.fromtimestamp(int(end_iso), tz=TIMEZONE)
@@ -45,15 +42,13 @@ def parse_end_iso(end_iso: Optional[str]) -> datetime:
         end_dt = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
         if end_dt.tzinfo is None:
             end_dt = end_dt.replace(tzinfo=TIMEZONE)
-        return end_dt
+        return end_dt.astimezone(TIMEZONE)
 
     return datetime.now(TIMEZONE)
 
 
 def get_aggregation_window_from_str(base_time_str: str) -> Tuple[datetime, datetime]:
-    """
-    "HH:MM" 기준 시간 문자열로부터 [base, now] 또는 [어제 base, base) 구간 계산.
-    """
+    """ "HH:MM" 기준 시간 문자열로부터 [base, now] 또는 [어제 base, base) 구간 계산."""
     now = datetime.now(TIMEZONE)
     hh, mm = map(int, base_time_str.split(":"))
     today_base = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
@@ -64,10 +59,7 @@ def get_aggregation_window_from_str(base_time_str: str) -> Tuple[datetime, datet
 
 
 def parse_prometheus_values(series: dict, skip_invalid: bool = True) -> List[ValueItem]:
-    """
-    Prometheus 시계열 1개(series)에서 values/value를 파싱하여 ValueItem 리스트로 변환.
-    - skip_invalid=True면 NaN/Inf 값은 무시.
-    """
+    """Prometheus 시계열 1개(series)에서 values/value를 파싱하여 ValueItem 리스트로 변환."""
     raw_values = series.get("values")
     if raw_values is None:
         v = series.get("value")
@@ -80,7 +72,7 @@ def parse_prometheus_values(series: dict, skip_invalid: bool = True) -> List[Val
             v = float(val)
             if skip_invalid and (math.isnan(v) or math.isinf(v)):
                 continue
-            points.append(ValueItem(ts=ts_dt.isoformat(), value=round(v, 2)))
+            points.append(ValueItem(ts=to_utc_z(ts_dt), value=round(v, 2)))
         except Exception:
             continue
 
@@ -93,6 +85,7 @@ def parse_prometheus_values(series: dict, skip_invalid: bool = True) -> List[Val
 
 
 async def prom_query(promql: str):
+    """Prometheus 단일 시점 쿼리"""
     ep = f"{settings.PROM_URL.rstrip('/')}/api/v1/query"
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -105,7 +98,6 @@ async def prom_query(promql: str):
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     code=CustomCode.ERR_500.value,
                     message=Messages.PROMETHEUS_BAD_STATUS.value,
-                    data=None,
                 )
 
             return data["data"]["result"]
@@ -116,12 +108,13 @@ async def prom_query(promql: str):
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
-            message=f"{Messages.PROMETHEUS_QUERY_FAIL.value}: {e}",
-            data=None,
+            message=Messages.PROMETHEUS_QUERY_FAIL.value,
+            data={"error": extract_error(e)},
         )
 
 
 async def prom_query_range(promql: str, start: datetime, end: datetime, step: str = "600"):
+    """Prometheus 범위 쿼리"""
     ep = f"{settings.PROM_URL.rstrip('/')}/api/v1/query_range"
 
     params = {
@@ -145,6 +138,7 @@ async def prom_query_range(promql: str, start: datetime, end: datetime, step: st
 
 
 async def get_server_metrics_service() -> BaseResponse:
+    """서버 리소스 메트릭 조회"""
     try:
         queries = {
             "cpu_util": "avg(nv_cpu_utilization)",
@@ -171,7 +165,7 @@ async def get_server_metrics_service() -> BaseResponse:
             gpu_data.append(
                 {
                     "uuid": uuid,
-                    "gpu_util": round(vals.get("gpu_util", 0), 2),
+                    "gpuUtil": round(vals.get("gpu_util", 0), 2),
                 }
             )
 
@@ -182,7 +176,7 @@ async def get_server_metrics_service() -> BaseResponse:
                 cpu_util = float(val[1])
 
         data = {
-            "timestamp": datetime.now(TIMEZONE).isoformat(),
+            "timestamp": to_utc_z(datetime.now(TIMEZONE)),
             "cpu_utilization": round(cpu_util, 2),
             "gpu": gpu_data,
         }
@@ -195,26 +189,20 @@ async def get_server_metrics_service() -> BaseResponse:
 
     except CustomHTTPException:
         raise
-    except Exception:
+    except Exception as e:
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.SERVER_METRIC_FAIL.value,
-            data=None,
+            data={"error": extract_error(e)},
         )
 
 
 # ============================================================
 # 2. GPU 메모리 / CPU 메모리 시계열
 # ============================================================
-
-
 async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
-    """
-    GPU/CPU 메모리 사용률(%) 시계열
-    - 구간: [end-1h, end]
-    - 간격: 10분
-    """
+    """GPU/CPU 메모리 사용률(%) 시계열"""
     try:
         end_dt = parse_end_iso(end_iso)
         start_dt = end_dt - timedelta(hours=1)
@@ -247,7 +235,7 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             points = parse_prometheus_values(s, skip_invalid=True)
             vram_series_list.append(
                 SeriesItem(
-                    gpu_uuid=metric.get("gpu_uuid", "unknown"),
+                    gpuUuid=metric.get("gpu_uuid", "unknown"),
                     values=points,
                 )
             )
@@ -258,14 +246,14 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
             points = parse_prometheus_values(s, skip_invalid=True)
             ram_series_list.append(
                 SeriesItem(
-                    gpu_uuid=metric.get("gpu_uuid", "none"),
+                    gpuUuid=metric.get("gpu_uuid", "none"),
                     values=points,
                 )
             )
 
         time_window = TimeWindow(
-            start=start_dt.isoformat(),
-            end=end_dt.isoformat(),
+            start=to_utc_z(start_dt),
+            end=to_utc_z(end_dt),
             step="10m",
         )
 
@@ -287,17 +275,98 @@ async def get_timeseries_service(end_iso: Optional[str] = None) -> BaseResponse:
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
-            message=f"{Messages.SERVER_METRIC_FAIL.value}: {e}",
-            data=None,
+            message=Messages.SERVER_METRIC_FAIL.value,
+            data={"error": extract_error(e)},
         )
 
 
 # ============================================================
-# 3. model_id 기반 모델 통계
+# 3. 대시보드 모델 목록 조회
 # ============================================================
+async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
+    """대시보드 모델 목록 조회"""
+    # 1. 서버 상태 확인
+    try:
+        triton_alive = triton_client.is_server_ready()
+    except Exception:
+        triton_alive = False
+
+    if not triton_alive:
+        return create_response(
+            code=CustomCode.DASH_003.value,
+            message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+            data={"models": []},
+        )
+
+    # 2. Triton 모델 READY 리스트 가져오기
+    try:
+        resp = triton_client.list_models()
+        triton_models = resp.get("models", [])
+
+        ready_names = {m["name"] for m in triton_models if m.get("state") == "READY"}
+
+        if not ready_names:
+            return create_response(
+                CustomCode.DASH_003.value,
+                Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+                {"models": []},
+            )
+
+    except Exception as e:
+        raise CustomHTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code=CustomCode.ERR_500.value,
+            message=Messages.MODEL_LIST_FETCH_ERROR.value,
+            data={"error": extract_error(e)},
+        )
+
+    # 3. DB 모델 매핑
+    db_models = db.query(Model).filter(Model.name.in_(ready_names)).all()
+
+    results = []
+
+    base_time_str = current_standard_time()
+    start_time, end_time = get_aggregation_window_from_str(base_time_str)
+    for m in db_models:
+        q = (
+            db.query(
+                func.count().filter(InferenceLogs.request_status == "SUCCESS").label("request_success"),
+                func.count().filter(InferenceLogs.inference_status == "OK").label("inference_ok"),
+                func.count().filter(InferenceLogs.inference_status == "NG").label("inference_ng"),
+            )
+            .filter(InferenceLogs.model_id == m.model_id)
+            .filter(InferenceLogs.completed_at >= start_time)
+            .filter(InferenceLogs.completed_at < end_time)
+        )
+
+        row = q.first()
+
+        inference_total = row.request_success or 0
+        inference_ok = row.inference_ok or 0
+        ok_ratio = round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0
+
+        results.append(
+            {
+                "modelId": m.model_id,
+                "modelName": m.name,
+                "inferenceTotal": inference_total,
+                "inferenceOk": inference_ok,
+                "okRatio": ok_ratio,
+            }
+        )
+
+    return create_response(
+        code=CustomCode.DASH_003.value,
+        message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
+        data={"models": results},
+    )
 
 
+# ============================================================
+# 4. model_id 기반 모델 통계
+# ============================================================
 def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseResponse:
+    """모델별 추론 통계 조회"""
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
         raise CustomHTTPException(
@@ -336,13 +405,13 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
     avg_ms = round(inferenceData.avg_latency or 0, 2)
 
     return create_response(
-        code=CustomCode.DASH_003.value,
-        message=f"{model.name} 통계 조회 성공",
+        code=CustomCode.DASH_004.value,
+        message=Messages.MODEL_STATS_FETCH_SUCCESS.value,
         data={
             "model_name": model.name,
             "base_time": base_time_str,  # "HH:MM"
-            "aggregation_start": start_time.isoformat(),
-            "aggregation_end": end_time.isoformat(),
+            "aggregation_start": to_utc_z(start_time),
+            "aggregation_end": to_utc_z(end_time),
             "request_total": request_total,
             "request_success": request_success,
             "request_fail": request_fail,
@@ -357,15 +426,14 @@ def get_model_per_inference_stats_service(model_id: int, db: Session) -> BaseRes
 
 
 # ============================================================
-# 4. model_id 기반 모델 latency
+# 5. model_id 기반 모델 latency
 # ============================================================
-
-
 async def get_model_per_inference_latency_service(
     model_id: int,
     end_iso: Optional[str],
     db: Session,
 ) -> BaseResponse:
+    """모델별 레이턴시 조회"""
     model = db.query(Model).filter(Model.model_id == model_id).first()
     if not model:
         raise CustomHTTPException(
@@ -416,8 +484,8 @@ async def get_model_per_inference_latency_service(
         output_series = convert(latency_results["output"])
 
         time_window = TimeWindow(
-            start=start_dt.isoformat(),
-            end=end_dt.isoformat(),
+            start=to_utc_z(start_dt),
+            end=to_utc_z(end_dt),
             step="10m",
         )
 
@@ -433,8 +501,8 @@ async def get_model_per_inference_latency_service(
         }
 
         return create_response(
-            code=CustomCode.DASH_003.value,
-            message=f"{model.name} 레이턴시 조회 성공",
+            code=CustomCode.DASH_005.value,
+            message=Messages.MODEL_LATENCY_FETCH_SUCCESS.value,
             data=data,
         )
 
@@ -444,89 +512,6 @@ async def get_model_per_inference_latency_service(
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
-            message=f"Failed: {e}",
-            data=None,
+            message=Messages.MODEL_LATENCY_FETCH_ERROR.value,
+            data={"error": extract_error(e)},
         )
-
-
-# ============================================================
-# 5. 대시보드 모델 목록 조회
-# ============================================================
-
-
-async def get_dashboard_models_list_service(db: Session) -> BaseResponse:
-    # 1. 서버 상태 확인
-    try:
-        triton_alive = triton_client.is_server_ready()
-    except Exception:
-        triton_alive = False
-
-    if not triton_alive:
-        return create_response(
-            code=CustomCode.DASH_005.value,
-            message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
-            data={"models": []},
-        )
-
-    # 2. Triton 모델 READY 리스트 가져오기
-    try:
-        resp = triton_client.list_models()
-        triton_models = resp.get("models", [])
-
-        ready_names = {m["name"] for m in triton_models if m.get("state") == "READY"}
-
-        if not ready_names:
-            return create_response(
-                CustomCode.DASH_005.value,
-                Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
-                {"models": []},
-            )
-
-    except Exception as e:
-        raise CustomHTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            code=CustomCode.ERR_500.value,
-            message=Messages.MODEL_LIST_FETCH_ERROR.value,
-            data={"detail": str(e)},
-        )
-
-    # 3. DB 모델 매핑
-    db_models = db.query(Model).filter(Model.name.in_(ready_names)).all()
-
-    results = []
-
-    base_time_str = current_standard_time()
-    start_time, end_time = get_aggregation_window_from_str(base_time_str)
-    for m in db_models:
-        q = (
-            db.query(
-                func.count().filter(InferenceLogs.request_status == "SUCCESS").label("request_success"),
-                func.count().filter(InferenceLogs.inference_status == "OK").label("inference_ok"),
-                func.count().filter(InferenceLogs.inference_status == "NG").label("inference_ng"),
-            )
-            .filter(InferenceLogs.model_id == m.model_id)
-            .filter(InferenceLogs.completed_at >= start_time)
-            .filter(InferenceLogs.completed_at < end_time)
-        )
-
-        row = q.first()
-
-        inference_total = row.request_success or 0
-        inference_ok = row.inference_ok or 0
-        ok_ratio = round(inference_ok / inference_total, 3) if inference_total > 0 else 0.0
-
-        results.append(
-            {
-                "modelId": m.model_id,
-                "modelName": m.name,
-                "inference_total": inference_total,
-                "inference_ok": inference_ok,
-                "ok_ratio": ok_ratio,
-            }
-        )
-
-    return create_response(
-        code=CustomCode.DASH_005.value,
-        message=Messages.DASHBOARD_MODEL_LIST_SUCCESS.value,
-        data={"models": results},
-    )

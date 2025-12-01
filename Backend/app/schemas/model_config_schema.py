@@ -1,16 +1,12 @@
-from pydantic import BaseModel
-from datetime import datetime
+from app.schemas.base_schema import BaseRequest
 
 
-class ConfigResponse(BaseModel):
-    configId: int
-    version: int
-    content: str
-    createdBy: int | None
-    createdAt: datetime
-
-
-class ConfigUpdateRequest(BaseModel):
-    loginId: str
+class ConfigUpdateRequest(BaseRequest):
+    login_id: str
     description: str | None = None
-    configContent: str
+    config_content: str
+
+
+class ConfigDeleteRequest(BaseRequest):
+    login_id: str
+    description: str | None = None

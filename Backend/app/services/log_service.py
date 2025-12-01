@@ -1,6 +1,7 @@
 from fastapi import status
 from datetime import datetime
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.schemas.base_schema import BaseResponse
 from app.core.response_utils import create_response
@@ -10,23 +11,22 @@ from app.models.server import Server
 from app.models.model import ModelRelease
 from app.models.user import User
 from app.core.customException import CustomHTTPException
+from app.core.config import TIMEZONE
+from app.common.utils import to_utc_z
 
-import asyncio
-from sqlalchemy.orm import Session
-from app.common.sse_push_channel import infer_log_channel, server_log_channel
 
-def get_api_log_service(
+def get_web_log_service(
     start_date, end_date, username, type, description, global_search, page: int, size: int, db: Session
 ) -> BaseResponse:
-
-    start_dt = datetime.combine(start_date, datetime.min.time())
-    end_dt = datetime.combine(end_date, datetime.max.time())
+    """웹 로그 조회"""
+    start_dt = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=TIMEZONE)
+    end_dt = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=TIMEZONE)
 
     if end_date < start_date:
         raise CustomHTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            code=CustomCode.ERR_400.value,
-            detail=Messages.ERR_END_DATE_BEFORE_START_DATE.value,
+            status.HTTP_400_BAD_REQUEST,
+            CustomCode.ERR_400.value,
+            Messages.ERR_END_DATE_BEFORE_START_DATE.value,
         )
 
     server_logs = (
@@ -41,7 +41,7 @@ def get_api_log_service(
         log_type = f"TRITON-{server.status.value}"
         server_result.append(
             {
-                "date": server.created_at,
+                "date": to_utc_z(server.created_at),  # ★
                 "username": user.name,
                 "type": log_type,
                 "description": server.description,
@@ -60,7 +60,7 @@ def get_api_log_service(
         log_type = f"{release.type.value}-{release.action.value}"
         release_result.append(
             {
-                "date": release.created_at,
+                "date": to_utc_z(release.created_at),  # ★
                 "username": user.name,
                 "type": log_type,
                 "description": release.reason,
@@ -97,18 +97,19 @@ def get_api_log_service(
 
     return create_response(
         code=CustomCode.LOG_001.value,
-        message=Messages.MODEL_API_LOG_FETCH_SUCCESS.value,
+        message=Messages.WEB_LOG_FETCH_SUCCESS.value,
         data={
             "items": paginated_items,
             "page": page,
             "size": size,
             "total": total,
-            "total_pages": total_pages,
+            "totalPages": total_pages,
         },
     )
 
 
 def get_model_name_list_service(db):
+    """ClickHouse 모델명 목록 조회"""
     sql = text(
         """
         SELECT DISTINCT model_name
@@ -123,7 +124,7 @@ def get_model_name_list_service(db):
 
     return create_response(
         CustomCode.LOG_002,
-        Messages.MODEL_LOG_MODEL_NAME_LIST_FETCH_SUCCESS,
+        Messages.INFER_LOG_MODEL_NAME_LIST_FETCH_SUCCESS,
         {"models": model_names},
     )
 
@@ -133,20 +134,21 @@ def _add_cond(where: list, cond: str | None):
         where.append(cond)
 
 
-def get_model_logs_service(db, model_name, start, end, level, cursor, request_id, global_search, limit):
+def get_infer_logs_service(db, model_name, start, end, level, cursor, request_id, global_search, limit):
+    """추론 로그 조회"""
     # 날짜 유효성 체크
     if (start and not end) or (end and not start):
-        return create_response(
-            CustomCode.ERR_400,
-            Messages.ERR_END_DATE_TOGETHER_START_DATE,
-            None,
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=Messages.ERR_END_DATE_TOGETHER_START_DATE.value,
         )
 
     if start and end and end < start:
-        return create_response(
-            CustomCode.ERR_400,
-            Messages.ERR_END_DATE_BEFORE_START_DATE,
-            None,
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=Messages.ERR_END_DATE_BEFORE_START_DATE.value,
         )
 
     # WHERE 조건 생성
@@ -199,8 +201,8 @@ def get_model_logs_service(db, model_name, start, end, level, cursor, request_id
                 "ts": r[1],  # iso_utc
                 "level": r[2],
                 "message": r[3],
-                "request_id": r[4],
-                "model_name": r[5],
+                "requestId": r[4],
+                "modelMame": r[5],
                 "uid": r[6],
             }
         )
@@ -210,28 +212,29 @@ def get_model_logs_service(db, model_name, start, end, level, cursor, request_id
 
     return create_response(
         CustomCode.LOG_003,
-        Messages.MODEL_LOG_FETCH_SUCCESS,
+        Messages.INFER_LOG_FETCH_SUCCESS,
         {
             "logs": logs,
-            "next_cursor": next_cursor,
+            "nextCursor": next_cursor,
         },
     )
 
 
 def get_server_logs_service(db, start, end, level, cursor, global_search, limit):
+    """서버 로그 조회"""
     # 날짜 유효성 체크
     if (start and not end) or (end and not start):
-        return create_response(
-            CustomCode.ERR_400,
-            Messages.ERR_END_DATE_TOGETHER_START_DATE,
-            None,
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=Messages.ERR_END_DATE_TOGETHER_START_DATE.value,
         )
 
     if start and end and end < start:
-        return create_response(
-            CustomCode.ERR_400,
-            Messages.ERR_END_DATE_BEFORE_START_DATE,
-            None,
+        raise CustomHTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code=CustomCode.ERR_400.value,
+            message=Messages.ERR_END_DATE_BEFORE_START_DATE.value,
         )
 
     # WHERE 조건 구성
@@ -285,14 +288,6 @@ def get_server_logs_service(db, start, end, level, cursor, global_search, limit)
         Messages.SERVER_LOG_FETCH_SUCCESS,
         {
             "logs": logs,
-            "next_cursor": next_cursor,
+            "nextCursor": next_cursor,
         },
     )
-
-
-async def handle_infer_log_event(payload: dict):
-    """
-    Vector → FastAPI 로 들어온 infer 로그를 처리하고 SSE로 전송
-    """
-    await infer_log_channel.publish(payload)
-    return {"ok": True}

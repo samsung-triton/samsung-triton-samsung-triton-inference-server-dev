@@ -1,6 +1,5 @@
 import random
 import shutil
-import logging
 from fastapi import status, UploadFile
 from pathlib import Path
 from typing import List
@@ -14,11 +13,12 @@ from app.core.response_utils import create_response
 from app.core.customException import CustomHTTPException
 from app.common.codes import CustomCode
 from app.common.messages import Messages
-from app.core.config import settings
-from app.core.config import TIMEZONE
+from app.core.config import settings, TIMEZONE
+from app.core.logger import extract_error
 
 
 def generate_custom_uid() -> str:
+    """커스텀 UID 생성"""
     now = datetime.now(TIMEZONE)
     date_part = now.strftime("%Y%m%d")
     time_part = now.strftime("%H%M%S")
@@ -26,20 +26,17 @@ def generate_custom_uid() -> str:
     return f"{date_part}_{time_part}_{rand_part}"
 
 
-logger = logging.getLogger(__name__)
-
-
 def save_input_before_infer_service(
-    clientId: str, modelName: str, dataFiles: List[UploadFile], db: Session
+    client_id: str, model_name: str, data_files: List[UploadFile], db: Session
 ) -> BaseResponse:
-    model = db.query(Model).filter(Model.name == modelName).first()
+    """Inference 입력 파일 저장"""
+    model = db.query(Model).filter(Model.name == model_name).first()
 
     if not model:
         raise CustomHTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
             message=Messages.MODEL_NOT_FOUND.value,
-            data=None,
         )
 
     try:
@@ -50,7 +47,7 @@ def save_input_before_infer_service(
         saved_paths = []
 
         # 여러 파일 저장 (로그는 한 번만 남김)
-        for file in dataFiles:
+        for file in data_files:
             file_path = save_dir / f"{uid}_{file.filename}"
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
@@ -59,7 +56,7 @@ def save_input_before_infer_service(
         # 로그
         new_log = InferenceLogs(
             uid=uid,
-            client_id=clientId,
+            client_id=client_id,
             input_path=",".join(saved_paths),  # 여러 경로를 문자열로 저장 (또는 JSON 필드라면 리스트로)
             model_id=model.model_id,
         )
@@ -72,21 +69,21 @@ def save_input_before_infer_service(
             Messages.INPUT_DATA_SAVE_SUCCESS.value,
             {
                 "uid": uid,
-                "input_path": saved_paths,  # 리스트 형태 반환
+                "inputPath": saved_paths,  # 리스트 형태 반환
             },
         )
 
     except Exception as e:
-        logger.error(f"데이터 저장 중 오류 발생: {e}")
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.INPUT_DATA_SAVE_FAIL.value,
-            data=None,
+            data={"error": extract_error(e)},
         )
 
 
 def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Session) -> BaseResponse:
+    """Inference 출력 Text 저장"""
     inferenceData = db.query(InferenceLogs).filter(InferenceLogs.uid == uid).first()
 
     if not inferenceData:
@@ -94,7 +91,6 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
             message=Messages.UID_NOT_FOUND.value,
-            data=None,
         )
 
     try:
@@ -122,23 +118,23 @@ def save_output_after_infer_service(uid: str, is_ok: bool, result: str, db: Sess
         return create_response(
             CustomCode.INFERENCE_002,
             Messages.OUTPUT_DATA_SAVE_SUCCESS.value,
-            {"uid": uid, "output_path": str(file_path)},
+            {"uid": uid, "outputPath": str(file_path)},
         )
 
     except Exception as e:
         db.rollback()
-        logger.error(f"데이터 저장 중 오류 발생: {e}")
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.OUTPUT_DATA_SAVE_FAIL.value,
-            data=None,
+            data={"error": extract_error(e)},
         )
 
 
 def save_binary_output_after_infer_service(
     uid: str, is_ok: bool, extension: str, binary_data: bytes, db: Session
 ) -> BaseResponse:
+    """Inference 출력 바이너리 저장"""
     inferenceData = db.query(InferenceLogs).filter(InferenceLogs.uid == uid).first()
 
     if not inferenceData:
@@ -146,7 +142,6 @@ def save_binary_output_after_infer_service(
             status_code=status.HTTP_404_NOT_FOUND,
             code=CustomCode.ERR_404.value,
             message=Messages.UID_NOT_FOUND.value,
-            data=None,
         )
 
     try:
@@ -169,18 +164,16 @@ def save_binary_output_after_infer_service(
         db.refresh(inferenceData)
 
         return create_response(
-            code=CustomCode.INFERENCE_002,
+            code=CustomCode.INFERENCE_003,
             message=Messages.OUTPUT_DATA_SAVE_SUCCESS.value,
-            data={"uid": uid, "output_path": str(file_path)},
+            data={"uid": uid, "outputPath": str(file_path)},
         )
 
     except Exception as e:
         db.rollback()
-        logger.error(f"바이너리 데이터 저장 중 오류 발생: {e}")
-
         raise CustomHTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code=CustomCode.ERR_500.value,
             message=Messages.OUTPUT_DATA_SAVE_FAIL.value,
-            data=None,
+            data={"error": extract_error(e)},
         )

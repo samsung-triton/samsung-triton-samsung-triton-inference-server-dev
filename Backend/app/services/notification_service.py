@@ -1,18 +1,18 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from fastapi import status
 
 from app.schemas.base_schema import BaseResponse
+from app.core.customException import CustomHTTPException
 from app.core.response_utils import create_response
+from app.core.logger import extract_error
 from app.common.codes import CustomCode
 from app.common.messages import Messages
+from app.common.utils import to_utc_z
 
 
 def get_inference_notification_service(db: Session, page: int, size: int) -> BaseResponse:
-    """
-    ClickHouse의 logs.triton_error_logs에서
-    ts, level, error_message만 가져와서
-    페이지네이션해서 반환
-    """
+    """Inference 에러 알림 목록 조회 (페이지네이션)"""
     try:
         offset = (page - 1) * size
 
@@ -34,14 +34,23 @@ def get_inference_notification_service(db: Session, page: int, size: int) -> Bas
 
         items = [
             {
-                "ts": row.ts.isoformat() if hasattr(row.ts, "isoformat") else str(row.ts),
+                "ts": to_utc_z(row.ts),
                 "level": row.level,
-                "error_message": row.error_message,
+                "errorMessage": row.error_message,
             }
             for row in rows
         ]
 
         total = db.execute(text("SELECT count() AS c FROM logs.triton_error_logs")).scalar()
+
+    except Exception as e:
+        # ClickHouse 장애 → 503 응답
+        raise CustomHTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code=CustomCode.ERR_503.value,
+            message=Messages.NOTIFICATION_FETCH_ERROR.value,
+            data={"error": extract_error(e)},
+        )
 
     finally:
         db.close()
@@ -50,12 +59,12 @@ def get_inference_notification_service(db: Session, page: int, size: int) -> Bas
 
     return create_response(
         CustomCode.NOTI_001.value,
-        Messages.NOTIFICATION_FETCH_SUCCESS.value,  # 임시 메시지
+        Messages.NOTIFICATION_FETCH_SUCCESS.value,
         data={
             "items": items,
             "page": page,
             "size": size,
             "total": total,
-            "total_pages": total_pages,
+            "totalPages": total_pages,
         },
     )
