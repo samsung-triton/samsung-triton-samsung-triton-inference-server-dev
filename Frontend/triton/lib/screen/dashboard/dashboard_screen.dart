@@ -1,5 +1,8 @@
+// 대시보드 화면
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:triton/controller/dashboard/dashboard_controller.dart';
 import 'package:triton/widgets/dashboard/dashboard_sidebar.dart';
 import 'package:triton/widgets/dashboard/model_dashboard_panel.dart';
@@ -19,23 +22,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
 
-    // 이전 컨트롤러가 살아있으면 제거
+    // 기존 컨트롤러 제거 후 재등록
     if (Get.isRegistered<DashboardController>()) {
       Get.delete<DashboardController>(force: true);
     }
-
-    // 🔥 Controller 등록
     dashboardController = Get.put(DashboardController());
-
-    // 🔥 Dashboard 화면 들어오면 polling 시작
-    dashboardController.startPolling();
   }
 
   @override
   void dispose() {
-    // 🔥 Dashboard 화면 벗어나면 polling 중단
-    dashboardController.stopPolling();
-
+    // 화면 종료 시 대시보드 컨트롤러 제거
+    if (Get.isRegistered<DashboardController>()) {
+      Get.delete<DashboardController>(force: true);
+    }
     super.dispose();
   }
 
@@ -43,10 +42,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+
+      // 좌측: 사이드바 / 우측: 패널 영역
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const DashboardSidebar(),
+
           Expanded(
             child: Obx(() {
               switch (dashboardController.selectedType.value) {

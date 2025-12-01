@@ -1,18 +1,13 @@
 // 모델 사이드바 카드
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:triton/controller/model_manage/model_manage_controller.dart';
-
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
-
-import '../../utils/modal_util.dart';
-
-import '../sidebar/sidebar_card_base.dart';
-
-import '../../widgets/modal/modal_registration.dart';
-import '../../widgets/modal/modal_description.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
+import 'package:triton/utils/modal_util.dart';
+import 'package:triton/widgets/modal/modal_description.dart';
+import 'package:triton/widgets/modal/modal_registration.dart';
+import 'package:triton/widgets/sidebar/sidebar_card_base.dart';
 
 // 모델 카드 종류
 enum ModelCardType { normal, add }
@@ -25,12 +20,12 @@ class ModelCard extends StatelessWidget {
   const ModelCard({super.key, required this.type, this.item, this.active = false})
     : assert(type != ModelCardType.normal || item != null, 'NORMAL 카드에서는 item이 필요합니다.');
 
-  // 등록 모달 열기
+  // 등록 모달 열기 기능 (모델 버전)
   void _openRegisterModal(BuildContext context) {
     ModalPortal.open(context, builder: (dialogContext) => const ModalRegistration(kind: RegistrationKind.model));
   }
 
-  // 삭제 모달 열기
+  // 삭제 모달 열기 기능
   void _openDeleteModal(BuildContext context) {
     final descCtrl = TextEditingController();
     final modelId = item?.modelId;
@@ -42,6 +37,7 @@ class ModelCard extends StatelessWidget {
         confirmMsg: "Are you sure you want to delete it?",
         onOK: () async {
           final modelManageController = Get.find<ModelManageController>();
+          // 모델 삭제 기능 호출
           await modelManageController.deleteModel(modelId!, descCtrl.text);
           descCtrl.dispose();
         },
@@ -57,11 +53,12 @@ class ModelCard extends StatelessWidget {
 
     return SidebarCardBase(
       isActive: active,
+      // 추가 카드면 추가 모달 열기 기능 추가
       onTap: isAdd ? () => _openRegisterModal(context) : () => modelManageController.selectModel(item!.modelId),
       child: SizedBox(
         width: double.infinity,
         child: isAdd
-            // ADD 카드
+            // 추가 카드
             ? Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Column(
@@ -82,13 +79,14 @@ class ModelCard extends StatelessWidget {
                   ],
                 ),
               )
-            // NORMAL 카드
+            // 일반 모델 카드
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 상단: 배지 + 삭제
+                  // 상단 배지 + 삭제
                   Row(
                     children: [
+                      // 로드 배지
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
@@ -100,7 +98,10 @@ class ModelCard extends StatelessWidget {
                           style: T.t10(bold: true, color: (item?.status ?? false) ? secondaryDarkest : darkGray),
                         ),
                       ),
+
                       const Spacer(),
+
+                      // 삭제 버튼
                       IconButton(
                         tooltip: 'delete',
                         onPressed: () => _openDeleteModal(context),
@@ -121,7 +122,7 @@ class ModelCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // 하단: last loaded | versions
+                  // 하단 last loaded | versions
                   Row(
                     children: [
                       Expanded(

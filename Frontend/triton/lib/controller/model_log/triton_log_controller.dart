@@ -1,4 +1,4 @@
-//Triton Log 드롭다운 컨트롤러
+//트리톤 로그 컨트롤러
 import 'package:get/get.dart';
 import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/show_alert.dart';
@@ -26,6 +26,7 @@ class TritonLogController extends GetxController {
 
       final List<String> fetched = (data['models'] as List).map((e) => e.toString()).toList();
 
+      //Triton Server 는 항상 상단에 고정
       modelList.assignAll(['Triton Server', ...fetched]);
     } catch (e) {
       ShowAlert.show(message: "Failed to retrieve model list.");

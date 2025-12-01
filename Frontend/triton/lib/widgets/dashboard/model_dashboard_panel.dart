@@ -1,3 +1,5 @@
+// 모델 대시보드 패널
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -6,15 +8,36 @@ import 'package:triton/widgets/dashboard/model_inference_stats_card.dart';
 import 'package:triton/widgets/dashboard/model_latency_chart.dart';
 import 'package:triton/widgets/dashboard/model_notification_panel.dart';
 
-// Controllers
 import 'package:triton/controller/dashboard/dashboard_controller.dart';
 import 'package:triton/controller/dashboard/model_dashboard_controller.dart';
 
-/// 🔹 Model Dashboard Panel
-/// - Inference Stats, Latency Chart, Notifications
-/// - Controller와 연결되어 reactive UI로 동작
-class ModelDashboardPanel extends StatelessWidget {
+class ModelDashboardPanel extends StatefulWidget {
   const ModelDashboardPanel({super.key});
+
+  @override
+  State<ModelDashboardPanel> createState() => _ModelDashboardPanelState();
+}
+
+class _ModelDashboardPanelState extends State<ModelDashboardPanel> {
+  @override
+  void initState() {
+    super.initState();
+
+    final dashCtrl = Get.find<DashboardController>();
+    final modelCtrl = Get.find<ModelDashboardController>();
+
+    final id = dashCtrl.selectedModelId.value;
+    if (id != null) {
+      modelCtrl.restartSse(id);
+    }
+  }
+
+  @override
+  void dispose() {
+    final modelCtrl = Get.find<ModelDashboardController>();
+    modelCtrl.onClose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,34 +49,34 @@ class ModelDashboardPanel extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.all(gap),
+
+      // 상단 헤더 + 좌측 통계 / 우측 알림 패널
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // ① Header
+          // 상단 헤더 (Reset Time / Last Updated / Update)
           CommonMetricHeaderBar(
             onRefresh: () {
               final id = dashCtrl.selectedModelId.value;
               if (id != null) {
-                modelCtrl.fetchAll(id);
+                modelCtrl.restartSse(id);
               }
             },
           ),
 
           const SizedBox(height: gap),
 
-          // ② Main Body
+          // 메인 영역
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left: Inference Stats + Latency
+                // 좌측: 추론 통계 + 지연시간 차트
                 Expanded(
                   child: Column(
                     children: [
                       const Expanded(child: ModelInferenceStatsCard()),
                       const SizedBox(height: gap),
-
-                      // 🔹 Latency Chart: 남는 세로 공간을 전부 사용
                       const Expanded(child: ModelLatencyChart()),
                     ],
                   ),
@@ -61,7 +84,7 @@ class ModelDashboardPanel extends StatelessWidget {
 
                 const SizedBox(width: gap),
 
-                // Right: Notifications
+                // 우측: 알림 패널
                 const SizedBox(width: rightPanelW, child: ModelNotificationPanel()),
               ],
             ),

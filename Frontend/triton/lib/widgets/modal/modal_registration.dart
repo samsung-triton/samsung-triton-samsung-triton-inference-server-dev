@@ -52,8 +52,8 @@ class _ModalRegistrationState extends State<ModalRegistration> {
   bool get isModel => widget.kind == RegistrationKind.model;
   bool get isSetup => widget.kind == RegistrationKind.setup;
 
-  String get _modelTypeLabel => modelType == ModelType.normal ? 'single' : 'ensemble';
-  String get _modelTypeApiValue => modelType == ModelType.normal ? 'NORMAL' : 'ENSEMBLE';
+  // 모델 타입 문자열
+  String get _modelTypeString => modelType == ModelType.normal ? 'NORMAL' : 'ENSEMBLE';
 
   @override
   void initState() {
@@ -92,7 +92,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
     }
   }
 
-  // setup 파일 등록
+  // 셋업 파일 등록
   Future<void> _browseSetupFile() async {
     final file = await _pickFile();
     if (file != null) {
@@ -126,7 +126,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         return false;
       }
     }
-    // 셋업 등록 검증
+    // 에셋 등록 검증
     else {
       if (pickedModelFile == null && pickedSetupFile == null) {
         _setError('at least one of model file or setup file is required');
@@ -161,7 +161,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
   Future<void> _performRegister() async {
     final modelManageController = Get.find<ModelManageController>();
 
-    // 버전 or 셋업 등록
+    // 에셋 등록 기능 호출
     if (isSetup) {
       final form = FormData({
         if (pickedModelFile != null)
@@ -172,7 +172,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
       });
       await modelManageController.registerAssets(form);
     }
-    // 싱글 모델 등록
+    // NORMAL 모델 등록 기능 호출
     else if (modelType == ModelType.normal) {
       final form = FormData({
         if (pickedModelFile != null)
@@ -180,18 +180,18 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         if (pickedSetupFile != null)
           'setupFile': MultipartFile(pickedSetupFile!.bytes, filename: pickedSetupFile!.name),
         'modelName': nameCtrl.text.trim(),
-        'modelType': _modelTypeApiValue,
+        'modelType': _modelTypeString,
         'description': descCtrl.text.trim(),
       });
       await modelManageController.registerModel(form);
     }
-    // 앙상블 모델 등록
+    // ENSEMBLE 모델 등록 기능 호출
     else {
       final form = FormData({
         if (pickedSetupFile != null)
           'setupFile': MultipartFile(pickedSetupFile!.bytes, filename: pickedSetupFile!.name),
         'modelName': nameCtrl.text.trim(),
-        'modelType': _modelTypeApiValue,
+        'modelType': _modelTypeString,
         'description': descCtrl.text.trim(),
       });
       await modelManageController.registerEnsembleModel(form);
@@ -202,27 +202,25 @@ class _ModalRegistrationState extends State<ModalRegistration> {
   Future<void> _confirmAndRegisterSequential() async {
     if (!_validate()) return;
 
-    // 현재(등록) 모달의 root 네비게이터 컨텍스트를 확보
     final hostCtx = Navigator.of(context, rootNavigator: true).context;
 
-    // 1) 현재 모달 닫기
     ModalPortal.close(context);
 
-    // 2) 다음 프레임에서 확인 모달 열기
+    // 확인 모달 열기
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ModalPortal.open(
         hostCtx,
         builder: (dialogContext) => ModalConfirmation(
           message: 'Are you sure you want to register it?',
           onOK: () async {
-            await _performRegister(); // API 호출
+            // 등록 함수
+            await _performRegister();
           },
         ),
       );
     });
   }
 
-  // UI
   @override
   Widget build(BuildContext context) {
     return ModalBase(
@@ -245,18 +243,18 @@ class _ModalRegistrationState extends State<ModalRegistration> {
           const SizedBox(height: 8),
         ],
 
-        // 모델 등록일 경우에만 타입과 이름 입력
+        // 모델 타입과 이름 입력 (모델 등록의 경우에만)
         if (isModel) ...[
           _LabelInputRow(
             label: 'model type',
             child: Dropdown(
               width: 200,
-              items: const ['single', 'ensemble'],
+              items: const ['NORMAL', 'ENSEMBLE'],
               hintText: 'Select model type',
-              value: _modelTypeLabel,
+              value: _modelTypeString,
               onChanged: (newValue) {
                 setState(() {
-                  if (newValue == 'ensemble') {
+                  if (newValue == 'ENSEMBLE') {
                     modelType = ModelType.ensemble;
                   } else {
                     modelType = ModelType.normal;
@@ -275,7 +273,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
           const SizedBox(height: 4),
         ],
 
-        // 모델 파일
+        // 모델 파일 입력
         if ((isModel && modelType == ModelType.normal) || isSetup) ...[
           _LabelInputRow(
             key: const ValueKey('model-file-row'),
@@ -291,7 +289,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
           const SizedBox(height: 4),
         ],
 
-        // 셋업 파일
+        // 셋업 파일 입력
         _LabelInputRow(
           key: const ValueKey('setup-file-row'),
           label: 'setup file',
@@ -305,7 +303,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         ),
         const SizedBox(height: 4),
 
-        // 이유 입력
+        // 이유 입력 칸
         _LabelInputRow(
           label: 'description',
           alignTop: true,
@@ -313,10 +311,11 @@ class _ModalRegistrationState extends State<ModalRegistration> {
         ),
         const SizedBox(height: 24),
 
-        // 등록 | 취소 버튼
+        // 등록 + 취소 버튼
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // 등록 버튼
             AnimatedBuilder(
               animation: Listenable.merge([nameCtrl, descCtrl]),
               builder: (context, _) {
@@ -330,6 +329,7 @@ class _ModalRegistrationState extends State<ModalRegistration> {
               },
             ),
             const SizedBox(width: 16),
+            // 취소 버튼
             ButtonMedium(
               text: 'cancel',
               onPressed: () => ModalPortal.close(context),

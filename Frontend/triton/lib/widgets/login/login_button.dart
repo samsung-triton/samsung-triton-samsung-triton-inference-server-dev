@@ -1,7 +1,7 @@
 // 로그인 버튼
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
 class LoginButton extends StatelessWidget {
   final String label;
@@ -10,12 +10,10 @@ class LoginButton extends StatelessWidget {
 
   const LoginButton({super.key, required this.label, required this.onPressed, this.isLoading = false});
 
-  // 생성 빌드
   @override
   Widget build(BuildContext context) {
     final bool disabled = isLoading;
 
-    // 최종 위젯
     return SizedBox(
       height: 64,
       width: double.infinity,

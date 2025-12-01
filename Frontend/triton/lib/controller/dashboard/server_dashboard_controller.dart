@@ -1,142 +1,148 @@
+// 서버 대시보드 컨트롤러
+
+import 'dart:async';
+import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:triton/widgets/dashboard/server_metrics.dart';
+
 import 'package:triton/utils/api_client.dart';
+import 'package:triton/widgets/dashboard/server_metrics.dart';
 
 class ServerDashboardController extends GetxController {
-  /// 서버 전체 스냅샷
-  final metrics = ServerMetrics.mock.obs;
+  // 서버 스냅샷 데이터
+  final metrics = ServerMetrics(cpuUsage: 0, ramUsage: 0, gpuUtilization: 0, gpuVram: 0, models: const []).obs;
 
-  /// 시계열 (RAM / GPU VRAM)
+  // 시간 시리즈(VRAM / RAM)
   final gpuVramSeries = <FlSpot>[].obs;
   final ramSeries = <FlSpot>[].obs;
-
-  /// timestamp 저장 (chart 라벨용)
   final gpuVramTimestamps = <DateTime>[].obs;
   final ramTimestamps = <DateTime>[].obs;
 
-  /// 로딩 상태
-  final loading = false.obs;
-
-  /// 에러 상태
+  // 에러 상태
   final cpuError = RxnString();
   final gpuError = RxnString();
   final vramError = RxnString();
   final ramError = RxnString();
 
-  /// API Client
-  late final ApiClient _api;
+  // SSE 구독 핸들
+  StreamSubscription<String>? _metricsSub;
+  StreamSubscription<String>? _timeseriesSub;
 
-  // ------------------------------------------------------------
-  // Computed Fields
-  // ------------------------------------------------------------
-  double get latestCpuUsage => metrics.value.cpuUsage;
-  double get latestGpuUtil => metrics.value.gpuUtilization;
-  double get latestGpuVram => gpuVramSeries.isNotEmpty ? gpuVramSeries.last.y : metrics.value.gpuVram;
-  double get latestRamUsage => ramSeries.isNotEmpty ? ramSeries.last.y : metrics.value.ramUsage;
+  late final ApiClient _api;
 
   @override
   void onInit() {
     super.onInit();
     _api = Get.find<ApiClient>();
-
-    // 초기 빈값
-    gpuVramSeries.value = [];
-    ramSeries.value = [];
-    gpuVramTimestamps.value = [];
-    ramTimestamps.value = [];
+    restartSse(); // 최초 진입 시 SSE 연결
   }
 
-  Future<void> fetchAll() async {
-    loading.value = true;
+  // SSE 중단
+  void stopSse() {
+    _metricsSub?.cancel();
+    _timeseriesSub?.cancel();
+  }
 
-    // ------------------------------------------------------------
-    // 1) CPU / GPU Utilization
-    // ------------------------------------------------------------
-    try {
-      final metricData = await _api.getServerMetrics();
+  // SSE 재연결
+  void restartSse() {
+    stopSse();
+    _startMetricsSse();
+    _startTimeseriesSse();
+  }
 
-      cpuError.value = null;
-      gpuError.value = null;
+  // 서버 메트릭 SSE (CPU / GPU)
+  void _startMetricsSse() {
+    _metricsSub = _api.listenServerMetrics().listen((raw) {
+      try {
+        final json = jsonDecode(raw);
+        final data = json['data'];
+        if (data == null) return;
 
-      final cpu = (metricData['cpu_utilization'] ?? 0).toDouble();
+        cpuError.value = null;
+        gpuError.value = null;
 
-      final gpuList = metricData['gpu'] as List<dynamic>? ?? [];
-      final gpu = gpuList.isNotEmpty ? (gpuList.first['gpu_util'] ?? 0).toDouble() : 0.0;
+        final cpu = (data['cpu_utilization'] ?? 0).toDouble();
 
-      final prev = metrics.value;
+        final gpuList = data['gpu'] as List? ?? [];
+        final gpuUtil = gpuList.isNotEmpty ? (gpuList.first['gpu_util'] ?? 0).toDouble() : 0.0;
 
-      metrics.value = ServerMetrics(
-        cpuUsage: cpu,
-        ramUsage: prev.ramUsage,
-        gpuUtilization: gpu,
-        gpuVram: prev.gpuVram,
-        models: prev.models,
-      );
-    } catch (e) {
-      cpuError.value = "CPU Error: $e";
-      gpuError.value = "GPU Error: $e";
-    }
+        final prev = metrics.value;
 
-    // ------------------------------------------------------------
-    // 2) VRAM / RAM 시계열
-    // ------------------------------------------------------------
-    try {
-      final tsData = await _api.getServerTimeSeries();
-
-      vramError.value = null;
-      ramError.value = null;
-
-      List<dynamic> _safeList(Map src, String key) {
-        final v = src[key];
-        if (v is List && v.isNotEmpty) return v;
-        throw "Missing or empty '$key' field in timeseries response";
+        metrics.value = ServerMetrics(
+          cpuUsage: cpu,
+          ramUsage: prev.ramUsage,
+          gpuUtilization: gpuUtil,
+          gpuVram: prev.gpuVram,
+          models: prev.models,
+        );
+      } catch (e) {
+        cpuError.value = "CPU Error: $e";
+        gpuError.value = "GPU Error: $e";
       }
-
-      // -------------------------
-      // 🔥 VRAM (timestamp + index 기반)
-      // -------------------------
-      final vramNode = _safeList(tsData, 'vram');
-      final vramValues = vramNode.first['values'] as List<dynamic>? ?? [];
-
-      gpuVramTimestamps.assignAll(vramValues.map((v) => DateTime.parse(v['ts'])).toList());
-
-      gpuVramSeries.assignAll(
-        List.generate(vramValues.length, (i) {
-          final y = (vramValues[i]['value'] ?? 0).toDouble();
-          return FlSpot(i.toDouble(), y);
-        }),
-      );
-
-      // -------------------------
-      // 🔥 RAM (timestamp + index 기반)
-      // -------------------------
-      final ramNode = _safeList(tsData, 'ram');
-      final ramValues = ramNode.first['values'] as List<dynamic>? ?? [];
-
-      ramTimestamps.assignAll(ramValues.map((v) => DateTime.parse(v['ts'])).toList());
-
-      ramSeries.assignAll(
-        List.generate(ramValues.length, (i) {
-          final y = (ramValues[i]['value'] ?? 0).toDouble();
-          return FlSpot(i.toDouble(), y);
-        }),
-      );
-
-      // snapshot 업데이트
-      final prev = metrics.value;
-      metrics.value = ServerMetrics(
-        cpuUsage: prev.cpuUsage,
-        gpuUtilization: prev.gpuUtilization,
-        ramUsage: ramSeries.isNotEmpty ? ramSeries.last.y : prev.ramUsage,
-        gpuVram: gpuVramSeries.isNotEmpty ? gpuVramSeries.last.y : prev.gpuVram,
-        models: prev.models,
-      );
-    } catch (e) {
-      vramError.value = "VRAM Error: $e";
-      ramError.value = "RAM Error: $e";
-    }
-
-    loading.value = false;
+    });
   }
+
+  // VRAM / RAM Time-series SSE
+  void _startTimeseriesSse() {
+    _timeseriesSub = _api.listenServerTimeSeries().listen((raw) {
+      try {
+        final json = jsonDecode(raw);
+        final data = json['data'];
+        if (data == null) return;
+
+        vramError.value = null;
+        ramError.value = null;
+
+        // VRAM
+        final vramList = data['vram'];
+        if (vramList is! List || vramList.isEmpty) {
+          vramError.value = "Invalid vram format";
+          return;
+        }
+        final vramValues = vramList.first['values'] as List;
+        gpuVramTimestamps.assignAll(vramValues.map((v) => DateTime.parse(v['ts'])).toList());
+        gpuVramSeries.assignAll(
+          List.generate(vramValues.length, (i) => FlSpot(i.toDouble(), (vramValues[i]['value'] ?? 0).toDouble())),
+        );
+
+        // RAM
+        final ramList = data['ram'];
+        if (ramList is! List || ramList.isEmpty) {
+          ramError.value = "Invalid ram format";
+          return;
+        }
+        final ramValues = ramList.first['values'] as List;
+
+        ramTimestamps.assignAll(ramValues.map((v) => DateTime.parse(v['ts'])).toList());
+        ramSeries.assignAll(
+          List.generate(ramValues.length, (i) => FlSpot(i.toDouble(), (ramValues[i]['value'] ?? 0).toDouble())),
+        );
+
+        // 스냅샷 갱신
+        final prev = metrics.value;
+        metrics.value = ServerMetrics(
+          cpuUsage: prev.cpuUsage,
+          gpuUtilization: prev.gpuUtilization,
+          ramUsage: ramSeries.isNotEmpty ? ramSeries.last.y : prev.ramUsage,
+          gpuVram: gpuVramSeries.isNotEmpty ? gpuVramSeries.last.y : prev.gpuVram,
+          models: prev.models,
+        );
+      } catch (e) {
+        vramError.value = "VRAM Error: $e";
+        ramError.value = "RAM Error: $e";
+      }
+    });
+  }
+
+  @override
+  void onClose() {
+    stopSse();
+    super.onClose();
+  }
+
+  // 최신 스냅샷 값
+  double get latestCpuUsage => metrics.value.cpuUsage;
+  double get latestGpuUtil => metrics.value.gpuUtilization;
+  double get latestGpuVram => gpuVramSeries.isNotEmpty ? gpuVramSeries.last.y : metrics.value.gpuVram;
+  double get latestRamUsage => ramSeries.isNotEmpty ? ramSeries.last.y : metrics.value.ramUsage;
 }

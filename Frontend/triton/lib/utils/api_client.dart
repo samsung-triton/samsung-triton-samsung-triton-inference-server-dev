@@ -1,10 +1,23 @@
 // api 모음 파일
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'dart:async';
+import 'package:web/web.dart' as html;
 
 // 앱 전체에서 공통으로 사용하는 API 클라이언트.
 class ApiClient extends GetConnect {
   static const String _baseUrl = 'http://213.181.122.2:53617';
+
+  static int activeSseCount = 0;
+
+  // SSE EventSource 핸들
+  html.EventSource? _serverMetricsEs;
+  html.EventSource? _serverTimeseriesEs;
+  html.EventSource? _dashboardModelsEs;
+  html.EventSource? _modelLatencyEs;
+  html.EventSource? _modelStatsEs;
+  html.EventSource? _modelNotificationEs;
+  html.EventSource? _serverStatusEs;
 
   @override
   void onInit() {
@@ -17,29 +30,28 @@ class ApiClient extends GetConnect {
   // 내부 공통 처리
   // ---------------------------------------------------------------------------
 
-  /// Get 요청 공통 래퍼
+  // Get 요청 공통 래퍼
   Future<dynamic> _get(String path, {String? apiName}) async {
     final res = await get(path);
     return _unwrapResponse(res, apiName ?? path);
   }
 
-  /// Post 요청 공통 래퍼
+  // Post 요청 공통 래퍼
   Future<dynamic> _postJson(String path, dynamic body, {String? apiName}) async {
     final res = await post(path, body, contentType: 'application/json');
     return _unwrapResponse(res, apiName ?? path);
   }
 
-  /// 임의 메서드용 공통 래퍼 (현재는 delete 용도)
+  // 임의 메서드용 공통 래퍼 (현재는 delete 용도)
   Future<dynamic> _requestRaw(String path, String method, {dynamic body, String? apiName}) async {
     final res = await httpClient.request(path, method, body: body);
     return _unwrapResponse(res, apiName ?? '$method $path');
   }
 
-  /// 공통 응답 언래핑
+  // 공통 응답 언래핑
   dynamic _unwrapResponse(Response res, String apiName) {
     // 1) 요청 실패: message 반환
     if (!res.isOk) {
-      print('[ApiClient] $apiName Api Error: ${res.statusCode} ${res.statusText}');
       return res.body['message'];
     }
 
@@ -47,6 +59,46 @@ class ApiClient extends GetConnect {
     dynamic body = res.body;
     final data = body['data'];
     return data;
+  }
+
+  // SSE 생성
+  Stream<String> _createSseStream(
+    String url, {
+    required html.EventSource? Function() getEs,
+    required void Function(html.EventSource?) setEs,
+  }) {
+    final old = getEs();
+    if (old != null) {
+      try {
+        old.close();
+      } catch (_) {}
+    }
+    setEs(null);
+
+    final es = html.EventSource(url);
+    setEs(es);
+
+    final controller = StreamController<String>();
+
+    es.onMessage.listen((event) {
+      controller.add(event.data?.toString() ?? '');
+    });
+
+    es.onError.listen((_) {
+      try {
+        es.close();
+      } catch (_) {}
+      setEs(null);
+    });
+    // 구독이 cancel 될 때 EventSource도 같이 close
+    controller.onCancel = () {
+      try {
+        es.close();
+      } catch (_) {}
+      setEs(null);
+    };
+
+    return controller.stream;
   }
 
   // ---------------------------------------------------------------------------
@@ -67,23 +119,27 @@ class ApiClient extends GetConnect {
   // 서버 관리
   // ---------------------------------------------------------------------------
 
-  // 서버 상태
+  // 서버 상태 조회
   Future<dynamic> getServerStatus() {
     return _get('/api/v1/server/status', apiName: 'getServerStatus');
   }
 
+  // 서버 상태 조회 SSE
+  Stream<String> listenServerStatus() => _createSseStream(
+    "$_baseUrl/api/v1/server/status/stream",
+    getEs: () => _serverStatusEs,
+    setEs: (es) => _serverStatusEs = es,
+  );
+
   // 서버 시작
   Future<dynamic> startServer({required String userLoginId}) {
-    return _postJson('/api/v1/server/start', {
-      'user_login_id': userLoginId,
-      'description': null,
-    }, apiName: 'startServer');
+    return _postJson('/api/v1/server/start', {'loginId': userLoginId, 'description': null}, apiName: 'startServer');
   }
 
   // 서버 중지
   Future<dynamic> stopServer({required String userLoginId, required String description}) {
     return _postJson('/api/v1/server/stop', {
-      'user_login_id': userLoginId,
+      'loginId': userLoginId,
       'description': description,
     }, apiName: 'stopServer');
   }
@@ -91,58 +147,66 @@ class ApiClient extends GetConnect {
   // 서버 재시작
   Future<dynamic> restartServer({required String userLoginId, required String description}) {
     return _postJson('/api/v1/server/restart', {
-      'user_login_id': userLoginId,
+      'loginId': userLoginId,
       'description': description,
     }, apiName: 'restartServer');
   }
 
   // ---------------------------------------------------------------------------
-  // 서버 대시보드 (Server Dashboard)
+  // 대시보드 (Dashboard)
   // ---------------------------------------------------------------------------
 
-  // 서버 메트릭스 정보
-  Future<dynamic> getServerMetrics() {
-    return _get('/api/v1/dashboard/server/metrics', apiName: 'getServerMetrics');
-  }
-
-  // GPU / 리소스 시계열 정보
-  Future<dynamic> getServerTimeSeries() {
-    return _get('/api/v1/dashboard/server/timeseries', apiName: 'getServerTimeSeries');
-  }
-
-  // GET /api/v1/models/standard-time
+  // 초기화 기준 시간 조회
   Future<dynamic> getStandardTime() {
-    return _get('/api/v1/models/standard-time', apiName: 'getStandardTime');
+    return _get('/api/v1/standard-time', apiName: 'getStandardTime');
   }
 
-  // POST /api/v1/models/standard-time
+  // 초기화 기준 시간 수정
   Future<dynamic> updateStandardTime(String newTime) {
-    return _postJson('/api/v1/models/standard-time?new_time=$newTime', null, apiName: 'updateStandardTime');
+    return _postJson('/api/v1/standard-time?new_time=$newTime', null, apiName: 'updateStandardTime');
   }
 
-  // ---------------------------------------------------------------------------
-  // 모델 대시보드 (Model Dashboard)
-  // ---------------------------------------------------------------------------
+  // 서버 CPU, GPU 메트릭 정보 조회 SSE
+  Stream<String> listenServerMetrics() => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/server/metrics/stream",
+    getEs: () => _serverMetricsEs,
+    setEs: (es) => _serverMetricsEs = es,
+  );
 
-  // 대시보드용 모델 목록 조회
-  Future<dynamic> getDashboardModelList() {
-    return _get('/api/v1/dashboard/models', apiName: 'getDashboardModelList');
-  }
+  // 서버 RAM, VRAM 시계열 메트릭 조회 SSE
+  Stream<String> listenServerTimeSeries() => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/server/timeseries/stream",
+    getEs: () => _serverTimeseriesEs,
+    setEs: (es) => _serverTimeseriesEs = es,
+  );
 
-  // 모델 통계 조회
-  Future<dynamic> getDashboardModelStats(int modelId) {
-    return _get('/api/v1/dashboard/model/$modelId/stats', apiName: 'getDashboardModelStats');
-  }
+  // 대시보드 모델 목록 조회 SSE
+  Stream<String> listenDashboardModelList() => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/models/stream",
+    getEs: () => _dashboardModelsEs,
+    setEs: (es) => _dashboardModelsEs = es,
+  );
 
-  // 모델 레이턴시 조회 (timeseries)
-  Future<dynamic> getDashboardModelLatency(int modelId) {
-    return _get('/api/v1/dashboard/model/$modelId/latency', apiName: 'getDashboardModelLatency');
-  }
+  // 모델 별 추론 통계값 조회 SSE
+  Stream<String> listenModelStats(int modelId) => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/model/$modelId/stats/stream",
+    getEs: () => _modelStatsEs,
+    setEs: (es) => _modelStatsEs = es,
+  );
 
-  // 서버 알람 (Server Notifications)
-  Future<dynamic> getServerNotifications({required int page, required int size}) {
-    return _get('/api/v1/noti?page=$page&size=$size', apiName: 'getServerNotifications');
-  }
+  // 모델 별 추론 레이턴시 조회 SSE
+  Stream<String> listenModelLatency(int modelId) => _createSseStream(
+    "$_baseUrl/api/v1/dashboard/model/$modelId/latency/stream",
+    getEs: () => _modelLatencyEs,
+    setEs: (es) => _modelLatencyEs = es,
+  );
+
+  // 추론 Error, Warn level 로그 조회 SSE
+  Stream<String> listenModelNotification() => _createSseStream(
+    "$_baseUrl/api/v1/notifications/stream",
+    getEs: () => _modelNotificationEs,
+    setEs: (es) => _modelNotificationEs = es,
+  );
 
   // ---------------------------------------------------------------------------
   // 모델 관리
@@ -153,14 +217,14 @@ class ApiClient extends GetConnect {
     return _get('/api/v1/models', apiName: 'getModelList');
   }
 
-  // 단일 모델 최초 등록 (파일 업로드 등이라 contentType 고정 안 함)
+  // 노말 모델 최초 등록
   Future<dynamic> createModel(dynamic body) {
-    return post('/api/v1/models', body).then((res) => _unwrapResponse(res, 'createModel'));
+    return post('/api/v1/models/normal', body).then((res) => _unwrapResponse(res, 'createModel'));
   }
 
   // 앙상블 모델 등록
   Future<dynamic> createEnsembleModel(dynamic body) {
-    return post('/api/v1/models/register/ensemble', body).then((res) => _unwrapResponse(res, 'createEnsembleModel'));
+    return post('/api/v1/models/ensemble', body).then((res) => _unwrapResponse(res, 'createEnsembleModel'));
   }
 
   // 모델 삭제
@@ -178,9 +242,9 @@ class ApiClient extends GetConnect {
     return _get('/api/v1/models/$modelId', apiName: 'getModelVersionsAndConfig');
   }
 
-  // 모델 버전 or 설정 추가
+  // 모델 에셋 추가
   Future<dynamic> addModelAssets({required int modelId, required dynamic body}) {
-    return post('/api/v1/models/$modelId/assets', body).then((res) => _unwrapResponse(res, 'addModelAssets'));
+    return post('/api/v1/models/$modelId/versions', body).then((res) => _unwrapResponse(res, 'addModelAssets'));
   }
 
   // 모델 버전 삭제
@@ -215,7 +279,7 @@ class ApiClient extends GetConnect {
     required String configContent,
   }) {
     return _postJson(
-      '/api/v1/models/$modelId/config/apply',
+      '/api/v1/models/$modelId/config',
       jsonEncode({'loginId': loginId, 'description': description, 'configContent': configContent}),
       apiName: 'applyConfig',
     );
@@ -236,40 +300,16 @@ class ApiClient extends GetConnect {
     );
   }
 
-  //Serverlog - server 로그 조회 & 필터링
-  Future<Map<String, dynamic>> getApiLog({
-    required int page,
-    required int size,
-    required String startDate,
-    required String endDate,
-    String? username,
-    String? type,
-    String? description,
-    String? grobalSearch,
-  }) async {
-    final res = await _requestRaw(
-      '/api/v1/logs/api?page=$page&size=$size',
-      'POST',
-      body: jsonEncode({
-        'start_date': startDate,
-        'end_date': endDate,
-        'username': username,
-        'type': type,
-        'description': description,
-        'global_search': grobalSearch,
-      }),
-      apiName: 'getApiLog',
-    );
-
-    return res; // <-- Map 전체를 반환해야 함
-  }
+  // ---------------------------------------------------------------------------
+  // Triton 로그
+  // ---------------------------------------------------------------------------
 
   //triton 로그에서 모델 목록 조회
   Future<dynamic> getLogModelList() {
-    return _get('/api/v1/logs/model-list', apiName: 'getLogModelList');
+    return _get('/api/v1/logs/models', apiName: 'getLogModelList');
   }
 
-  //Serverlog - Infer 로그 조회 & 필터링
+  // 모델 추론 로그 조회 & 필터링
   Future<Map<String, dynamic>> getInferLog({
     String? startDate,
     String? endDate,
@@ -281,23 +321,23 @@ class ApiClient extends GetConnect {
     int limit = 200,
   }) async {
     final raw = await httpClient.post(
-      '/api/v1/logs/model',
+      '/api/v1/logs/infer',
       body: jsonEncode({
-        'model_name': modelName,
+        'modelName': modelName,
         'cursor': cursor,
         'requestId': requestId,
-        'start_date': startDate,
-        'end_date': endDate,
+        'start': startDate,
+        'end': endDate,
         'level': level,
-        'global_search': grobalSearch,
+        'globalSearch': grobalSearch,
         'limit': limit,
       }),
       contentType: 'application/json',
     );
-    return raw.body; // JSON 반환
+    return raw.body;
   }
 
-  //Serverlog - Triton 로그 조회 & 필터링
+  // Triton Server 로그 조회 & 필터링
   Future<Map<String, dynamic>> getTritonLog({
     String? startDate,
     String? endDate,
@@ -307,17 +347,49 @@ class ApiClient extends GetConnect {
     int limit = 200,
   }) async {
     final raw = await httpClient.post(
-      '/api/v1/logs/system',
+      '/api/v1/logs/server',
       body: jsonEncode({
         'cursor': cursor,
         'start': startDate,
         'end': endDate,
         'level': level,
-        'global_search': grobalSearch,
+        'globalSearch': grobalSearch,
         'limit': limit,
       }),
       contentType: 'application/json',
     );
-    return raw.body; // JSON 반환
+    return raw.body;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Server 로그
+  // ---------------------------------------------------------------------------
+
+  // API 로그 조회 & 필터링
+  Future<Map<String, dynamic>> getApiLog({
+    required int page,
+    required int size,
+    required String startDate,
+    required String endDate,
+    String? username,
+    String? type,
+    String? description,
+    String? grobalSearch,
+  }) async {
+    final res = await _requestRaw(
+      '/api/v1/logs/web?page=$page&size=$size',
+      'POST',
+      body: jsonEncode({
+        'startDate': startDate,
+        'endDate': endDate,
+        'username': username,
+        'type': type,
+        'description': description,
+        'globalSearch': grobalSearch,
+      }),
+      apiName: 'getApiLog',
+    );
+
+    return res;
   }
 }

@@ -1,3 +1,4 @@
+//트리톤 로그 필터블록
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/triton_server_log_controller.dart';
@@ -45,6 +46,7 @@ class _FilterBlockTritonServerState extends State<FilterBlockTritonServer> {
             children: [
               FilterText(label: 'period'),
               SizedBox(width: 8),
+              //시작일 선택
               Obx(
                 () => MiniDatePicker(
                   initialDate: controller.startDate.value,
@@ -61,6 +63,7 @@ class _FilterBlockTritonServerState extends State<FilterBlockTritonServer> {
               SizedBox(width: 8),
               Text('~', style: TextStyle(color: black)),
               SizedBox(width: 8),
+              //종료일 선택
               Obx(
                 () => MiniDatePicker(
                   initialDate: controller.endDate.value,
@@ -69,8 +72,8 @@ class _FilterBlockTritonServerState extends State<FilterBlockTritonServer> {
                 ),
               ),
               const Spacer(), // 오른쪽으로 밀기
-
               ButtonSmall(
+                //리셋 버튼
                 text: 'reset',
                 backgroundColor: primaryNormal,
                 textColor: white,
@@ -88,6 +91,7 @@ class _FilterBlockTritonServerState extends State<FilterBlockTritonServer> {
             children: [
               FilterText(label: 'log level'),
               SizedBox(width: 8),
+              //로그 레벨 선택
               Obx(
                 () => Dropdown(
                   key: ValueKey(controller.logLevel.value),
@@ -109,10 +113,12 @@ class _FilterBlockTritonServerState extends State<FilterBlockTritonServer> {
               const FilterText(label: 'search'),
               const SizedBox(width: 8),
               SizedBox(
+                //키워드 인풋
                 child: InputSmall(hintText: 'Enter keyword', width: 424, height: 28, controller: keywordCtrl),
               ),
               const SizedBox(width: 8),
               ButtonSmall(
+                //필터 적용 버튼
                 text: 'ok',
                 backgroundColor: primaryNormal,
                 textColor: white,

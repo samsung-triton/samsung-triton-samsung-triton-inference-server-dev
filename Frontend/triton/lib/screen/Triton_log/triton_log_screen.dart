@@ -1,4 +1,4 @@
-// Triton Log Screen
+// 트리콘 로그 화면
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:triton/controller/model_log/model_log_controller.dart';
@@ -33,7 +33,6 @@ class _TritonLogScreenState extends State<TritonLogScreen> {
 
   @override
   void dispose() {
-    // 페이지 나갈 때 컨트롤러 메모리 해제
     Get.delete<TritonServerLogController>();
     Get.delete<ModelLogController>();
     Get.delete<TritonLogController>();

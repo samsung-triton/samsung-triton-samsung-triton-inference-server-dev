@@ -7,6 +7,7 @@ import 'package:triton/utils/api_client.dart';
 import 'package:triton/utils/server_guard.dart';
 import 'package:triton/utils/show_alert.dart';
 
+// 모델 아이템 모델
 class ModelItem {
   final int modelId;
   final String name;
@@ -38,6 +39,7 @@ class ModelManageController extends GetxController {
   // 게정 정보 확인을 위한 저장소 사용
   GetStorage get _authStorage => GetStorage('auth');
 
+  // 첫 로드인지 확인
   bool _isFirstLoad = true;
 
   @override
@@ -47,9 +49,9 @@ class ModelManageController extends GetxController {
     _api = Get.find<ApiClient>();
   }
 
-  // 모델 목록 로드
+  // 모델 목록 로드 기능
   Future<void> loadModels() async {
-    // API 호출
+    // 모델 불러오는 API 호출
     final dynamic data = await _api.getModelList();
 
     // 데이터가 String이면 에러 메시지로 간주
@@ -73,7 +75,7 @@ class ModelManageController extends GetxController {
       );
     }).toList();
 
-    // List에 반영
+    // 모델 목록에 반영
     models.assignAll(fetchedModels);
 
     // 첫 로드일 때만 첫 번째 모델 자동 선택
@@ -83,7 +85,7 @@ class ModelManageController extends GetxController {
     }
   }
 
-  // 모델 선택
+  // 모델 선택 기능
   Future<void> selectModel(int modelId) async {
     if (selectedModel.value?.modelId == modelId) return;
     selectedModel.value = models.firstWhereOrNull((e) => e.modelId == modelId);
@@ -91,6 +93,7 @@ class ModelManageController extends GetxController {
     await loadModelInfo();
   }
 
+  // 모델 버전 목록 + config 불러오기 기능
   Future<void> loadModelInfo() async {
     final modelId = selectedModel.value?.modelId;
     if (modelId == null) {
@@ -98,6 +101,7 @@ class ModelManageController extends GetxController {
       return;
     }
 
+    // 모델 버전 목록 + config 불러오기 API 호출
     final dynamic data = await _api.getModelVersionsAndConfig(modelId: modelId);
     // 데이터가 String이면 에러 메시지로 간주
     if (data is String) {
@@ -119,7 +123,7 @@ class ModelManageController extends GetxController {
       );
     }).toList();
 
-    // 버전 채워 넣기
+    // 버전 목록 채워 넣기
     final versionManageController = Get.find<VersionManageController>();
     versionManageController.setVersions(fetchedVersions);
 
@@ -128,9 +132,10 @@ class ModelManageController extends GetxController {
     codeEditorController.setEditorCtrlText(text: data['config']["content"] as String);
   }
 
-  // 모델 등록
+  // 노말 모델 등록 기능
   Future<void> registerModel(dynamic body) async {
-    final ok = await isServerRunning();
+    // 서버 on/off 확인
+    final ok = isServerRunning();
     if (!ok) {
       ShowAlert.show(
         title: 'Server Not Running',
@@ -142,8 +147,9 @@ class ModelManageController extends GetxController {
     }
 
     final registerId = _authStorage.read<String>('loginedId') ?? '';
-    body.fields.add(MapEntry('LoginId', registerId));
+    body.fields.add(MapEntry('loginId', registerId));
 
+    // 노말 모델 등록 API 호출
     final dynamic data = await _api.createModel(body);
     if (data is String) {
       ShowAlert.show(message: "Failed to Register the model.\nPlease retry or restart the server.");
@@ -153,9 +159,10 @@ class ModelManageController extends GetxController {
     }
   }
 
-  // 앙상블 모델 등록
+  // 앙상블 모델 등록 기능
   Future<void> registerEnsembleModel(dynamic body) async {
-    final ok = await isServerRunning();
+    // 서버 on/off 확인
+    final ok = isServerRunning();
     if (!ok) {
       ShowAlert.show(
         title: 'Server Not Running',
@@ -167,8 +174,9 @@ class ModelManageController extends GetxController {
     }
 
     final registerId = _authStorage.read<String>('loginedId') ?? '';
-    body.fields.add(MapEntry('LoginId', registerId));
+    body.fields.add(MapEntry('loginId', registerId));
 
+    // 앙상블 모델 등록 API 호출
     final dynamic data = await _api.createEnsembleModel(body);
     if (data is String) {
       ShowAlert.show(message: "Failed to Register the model.\nPlease retry or restart the server.");
@@ -178,9 +186,10 @@ class ModelManageController extends GetxController {
     }
   }
 
-  // 버전 or 셋업 등록
+  // 버전 or 셋업 등록 기능
   Future<void> registerAssets(dynamic body) async {
-    final ok = await isServerRunning();
+    // 서버 on/off 확인
+    final ok = isServerRunning();
     if (!ok) {
       ShowAlert.show(
         title: 'Server Not Running',
@@ -200,6 +209,7 @@ class ModelManageController extends GetxController {
     final registerId = _authStorage.read<String>('loginedId') ?? '';
     body.fields.add(MapEntry('loginId', registerId));
 
+    // 모델 에셋 등록 API 호출
     final dynamic data = await _api.addModelAssets(modelId: modelId, body: body);
     if (data is String) {
       ShowAlert.show(message: "Failed to Register version or setup.\nPlease retry or restart the server.");
@@ -209,9 +219,10 @@ class ModelManageController extends GetxController {
     }
   }
 
-  // 모델 삭제
-  Future<void> deleteModel(int modeld, String description) async {
-    final ok = await isServerRunning();
+  // 모델 삭제 기능
+  Future<void> deleteModel(int modelId, String description) async {
+    // 서버 on/off 확인
+    final ok = isServerRunning();
     if (!ok) {
       ShowAlert.show(
         title: 'Server Not Running',
@@ -222,14 +233,9 @@ class ModelManageController extends GetxController {
       return;
     }
 
-    final modelId = selectedModel.value?.modelId;
-    if (modelId == null) {
-      ShowAlert.show(message: "Select Model");
-      return;
-    }
-
     final deleteId = _authStorage.read<String>('loginedId') ?? '';
 
+    // 모델 삭제 API 호출
     final dynamic data = await _api.deleteModel(modelId: modelId, loginId: deleteId, description: description);
     if (data is String) {
       ShowAlert.show(message: "Failed to Delete model.\nPlease retry or restart the server.");

@@ -2,12 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get/get.dart';
-
-import '../../theme/app_colors.dart';
-import '../../theme/typography.dart';
-import '../../widgets/login/login_text_field.dart';
-import '../../widgets/login/login_button.dart';
-import '../../controller/auth/auth_controller.dart';
+import 'package:triton/controller/auth/auth_controller.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
+import 'package:triton/widgets/login/login_button.dart';
+import 'package:triton/widgets/login/login_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // 로그인 기능
   Future<void> _handleLogin() async {
     setState(() {
       _isLoading = true;
@@ -37,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // 값이 비어있는지 확인
       if (_idCtrl.text.trim().isEmpty || _pwCtrl.text.trim().isEmpty) {
         setState(() {
           _error = 'Please enter both your ID and password.';
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // 로그인 성공 → 페이지 이동
+      // 로그인 성공 -> 페이지 이동
       if (mounted) context.go('/dashboard');
     } catch (_) {
       setState(() => _error = 'Network error. Please try again.');
@@ -78,12 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: ClipRRect(
                 child: Stack(
                   fit: StackFit.expand,
-                  children: [
-                    Image.asset(
-                      'assets/images/login_panel.png',
-                      fit: BoxFit.cover, // 패널을 꽉 채우도록
-                    ),
-                  ],
+                  children: [Image.asset('assets/images/login_panel.png', fit: BoxFit.cover)],
                 ),
               ),
             ),
@@ -100,6 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Center(child: Text('Welcome', style: T.t20(bold: true).copyWith(fontSize: 40))),
                   const SizedBox(height: 32),
 
+                  // 아이디 입력
                   LoginTextField(
                     label: 'ID',
                     hintText: 'Please enter your ID.',
@@ -108,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
+                  // 비밀번호 입력
                   LoginTextField(
                     label: 'Password',
                     hintText: 'Please enter your Password.',
@@ -118,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // 에러용 공간 확보
+                  // 에러문구
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: SizedBox(
@@ -128,6 +126,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+
+                  // 로그인 버트
                   LoginButton(label: 'Login', isLoading: _isLoading, onPressed: _handleLogin),
                   const SizedBox(height: 24),
                 ],

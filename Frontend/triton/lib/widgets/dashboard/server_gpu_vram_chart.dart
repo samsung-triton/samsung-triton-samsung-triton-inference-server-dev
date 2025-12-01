@@ -1,4 +1,5 @@
-// lib/widgets/dashboard/server_gpu_vram_chart.dart
+// 서버 GPU VRAM 시계열 차트
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -14,14 +15,17 @@ class ServerGpuResourceChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<ServerDashboardController>();
 
+    // GPU VRAM 리스트 / timestamp
     return Obx(() {
       final data = controller.gpuVramSeries;
       final timestamps = controller.gpuVramTimestamps;
 
+      // 데이터 없음
       if (data.isEmpty) {
         return const Center(child: Text('No VRAM data available'));
       }
 
+      // X축 범위
       final minX = 0.0;
       final maxX = (data.length - 1).toDouble();
 
@@ -34,6 +38,7 @@ class ServerGpuResourceChart extends StatelessWidget {
             minY: 0,
             maxY: 100,
 
+            // 그리드 라인
             gridData: FlGridData(
               show: true,
               drawHorizontalLine: true,
@@ -46,9 +51,10 @@ class ServerGpuResourceChart extends StatelessWidget {
                   FlLine(color: darkGray.withOpacity(0.25), strokeWidth: 1, dashArray: [6, 6]),
             ),
 
+            // 터치 / 툴팁
             lineTouchData: LineTouchData(
               enabled: true,
-              getTouchedSpotIndicator: (barData, idx) => idx.map((index) {
+              getTouchedSpotIndicator: (barData, idxList) => idxList.map((idx) {
                 return TouchedSpotIndicatorData(FlLine(color: primaryNormal, dashArray: [3, 3]), FlDotData(show: true));
               }).toList(),
               touchTooltipData: LineTouchTooltipData(
@@ -57,6 +63,7 @@ class ServerGpuResourceChart extends StatelessWidget {
               ),
             ),
 
+            // 축 라벨
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
@@ -71,28 +78,30 @@ class ServerGpuResourceChart extends StatelessWidget {
                   showTitles: true,
                   interval: 1,
                   getTitlesWidget: (value, _) {
-                    final index = value.toInt();
-                    if (index < 0 || index >= timestamps.length) {
-                      return const SizedBox.shrink();
-                    }
+                    final idx = value.toInt();
+                    if (idx < 0 || idx >= timestamps.length) return const SizedBox.shrink();
 
-                    final t = timestamps[index].toLocal();
+                    // timestamp → HH:mm
+                    final t = timestamps[idx].toLocal();
                     return Text(DateFormat("HH:mm").format(t), style: T.t8(color: darkGray));
                   },
                 ),
               ),
 
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
 
+            // 라인 그래프 데이터
             lineBarsData: [
               LineChartBarData(
-                spots: data, // already List<FlSpot>
+                spots: data,
                 isCurved: false,
                 color: primaryNormal,
                 barWidth: 1.2,
                 dotData: FlDotData(show: false),
+
+                // 라인 하단 영역(그라데이션)
                 belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(

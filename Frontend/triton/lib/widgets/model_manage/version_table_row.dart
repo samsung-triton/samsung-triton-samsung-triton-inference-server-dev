@@ -1,8 +1,8 @@
 // 버전 관리 테이블 가로줄
 import 'package:flutter/material.dart';
-import '../../controller/model_manage/version_manage_controller.dart';
-import '../../theme/typography.dart';
-import '../../theme/app_colors.dart';
+import 'package:triton/controller/model_manage/version_manage_controller.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
 
 class VersionListRow extends StatelessWidget {
   final VersionItem item;
