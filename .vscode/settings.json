@@ -1,0 +1,19 @@
+{
+  "editor.formatOnSave": true,
+
+  // Dart 포매터
+  "dart.lineLength": 120,
+  "[dart]": {
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  }
+  
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": ["--line-length", "120"],
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": ["--max-line-length=120"],
+    "editor.formatOnSave": true
+}

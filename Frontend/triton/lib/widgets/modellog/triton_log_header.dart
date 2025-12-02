@@ -1,0 +1,118 @@
+//트리톤 로그 화면 헤더
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:triton/controller/model_log/model_log_controller.dart';
+import 'package:triton/controller/model_log/triton_log_controller.dart';
+import 'package:triton/controller/model_log/triton_server_log_controller.dart';
+import 'package:triton/widgets/modellog/DownloadIconButton.dart';
+import 'package:triton/widgets/input/dropdown.dart';
+import 'package:triton/theme/app_colors.dart';
+import 'package:triton/theme/typography.dart';
+import 'package:triton/widgets/modellog/filter_block_model.dart';
+import 'package:triton/widgets/modellog/filter_block_triton_server.dart';
+
+class TritonLogHeader extends StatefulWidget {
+  const TritonLogHeader({super.key});
+
+  @override
+  State<TritonLogHeader> createState() => _TritonLogHeaderState();
+}
+
+class _TritonLogHeaderState extends State<TritonLogHeader> with SingleTickerProviderStateMixin {
+  bool _isFilterOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tritonController = Get.find<TritonLogController>();
+    final tritonServerLogController = Get.find<TritonServerLogController>();
+    final modelController = Get.find<ModelLogController>();
+
+    return Column(
+      children: [
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              //왼쪽 : Triton Log + Dropdown
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text("Triton Log", style: T.t16(color: black, bold: true)),
+                  const SizedBox(width: 12),
+                  Obx(() {
+                    return Dropdown(
+                      items: tritonController.modelList.toList(),
+                      width: 244,
+                      hintText: "model name",
+                      onChanged: (value) {
+                        tritonServerLogController.modelName.value = value ?? '';
+                        modelController.modelName.value = value ?? '';
+                        tritonController.modelName.value = value ?? '';
+
+                        //Triton Server 선택 경우와 AI 모델 선택 경우로 분기
+                        if (value == "Triton Server") {
+                          tritonServerLogController.applyFilter();
+                        } else {
+                          modelController.applyFilter();
+                        }
+                      },
+                    );
+                  }),
+                  const SizedBox(width: 12),
+                  DownloadIconButton(
+                    onPressed: () {
+                      //Triton Server 선택 경우와 AI 모델 선택 경우로 분기
+                      if (tritonController.modelName.value == 'Triton Server') {
+                        tritonServerLogController.exportFilteredLogsAsTxt(); // Triton 로그 다운로드
+                      } else {
+                        modelController.exportFilteredLogsAsTxt(); // 모델별 Infer 로그 다운로드
+                      }
+                    },
+                  ),
+                ],
+              ),
+
+              // 오른쪽: filter 토글
+              Obx(() {
+                if (tritonServerLogController.modelName.value.isEmpty) {
+                  return const SizedBox.shrink(); // model name 선택 전에는 숨김
+                }
+
+                return GestureDetector(
+                  onTap: () => setState(() => _isFilterOpen = !_isFilterOpen),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_isFilterOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: black, size: 24),
+                      const SizedBox(width: 2),
+                      Text("filter", style: T.t16(color: black)),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+
+        // 필터 영역 (열리면 아래 컨텐츠 밀림)
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: _isFilterOpen
+              ? Obx(() {
+                  final server = tritonController.modelName.value;
+
+                  if (server == 'Triton Server') {
+                    return const FilterBlockTritonServer();
+                  } else {}
+                  return const FilterBlockModel();
+                })
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+}
