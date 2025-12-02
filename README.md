@@ -57,7 +57,7 @@ NVIDIA Triton Inference Server 기반의 통합 모델 운영 환경을 제공�
 
 ## 🧱 시스템 아키텍처
 
-![Architecture](/Backend/resource//아키텍처.png)
+![Architecture](/Backend/resource/아키텍처.png)
 
 **주요 연동 흐름**
 - Flutter 웹 UI가 FastAPI 백엔드와 REST API 및 SSE로 통신
